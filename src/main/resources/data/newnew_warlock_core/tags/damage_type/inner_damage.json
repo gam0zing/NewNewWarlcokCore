@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "newnew_warlock_core:bleeding",
+    "minecraft:drown",
+    "minecraft:starve",
+    "minecraft:dry_out"
+  ]
+}

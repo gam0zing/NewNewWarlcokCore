@@ -1,0 +1,39 @@
+{
+  "required": true,
+  "package": "com.gam0zing.newnew_warlock_core.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "AnvilMenuMixin",
+    "BeeUnderwaterDamageMixin",
+    "DolphinDryOutMixin",
+    "EnchantRandomlyFunctionMixin",
+    "EnchantWithLevelsFunctionMixin",
+    "EnchantmentMaxLevelMixin",
+    "EnchantmentMenuMixin",
+    "ItemStackFinishUsingMixin",
+    "LivingEntityDamagePipelineMixin",
+    "LivingEntityEffectHooks",
+    "LivingEntityEffectPersistenceMixin",
+    "LivingEntityEffectSourceMixin",
+    "LivingEntityEffectStackMixin",
+    "LivingEntityHealingMixin",
+    "LivingEntityKnockbackGateMixin",
+    "LivingEntityNewNewRebuildMixin",
+    "LivingEntityPeriodicDamageMixin",
+    "LivingEntitySelfConsumptionMixin",
+    "LivingEntitySensitiveWaterMixin",
+    "MobEffectInstanceSourceMixin",
+    "MobEffectInstanceStackAccess",
+    "PlayerAttackEquipmentMixin",
+    "PlayerAttackFeedbackMixin",
+    "PlayerDifficultyScalingMixin",
+    "ServerPlayerAttackFeedbackMixin"
+  ],
+  "client": [],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

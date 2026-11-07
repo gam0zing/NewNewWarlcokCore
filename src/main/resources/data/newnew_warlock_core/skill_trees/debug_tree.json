@@ -1,0 +1,275 @@
+{
+  "schema": 1,
+  "display_name": "测试技能树",
+  "order": 0,
+  "default_unlocked": true,
+  "reset_xp_per_point": 0,
+  "nodes": [
+    {
+      "id": "n1",
+      "x": 52,
+      "y": 70,
+      "name": "DEBUG获取属性点",
+      "description": "属性点+10，用来测试功能",
+      "icon": "minecraft:experience_bottle",
+      "commands": [
+        {
+          "command": "newnew_warlock_core:attribute",
+          "params": {
+            "attribute": "newnew_warlock_core:newnew_points",
+            "operation": "add_value",
+            "gain": 10,
+            "cost": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "n4",
+      "x": 51.8,
+      "y": 3.5,
+      "name": "DEBUG获取属性点",
+      "description": "属性点+10，用来测试功能",
+      "icon": "minecraft:experience_bottle",
+      "commands": [
+        {
+          "command": "newnew_warlock_core:attribute",
+          "params": {
+            "attribute": "newnew_warlock_core:newnew_points",
+            "operation": "add_value",
+            "gain": 10,
+            "cost": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "n6",
+      "x": 51.9,
+      "y": -64.8,
+      "name": "DEBUG获取属性点",
+      "description": "属性点+10，用来测试功能",
+      "icon": "minecraft:experience_bottle",
+      "commands": [
+        {
+          "command": "newnew_warlock_core:attribute",
+          "params": {
+            "attribute": "newnew_warlock_core:newnew_points",
+            "operation": "add_value",
+            "gain": 10,
+            "cost": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "n7",
+      "x": 52.5,
+      "y": -130,
+      "name": "DEBUG获取属性点",
+      "description": "属性点+10，用来测试功能",
+      "icon": "minecraft:experience_bottle",
+      "commands": [
+        {
+          "command": "newnew_warlock_core:attribute",
+          "params": {
+            "attribute": "newnew_warlock_core:newnew_points",
+            "operation": "add_value",
+            "gain": 10,
+            "cost": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "n8",
+      "x": 150,
+      "y": 72,
+      "name": "力大无穷",
+      "description": "物理伤害+25%",
+      "icon": "minecraft:iron_sword",
+      "commands": [
+        {
+          "command": "newnew_warlock_core:attribute",
+          "params": {
+            "attribute": "newnew_warlock_core:physics_damage_scale",
+            "operation": "add_multiplied_base",
+            "gain": 0.25,
+            "cost": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "n9",
+      "x": 150,
+      "y": -65.2,
+      "name": "力大无穷",
+      "description": "物理伤害+25%",
+      "icon": "minecraft:iron_sword",
+      "commands": [
+        {
+          "command": "newnew_warlock_core:attribute",
+          "params": {
+            "attribute": "newnew_warlock_core:physics_damage_scale",
+            "operation": "add_value",
+            "gain": 0.25,
+            "cost": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "n10",
+      "x": 150,
+      "y": 4.5,
+      "name": "力大无穷",
+      "description": "物理伤害+25%",
+      "icon": "minecraft:iron_sword",
+      "commands": [
+        {
+          "command": "newnew_warlock_core:attribute",
+          "params": {
+            "attribute": "newnew_warlock_core:physics_damage_scale",
+            "operation": "add_value",
+            "gain": 0.25,
+            "cost": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "n11",
+      "x": 150.5,
+      "y": -128.5,
+      "name": "力大无穷",
+      "description": "物理伤害+25%",
+      "icon": "minecraft:iron_sword",
+      "commands": [
+        {
+          "command": "newnew_warlock_core:attribute",
+          "params": {
+            "attribute": "newnew_warlock_core:physics_damage_scale",
+            "operation": "add_value",
+            "gain": 0.25,
+            "cost": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "n12",
+      "x": 247.6,
+      "y": 73.5,
+      "name": "铜皮铁骨",
+      "description": "最大生命值+25%",
+      "icon": "minecraft:iron_chestplate",
+      "commands": [
+        {
+          "command": "newnew_warlock_core:attribute",
+          "params": {
+            "attribute": "minecraft:max_health",
+            "operation": "add_multiplied_base",
+            "gain": 0.25,
+            "cost": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "n13",
+      "x": 247.3,
+      "y": 5.5,
+      "name": "铜皮铁骨",
+      "description": "最大生命值+25%",
+      "icon": "minecraft:iron_chestplate",
+      "commands": [
+        {
+          "command": "newnew_warlock_core:attribute",
+          "params": {
+            "attribute": "minecraft:max_health",
+            "operation": "add_multiplied_base",
+            "gain": 0.25,
+            "cost": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "n14",
+      "x": 247.6,
+      "y": -60.3,
+      "name": "铜皮铁骨",
+      "description": "最大生命值+25%",
+      "icon": "minecraft:iron_chestplate",
+      "commands": [
+        {
+          "command": "newnew_warlock_core:attribute",
+          "params": {
+            "attribute": "minecraft:max_health",
+            "operation": "add_multiplied_base",
+            "gain": 0.25,
+            "cost": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "n15",
+      "x": 247.7,
+      "y": -126.9,
+      "name": "铜皮铁骨",
+      "description": "最大生命值+25%",
+      "icon": "minecraft:iron_chestplate",
+      "commands": [
+        {
+          "command": "newnew_warlock_core:attribute",
+          "params": {
+            "attribute": "minecraft:max_health",
+            "operation": "add_multiplied_base",
+            "gain": 0.25,
+            "cost": 3
+          }
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1",
+      "to": "n4"
+    },
+    {
+      "from": "n4",
+      "to": "n6"
+    },
+    {
+      "from": "n6",
+      "to": "n7"
+    },
+    {
+      "from": "n8",
+      "to": "n10"
+    },
+    {
+      "from": "n10",
+      "to": "n9"
+    },
+    {
+      "from": "n9",
+      "to": "n11"
+    },
+    {
+      "from": "n12",
+      "to": "n13"
+    },
+    {
+      "from": "n13",
+      "to": "n14"
+    },
+    {
+      "from": "n14",
+      "to": "n15"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:player_attack",
+    "minecraft:mob_attack",
+    "minecraft:mob_attack_no_aggro",
+    "minecraft:arrow",
+    "minecraft:trident",
+    "minecraft:thrown",
+    "minecraft:mob_projectile",
+    "minecraft:spit",
+    "minecraft:wind_charge",
+    "minecraft:sting",
+    "minecraft:fall",
+    "minecraft:falling_block",
+    "minecraft:falling_anvil",
+    "minecraft:falling_stalactite",
+    "minecraft:cactus",
+    "minecraft:stalagmite",
+    "minecraft:sweet_berry_bush",
+    "minecraft:cramming",
+    "minecraft:fly_into_wall",
+    "minecraft:in_wall",
+    "minecraft:explosion",
+    "minecraft:player_explosion",
+    "minecraft:fireworks",
+    {
+      "id": "#forge:is_physical",
+      "required": false
+    }
+  ]
+}
