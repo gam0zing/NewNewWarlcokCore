@@ -102,6 +102,12 @@ configurations {
 // client 还需要 main 编译产物（SkillTreeClientData 等在 main 里，client 里的 SkillTreeClient 会引用它们）
 sourceSets.client.compileClasspath += sourceSets.main.output
 
+// 官方 Gradle 的 jar 只打 main 的产物，client source set 不进包。
+// 不加这段的话，正式环境里 SkillTreeClient 不存在 → 按键不注册（按键列表里没有）、SkillTreeScreen 也加载不到。
+tasks.named('jar', Jar).configure {
+    from sourceSets.client.output
+}
+
 dependencies {
 }
 

@@ -309,5 +309,5 @@
   "screen.newnew_warlock_core.skill_tree.reset.confirm": "Refund %s points and consume %s levels. Reset this skill tree?",
   "hud.newnew_warlock_core.difficulty": "Difficulty: %s",
   "key.newnew_warlock_core.skill_tree": "Open Skill Tree",
-  "key.categories.newnew_warlock_core": "NewNew Warlock Core"
+  "key.category.newnew_warlock_core.skill_tree": "NewNew Warlock Core"
 }

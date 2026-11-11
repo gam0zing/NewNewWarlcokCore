@@ -309,5 +309,5 @@
   "screen.newnew_warlock_core.skill_tree.reset.confirm": "将返还 %s 点，并消耗 %s 级经验。确定重置这棵技能树吗？",
   "hud.newnew_warlock_core.difficulty": "难度：%s",
   "key.newnew_warlock_core.skill_tree": "打开技能树",
-  "key.categories.newnew_warlock_core": "NewNew Warlock Core"
+  "key.category.newnew_warlock_core.skill_tree": "NewNew Warlock Core"
 }
