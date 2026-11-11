@@ -39,6 +39,9 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 public class SkillTreeScreen extends Screen {
 
     private static final int NODE_SIZE = 40;
+    /** 画布缩放：世界坐标 → 屏幕像素的比例（0.5 表示整棵树缩小一半显示） */
+    private static final float CANVAS_SCALE = 0.5F;
+    private static final int SCALED_NODE_SIZE = Math.max(1, Math.round(NODE_SIZE * CANVAS_SCALE));
     private static final int TAB_HEIGHT = 28;
     private static final int TAB_WIDTH = 90;
     private static final int COLOR_BACKGROUND = 0xF0101216;
@@ -104,16 +107,16 @@ public class SkillTreeScreen extends Screen {
             minY = Math.min(minY, node.y());
             maxY = Math.max(maxY, node.y());
         }
-        this.panX = this.width / 2.0F - (minX + maxX) / 2.0F;
-        this.panY = (this.canvasTop + this.canvasBottom) / 2.0F - (minY + maxY) / 2.0F;
+        this.panX = this.width / 2.0F - (minX + maxX) / 2.0F * CANVAS_SCALE;
+        this.panY = (this.canvasTop + this.canvasBottom) / 2.0F - (minY + maxY) / 2.0F * CANVAS_SCALE;
     }
 
     private int nodeScreenX(SkillTreeNode node) {
-        return Math.round(this.panX + node.x());
+        return Math.round(this.panX + node.x() * CANVAS_SCALE);
     }
 
     private int nodeScreenY(SkillTreeNode node) {
-        return Math.round(this.panY + node.y());
+        return Math.round(this.panY + node.y() * CANVAS_SCALE);
     }
 
     private boolean isUnlocked(SkillTreeNode node) {
@@ -196,8 +199,8 @@ public class SkillTreeScreen extends Screen {
         for (SkillTreeNode node : tree.nodes()) {
             int centerX = this.nodeScreenX(node);
             int centerY = this.nodeScreenY(node);
-            int left = centerX - NODE_SIZE / 2;
-            int top = centerY - NODE_SIZE / 2;
+            int left = centerX - SCALED_NODE_SIZE / 2;
+            int top = centerY - SCALED_NODE_SIZE / 2;
             boolean unlocked = this.isUnlocked(node);
             boolean available = !unlocked && this.prerequisitesSatisfied(node);
 
@@ -205,14 +208,14 @@ public class SkillTreeScreen extends Screen {
             int border = node == this.selected ? COLOR_BORDER_SELECTED
                 : unlocked ? COLOR_BORDER_UNLOCKED : available ? COLOR_BORDER_AVAILABLE : COLOR_BORDER_LOCKED;
 
-            graphics.fill(left - 1, top - 1, left + NODE_SIZE + 1, top + NODE_SIZE + 1, border);
-            graphics.fill(left, top, left + NODE_SIZE, top + NODE_SIZE, fill);
+            graphics.fill(left - 1, top - 1, left + SCALED_NODE_SIZE + 1, top + SCALED_NODE_SIZE + 1, border);
+            graphics.fill(left, top, left + SCALED_NODE_SIZE, top + SCALED_NODE_SIZE, fill);
 
             if (node.icon() != null) {
                 Item item = BuiltInRegistries.ITEM.get(node.icon()).map(Holder::value).orElse(null);
                 if (item != null) {
                     ItemStack stack = new ItemStack(item);
-                    graphics.item(stack, left + NODE_SIZE / 2 - 8, top + NODE_SIZE / 2 - 8);
+                    graphics.item(stack, left + SCALED_NODE_SIZE / 2 - 8, top + SCALED_NODE_SIZE / 2 - 8);
                 }
             }
         }
@@ -370,9 +373,9 @@ public class SkillTreeScreen extends Screen {
     @Nullable
     private SkillTreeNode nodeAt(double mouseX, double mouseY, SkillTreeDefinition tree) {
         for (SkillTreeNode node : tree.nodes()) {
-            int left = this.nodeScreenX(node) - NODE_SIZE / 2;
-            int top = this.nodeScreenY(node) - NODE_SIZE / 2;
-            if (inRect(mouseX, mouseY, left, top, NODE_SIZE, NODE_SIZE)) {
+            int left = this.nodeScreenX(node) - SCALED_NODE_SIZE / 2;
+            int top = this.nodeScreenY(node) - SCALED_NODE_SIZE / 2;
+            if (inRect(mouseX, mouseY, left, top, SCALED_NODE_SIZE, SCALED_NODE_SIZE)) {
                 return node;
             }
         }
@@ -406,10 +409,10 @@ public class SkillTreeScreen extends Screen {
         }
         double nx = dx / length;
         double ny = dy / length;
-        int startX = (int) Math.round(x1 + nx * (NODE_SIZE / 2.0D));
-        int startY = (int) Math.round(y1 + ny * (NODE_SIZE / 2.0D));
-        int endX = (int) Math.round(x2 - nx * (NODE_SIZE / 2.0D + 4.0D));
-        int endY = (int) Math.round(y2 - ny * (NODE_SIZE / 2.0D + 4.0D));
+        int startX = (int) Math.round(x1 + nx * (SCALED_NODE_SIZE / 2.0D));
+        int startY = (int) Math.round(y1 + ny * (SCALED_NODE_SIZE / 2.0D));
+        int endX = (int) Math.round(x2 - nx * (SCALED_NODE_SIZE / 2.0D + 4.0D));
+        int endY = (int) Math.round(y2 - ny * (SCALED_NODE_SIZE / 2.0D + 4.0D));
         drawLine(graphics, startX, startY, endX, endY, color);
 
         // 箭头

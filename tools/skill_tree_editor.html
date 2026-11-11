@@ -447,6 +447,82 @@
   #toast.error { border-color: #5a2b2b; color: #ffb4b4; }
   #toast.ok { border-color: #2c4a38; color: #b6f0c9; }
 
+  /* --------------------------------- 远程仓库 -------------------------------- */
+
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button:disabled:hover { background: var(--panel-2); border-color: var(--line); }
+
+  #repo-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 75;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(4, 6, 10, .7);
+  }
+  .repo-box { width: min(1080px, 95vw); height: min(760px, 90vh); max-height: 90vh; }
+  .repo-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 16px;
+    overflow: hidden;
+  }
+  .repo-settings { display: grid; grid-template-columns: 1fr 1.4fr 1.2fr auto auto; gap: 8px; align-items: end; }
+  .repo-settings .field { margin-bottom: 0; }
+  .repo-settings input { width: 100%; }
+  .repo-main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(260px, .9fr) minmax(0, 1.4fr); gap: 10px; }
+  .repo-pane {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel-2);
+    overflow: hidden;
+  }
+  .repo-pane-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .repo-list { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 7px; }
+  .repo-tree { padding: 8px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); cursor: pointer; }
+  .repo-tree:hover { border-color: #3d5170; }
+  .repo-tree.active { border-color: var(--gold); background: #1d2230; }
+  .repo-tree .name { margin-bottom: 3px; font-weight: 600; }
+  .repo-tree .line, .repo-version .line { font-size: 10px; color: var(--muted); word-break: break-all; }
+  .repo-version { padding: 8px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
+  .repo-version.current { border-color: #2c4a38; }
+  .repo-version .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+  .repo-version .tag { color: var(--gold); font-weight: 600; }
+  .repo-version .msg { margin: 4px 0; font-size: 11px; color: #c9d4e4; white-space: pre-wrap; word-break: break-word; }
+  .repo-version .btns { display: flex; gap: 6px; margin-top: 6px; }
+  .repo-version .btns button { padding: 3px 8px; font-size: 11px; }
+  .repo-ops {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+  }
+  .repo-workspace { font-size: 11px; color: var(--muted); line-height: 1.7; }
+  .repo-workspace b { color: var(--text); font-weight: 600; }
+  .repo-buttons { display: flex; gap: 8px; }
+  .muted-text { color: var(--muted); font-weight: 400; letter-spacing: 0; text-transform: none; }
+
   ::-webkit-scrollbar { width: 9px; height: 9px; }
   ::-webkit-scrollbar-thumb { background: #26303d; border-radius: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -467,6 +543,8 @@
     <button id="btn-new">新建</button>
     <button id="btn-import-tree">导入技能树</button>
     <button id="btn-export" class="primary">导出技能树</button>
+    <button id="btn-upload">上传</button>
+    <button id="btn-repo">仓库</button>
     <button id="btn-help">帮助</button>
   </div>
 </header>
@@ -538,6 +616,53 @@
     <div class="modal-foot" id="modal-foot"></div>
   </div>
 </div>
+
+<div id="repo-modal" class="hidden">
+  <div class="modal-box repo-box">
+    <div class="modal-head" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>远程仓库</span>
+      <span id="repo-status" class="status">未连接</span>
+    </div>
+    <div class="repo-body">
+      <div class="repo-settings">
+        <div class="field">
+          <label for="repo-author">作者 ID</label>
+          <input id="repo-author" type="text" spellcheck="false" placeholder="上传时显示的名字">
+        </div>
+        <div class="field">
+          <label for="repo-server">服务器地址</label>
+          <input id="repo-server" type="text" spellcheck="false" placeholder="留空 = 当前页面地址">
+        </div>
+        <div class="field">
+          <label for="repo-token">访问令牌</label>
+          <input id="repo-token" type="password" placeholder="与服务端 EDITOR_TOKEN 一致">
+        </div>
+        <button id="repo-save-config">保存设置</button>
+        <button id="repo-refresh">刷新列表</button>
+      </div>
+      <div class="repo-main">
+        <section class="repo-pane">
+          <div class="repo-pane-title"><span>技能树</span><span id="repo-tree-count" class="muted-text"></span></div>
+          <div id="repo-trees" class="repo-list"></div>
+        </section>
+        <section class="repo-pane">
+          <div class="repo-pane-title"><span>版本检查器</span><span id="repo-selected-name" class="muted-text"></span></div>
+          <div id="repo-versions" class="repo-list"></div>
+        </section>
+      </div>
+      <div class="repo-ops">
+        <div id="repo-workspace" class="repo-workspace"></div>
+        <div class="repo-buttons">
+          <button id="repo-push-new">推送当前工作区作为新树</button>
+          <button id="repo-push-version" class="primary">推送当前工作区作为新版本</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button id="repo-close">关闭</button>
+    </div>
+  </div>
+</div>
 <div id="toast"></div>
 
 <input type="file" id="file-defs" accept=".json,application/json" hidden>
@@ -555,11 +680,14 @@
   // ==========================================================================================
 
   const STORAGE_KEY = 'newnew_skill_tree_editor_v1';
+  const AUTHOR_KEY = 'newnew_skill_tree_editor_author_v1';
+  const TOKEN_KEY = 'newnew_skill_tree_editor_token_v1';
+  const SERVER_KEY = 'newnew_skill_tree_editor_server_v1';
   const SCHEMA_VERSION = 1;
   const DEFAULT_NAMESPACE = 'newnew_warlock_core';
   const BOX = 40;                 // 节点在世界坐标里的边长（与游戏内一致）
-  const GAME_VIEW_WIDTH = 480;    // 游戏内窗口大致显示宽度（约 16:9，1920×1080 / GUI 缩放 4）
-  const GAME_VIEW_HEIGHT = 270;   // 游戏内窗口大致显示高度
+  const GAME_VIEW_WIDTH = 960;    // 游戏内窗口大致显示宽度（1920×1080 / GUI 缩放 4 / 画布缩放 0.5）
+  const GAME_VIEW_HEIGHT = 540;   // 游戏内窗口大致显示高度
   const LONG_PRESS_MS = 200;      // 长按开始拖拽
   const MOVE_TOLERANCE = 4;       // 长按前的抖动容差
 
@@ -577,7 +705,11 @@
     selection: null,
     connect: null,      // { mode: 'out' | 'in', id }
     view: { x: 80, y: 80, scale: 2 },
-    seq: 1
+    seq: 1,
+    // 版本信息（写进 tree.json 的根级 meta，游戏解析器会忽略）
+    meta: { originalAuthor: '', version: 0, editors: [], editedAt: '', message: '' },
+    // 远程仓库关联：baseVersion 为 0 表示尚未关联远程树
+    remote: { treeId: '', baseVersion: 0, lastSyncedHash: '' }
   };
 
   const dom = {
@@ -604,6 +736,18 @@
     treeResetXp: document.getElementById('tree-reset-xp'),
     treeDefaultUnlocked: document.getElementById('tree-default-unlocked'),
     treePathHint: document.getElementById('tree-path-hint'),
+    repoModal: document.getElementById('repo-modal'),
+    repoStatus: document.getElementById('repo-status'),
+    repoAuthor: document.getElementById('repo-author'),
+    repoServer: document.getElementById('repo-server'),
+    repoToken: document.getElementById('repo-token'),
+    repoTrees: document.getElementById('repo-trees'),
+    repoTreeCount: document.getElementById('repo-tree-count'),
+    repoVersions: document.getElementById('repo-versions'),
+    repoSelectedName: document.getElementById('repo-selected-name'),
+    repoWorkspace: document.getElementById('repo-workspace'),
+    repoPushNew: document.getElementById('repo-push-new'),
+    repoPushVersion: document.getElementById('repo-push-version'),
     fileDefs: document.getElementById('file-defs'),
     fileEnums: document.getElementById('file-enums'),
     fileTree: document.getElementById('file-tree')
@@ -1288,6 +1432,10 @@
         dom.modal.classList.add('hidden');
         return;
       }
+      if (!dom.repoModal.classList.contains('hidden')) {
+        closeRepo();
+        return;
+      }
       if (state.connect) {
         state.connect = null;
         updateBanner();
@@ -1886,6 +2034,8 @@
       from: String(edge.from ?? ''),
       to: String(edge.to ?? '')
     })) : [];
+    state.meta = normalizeMeta(json.meta);
+    state.remote = { treeId: '', baseVersion: 0, lastSyncedHash: '' };
 
     if (filename) {
       const base = filename.replace(/\.json$/i, '');
@@ -1906,7 +2056,22 @@
     save();
   }
 
-  function buildTreeJson() {
+  /** 把 JSON 根级的 meta 规范化为编辑器内部结构 */
+  function normalizeMeta(raw) {
+    if (!raw || typeof raw !== 'object') {
+      return { originalAuthor: '', version: 0, editors: [], editedAt: '', message: '' };
+    }
+    return {
+      originalAuthor: typeof raw.original_author === 'string' ? raw.original_author : '',
+      version: Number.isInteger(raw.version) ? raw.version : 0,
+      editors: Array.isArray(raw.editors) ? raw.editors.filter(item => typeof item === 'string') : [],
+      editedAt: typeof raw.edited_at === 'string' ? raw.edited_at : '',
+      message: typeof raw.message === 'string' ? raw.message : ''
+    };
+  }
+
+  /** 仅包含技能树本体（不含版本 meta），用于计算内容哈希 */
+  function buildCoreTree() {
     return {
       schema: SCHEMA_VERSION,
       display_name: state.displayName,
@@ -1927,6 +2092,18 @@
       }),
       edges: state.edges.map(edge => ({ from: edge.from, to: edge.to }))
     };
+  }
+
+  function buildTreeJson() {
+    const json = buildCoreTree();
+    json.meta = {
+      original_author: state.meta.originalAuthor,
+      version: state.meta.version,
+      editors: state.meta.editors.slice(),
+      edited_at: state.meta.editedAt || new Date().toISOString(),
+      message: state.meta.message
+    };
+    return json;
   }
 
   function validateTree() {
@@ -2004,14 +2181,8 @@
 
     const perform = () => {
       const json = buildTreeJson();
-      const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
       const name = parts ? parts.path.replace(/\//g, '_') + '.json' : 'skill_tree.json';
-      const anchor = el('a', { href: url, download: name });
-      document.body.append(anchor);
-      anchor.click();
-      anchor.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1500);
+      downloadText(JSON.stringify(json, null, 2), name);
       toast('已导出，目标路径：' + targetPath, 'ok');
     };
 
@@ -2029,15 +2200,18 @@
   function showModal(title, bodyNodes, actions) {
     dom.modalTitle.textContent = title;
     dom.modalBody.innerHTML = '';
-    for (const child of bodyNodes) dom.modalBody.append(child);
+    for (const child of bodyNodes) {
+      if (child !== null && child !== undefined && child !== false) dom.modalBody.append(child);
+    }
     dom.modalFoot.innerHTML = '';
     for (const action of actions) {
       dom.modalFoot.append(el('button', {
         class: action.primary ? 'primary' : (action.danger ? 'danger' : ''),
         text: action.label,
         onclick: () => {
-          if (!action.keepOpen) dom.modal.classList.add('hidden');
-          if (action.action) action.action();
+          // action 返回 false 表示校验未通过，保持弹窗打开
+          const result = action.action ? action.action() : undefined;
+          if (!action.keepOpen && result !== false) dom.modal.classList.add('hidden');
         }
       }));
     }
@@ -2083,6 +2257,9 @@
         el('li', {}, '右侧检查器修改节点名称、描述、图标物品与命令参数。'),
         el('li', {}, '点击「导出技能树」，把文件放到 ', el('code', { text: 'data/<命名空间>/skill_trees/<名称>.json' }), '，执行 /reload。')
       ),
+      el('div', { class: 'section-title' }, el('span', {}, '远程仓库（可选）')),
+      el('div', { text: '在「仓库」里填写作者 ID、服务器地址与访问令牌。上传时会把当前工作区连同版本信息（原作者、版本号、编辑者、编辑时间、版本说明）推到服务端；拉取可把任意历史版本取回画布，下载可得到含 tree.json 与 meta.json 的 zip。' }),
+      el('div', { text: '已经关联远程树时，顶部「上传」会作为新版本推送；如果远端已有更新版本，需要先拉取。未关联时，则作为一棵新树上传。' }),
       el('div', { class: 'section-title' }, el('span', {}, '前置规则')),
       el('div', { text: '连线方向为「前置 → 后继」。一个节点有多个前置时，只要其中任意一个已解锁即可解锁；没有前置的节点是根节点，可直接解锁。' }),
       el('div', { class: 'section-title' }, el('span', {}, 'enum 表（编辑期辅助）')),
@@ -2114,6 +2291,665 @@
   }
 
   // ==========================================================================================
+  // 远程仓库
+  // ==========================================================================================
+
+  const repoState = {
+    trees: [],
+    selectedId: '',
+    detail: null,
+    versions: [],
+    dirty: null
+  };
+
+  // ---------------------------------------------------------------- 本地配置
+
+  function readLocal(key) {
+    try { return localStorage.getItem(key) || ''; } catch (error) { return ''; }
+  }
+
+  function writeLocal(key, value) {
+    try { localStorage.setItem(key, value); } catch (error) { /* 忽略隐私模式下的写入失败 */ }
+  }
+
+  function repoAuthor() {
+    return readLocal(AUTHOR_KEY).trim();
+  }
+
+  function repoToken() {
+    return readLocal(TOKEN_KEY).trim();
+  }
+
+  function serverBase() {
+    const saved = readLocal(SERVER_KEY).trim();
+    const base = saved || (/^https?:$/.test(location.protocol) ? '' : 'http://127.0.0.1:8787');
+    return base.replace(/\/+$/, '');
+  }
+
+  // ---------------------------------------------------------------- 内容哈希
+
+  const SHA256_K = [
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+  ];
+
+  function rotr(value, bits) {
+    return (value >>> bits) | (value << (32 - bits));
+  }
+
+  /** 纯 JS SHA-256，用于 file:// 等没有 crypto.subtle 的场景 */
+  function sha256Fallback(text) {
+    const bytes = new TextEncoder().encode(text);
+    const bitLength = bytes.length * 8;
+    const padded = new Uint8Array((((bytes.length + 8) >> 6) + 1) << 6);
+    padded.set(bytes);
+    padded[bytes.length] = 0x80;
+    const view = new DataView(padded.buffer);
+    view.setUint32(padded.length - 8, Math.floor(bitLength / 0x100000000));
+    view.setUint32(padded.length - 4, bitLength >>> 0);
+
+    const hash = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+    const w = new Uint32Array(64);
+
+    for (let offset = 0; offset < padded.length; offset += 64) {
+      for (let i = 0; i < 16; i += 1) w[i] = view.getUint32(offset + i * 4);
+      for (let i = 16; i < 64; i += 1) {
+        const s0 = rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >>> 3);
+        const s1 = rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >>> 10);
+        w[i] = (w[i - 16] + s0 + w[i - 7] + s1) >>> 0;
+      }
+
+      let a = hash[0];
+      let b = hash[1];
+      let c = hash[2];
+      let d = hash[3];
+      let e = hash[4];
+      let f = hash[5];
+      let g = hash[6];
+      let h = hash[7];
+
+      for (let i = 0; i < 64; i += 1) {
+        const s1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+        const ch = (e & f) ^ (~e & g);
+        const temp1 = (h + s1 + ch + SHA256_K[i] + w[i]) >>> 0;
+        const s0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+        const maj = (a & b) ^ (a & c) ^ (b & c);
+        const temp2 = (s0 + maj) >>> 0;
+        h = g; g = f; f = e; e = (d + temp1) >>> 0;
+        d = c; c = b; b = a; a = (temp1 + temp2) >>> 0;
+      }
+
+      hash[0] = (hash[0] + a) >>> 0;
+      hash[1] = (hash[1] + b) >>> 0;
+      hash[2] = (hash[2] + c) >>> 0;
+      hash[3] = (hash[3] + d) >>> 0;
+      hash[4] = (hash[4] + e) >>> 0;
+      hash[5] = (hash[5] + f) >>> 0;
+      hash[6] = (hash[6] + g) >>> 0;
+      hash[7] = (hash[7] + h) >>> 0;
+    }
+
+    return hash.map(value => value.toString(16).padStart(8, '0')).join('');
+  }
+
+  async function hashCurrentTree() {
+    const text = canonicalJson(buildCoreTree());
+    if (window.crypto && window.crypto.subtle) {
+      try {
+        const digest = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+        return Array.from(new Uint8Array(digest)).map(byte => byte.toString(16).padStart(2, '0')).join('');
+      } catch (error) { /* 回退 */ }
+    }
+    return sha256Fallback(text);
+  }
+
+  /** 与服务端一致的键排序 JSON */
+  function canonicalJson(value) {
+    if (Array.isArray(value)) return '[' + value.map(canonicalJson).join(',') + ']';
+    if (value && typeof value === 'object') {
+      return '{' + Object.keys(value).sort()
+        .map(key => JSON.stringify(key) + ':' + canonicalJson(value[key]))
+        .join(',') + '}';
+    }
+    return JSON.stringify(value) ?? 'null';
+  }
+
+  // ---------------------------------------------------------------- HTTP
+
+  async function repoRequest(pathname, options) {
+    const token = repoToken();
+    if (!token) throw new Error('还没有设置访问令牌，请先在上方填写服务端的 EDITOR_TOKEN');
+    const url = serverBase() + pathname;
+    let response;
+    try {
+      response = await fetch(url, {
+        method: (options && options.method) || 'GET',
+        headers: Object.assign(
+          { Authorization: 'Bearer ' + token, 'ngrok-skip-browser-warning': 'true' },
+          options && options.body ? { 'Content-Type': 'application/json' } : {}
+        ),
+        body: options && options.body ? JSON.stringify(options.body) : undefined
+      });
+    } catch (error) {
+      throw new Error('连接服务器失败：' + url + '（' + error.message + '）');
+    }
+
+    const text = await response.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch (error) { data = null; }
+
+    if (!response.ok) {
+      const requestError = new Error((data && (data.error || data.message)) || ('HTTP ' + response.status));
+      requestError.status = response.status;
+      requestError.data = data;
+      throw requestError;
+    }
+    return data;
+  }
+
+  function downloadText(text, name) {
+    const blob = new Blob([text], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = el('a', { href: url, download: name });
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  }
+
+  async function repoDownload(pathname) {
+    const token = repoToken();
+    if (!token) throw new Error('还没有设置访问令牌');
+    const response = await fetch(serverBase() + pathname, {
+      headers: { Authorization: 'Bearer ' + token, 'ngrok-skip-browser-warning': 'true' }
+    });
+    if (!response.ok) {
+      let message = 'HTTP ' + response.status;
+      try {
+        const data = await response.json();
+        if (data && (data.error || data.message)) message = data.error || data.message;
+      } catch (error) { /* 忽略 */ }
+      throw new Error(message);
+    }
+    const blob = await response.blob();
+    const disposition = response.headers.get('Content-Disposition') || '';
+    const match = /filename\*=UTF-8''([^;]+)/i.exec(disposition);
+    const name = match ? decodeURIComponent(match[1]) : 'skill_tree.zip';
+    const url = URL.createObjectURL(blob);
+    const anchor = el('a', { href: url, download: name });
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  }
+
+  // ---------------------------------------------------------------- 仓库界面
+
+  function isRepoOpen() {
+    return !dom.repoModal.classList.contains('hidden');
+  }
+
+  function setRepoStatus(text, kind) {
+    dom.repoStatus.textContent = text;
+    dom.repoStatus.className = 'status' + (kind ? ' ' + kind : '');
+  }
+
+  function formatTime(value) {
+    if (!value) return '未知时间';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString('zh-CN', { hour12: false });
+  }
+
+  function openRepo() {
+    dom.repoAuthor.value = repoAuthor();
+    dom.repoServer.value = readLocal(SERVER_KEY);
+    dom.repoToken.value = repoToken();
+    dom.repoModal.classList.remove('hidden');
+
+    repoState.selectedId = state.remote.treeId || repoState.selectedId;
+    updateRepoWorkspace();
+
+    if (!repoToken()) {
+      dom.repoTrees.innerHTML = '';
+      dom.repoTrees.append(el('div', { class: 'empty', text: '先填写访问令牌并点「保存设置」，再刷新列表。' }));
+      dom.repoVersions.innerHTML = '';
+      setRepoStatus('未设置令牌', '');
+      return;
+    }
+
+    refreshTrees().catch(showRepoError);
+    computeDirty().catch(() => undefined);
+  }
+
+  function closeRepo() {
+    dom.repoModal.classList.add('hidden');
+  }
+
+  async function computeDirty() {
+    if (!state.remote.treeId || !state.remote.lastSyncedHash) {
+      repoState.dirty = null;
+      updateRepoWorkspace();
+      return;
+    }
+    repoState.dirty = (await hashCurrentTree()) !== state.remote.lastSyncedHash;
+    updateRepoWorkspace();
+  }
+
+  function saveRepoConfig(silent) {
+    const author = dom.repoAuthor.value.trim();
+    const server = dom.repoServer.value.trim();
+    const token = dom.repoToken.value.trim();
+
+    if (server) {
+      try {
+        const url = new URL(server);
+        if (!/^https?:$/.test(url.protocol)) throw new Error('protocol');
+      } catch (error) {
+        toast('服务器地址需要以 http:// 或 https:// 开头', 'error');
+        return false;
+      }
+    }
+
+    writeLocal(AUTHOR_KEY, author);
+    writeLocal(SERVER_KEY, server.replace(/\/+$/, ''));
+    writeLocal(TOKEN_KEY, token);
+    if (!silent) toast('仓库设置已保存在本机', 'ok');
+    updateRepoWorkspace();
+    return true;
+  }
+
+  async function refreshTrees() {
+    setRepoStatus('连接中…', '');
+    const trees = await repoRequest('/api/trees');
+    repoState.trees = Array.isArray(trees) ? trees : [];
+
+    if (!repoState.selectedId && state.remote.treeId) repoState.selectedId = state.remote.treeId;
+    if (repoState.selectedId && !repoState.trees.some(tree => tree.tree_id === repoState.selectedId)) {
+      repoState.selectedId = '';
+    }
+
+    renderRepoTrees();
+
+    if (!repoState.trees.length) {
+      repoState.detail = null;
+      repoState.versions = [];
+      renderRepoVersions();
+      updateRepoWorkspace();
+      setRepoStatus('已连接', 'ok');
+      return;
+    }
+
+    await selectRepoTree(repoState.selectedId || repoState.trees[0].tree_id);
+    await computeDirty();
+    setRepoStatus('已连接', 'ok');
+  }
+
+  async function selectRepoTree(treeId) {
+    repoState.selectedId = treeId;
+    renderRepoTrees();
+    setRepoStatus('加载版本…', '');
+    const detail = await repoRequest('/api/trees/' + encodeURIComponent(treeId) + '/versions');
+    repoState.detail = detail;
+    repoState.versions = Array.isArray(detail.versions) ? detail.versions : [];
+    renderRepoVersions();
+    updateRepoWorkspace();
+    setRepoStatus('已连接', 'ok');
+  }
+
+  function renderRepoTrees() {
+    dom.repoTreeCount.textContent = repoState.trees.length + ' 棵';
+    dom.repoTrees.innerHTML = '';
+
+    if (!repoState.trees.length) {
+      dom.repoTrees.append(el('div', { class: 'empty', text: '仓库里还没有技能树。可以用下方按钮把当前工作区推送为新树。' }));
+      return;
+    }
+
+    for (const tree of repoState.trees) {
+      dom.repoTrees.append(el('div', {
+        class: 'repo-tree' + (tree.tree_id === repoState.selectedId ? ' active' : ''),
+        onclick: () => selectRepoTree(tree.tree_id).catch(showRepoError)
+      },
+        el('div', { class: 'name', text: tree.tree_name + ' · v' + tree.latest_version }),
+        el('div', { class: 'line', text: '原作者：' + (tree.original_author || '未知') }),
+        el('div', { class: 'line', text: '上传 ' + tree.upload_count + ' 次 · 最后 ' + formatTime(tree.last_uploaded_at) }),
+        el('div', { class: 'line', text: tree.tree_id })
+      ));
+    }
+  }
+
+  function renderRepoVersions() {
+    dom.repoVersions.innerHTML = '';
+    if (!repoState.detail) {
+      dom.repoSelectedName.textContent = '';
+      dom.repoVersions.append(el('div', { class: 'empty', text: '在左侧选择一棵技能树，这里会列出它的所有版本。' }));
+      return;
+    }
+
+    const detail = repoState.detail;
+    dom.repoSelectedName.textContent = detail.tree_name + '（' + repoState.versions.length + ' 个版本）';
+
+    for (const version of repoState.versions) {
+      const isCurrent = state.remote.treeId === detail.tree_id && state.remote.baseVersion === version.version;
+      dom.repoVersions.append(el('div', { class: 'repo-version' + (isCurrent ? ' current' : '') },
+        el('div', { class: 'head' },
+          el('span', { class: 'tag', text: 'v' + version.version + (version.version === detail.latest_version ? ' · 最新' : '') + (isCurrent ? ' · 工作区' : '') }),
+          el('span', { class: 'muted-text', text: formatTime(version.edited_at) })
+        ),
+        version.message ? el('div', { class: 'msg', text: version.message }) : null,
+        el('div', { class: 'line', text: '编辑者：' + (version.uploader || '未知') + ' · 上传于 ' + formatTime(version.uploaded_at) }),
+        el('div', { class: 'line', text: '参与编辑：' + ((version.editors || []).join('、') || '未知') }),
+        el('div', { class: 'btns' },
+          el('button', {
+            text: '拉取到工作区',
+            onclick: () => pullVersion(detail.tree_id, version.version)
+          }),
+          el('button', {
+            text: '下载 zip',
+            onclick: () => downloadVersion(detail.tree_id, version.version, detail.tree_name)
+          })
+        )
+      ));
+    }
+  }
+
+  function updateRepoWorkspace() {
+    const dirtyText = repoState.dirty === null ? '未计算' : (repoState.dirty ? '有未同步修改' : '与最近同步一致');
+    const remoteText = state.remote.treeId
+      ? '已关联 ' + state.remote.treeId + ' · 基于 v' + state.remote.baseVersion
+      : '未关联远程树';
+
+    dom.repoWorkspace.innerHTML = '';
+    dom.repoWorkspace.append(
+      el('div', {}, '当前工作区：', el('b', { text: state.displayName || '未命名' }), ' · ', el('b', { text: state.treeId }), ' · ', remoteText),
+      el('div', {}, '作者：', el('b', { text: state.meta.originalAuthor || repoAuthor() || '未设置' }),
+        ' · 工作区版本：', el('b', { text: state.meta.version ? 'v' + state.meta.version : '未上传' }),
+        ' · ', dirtyText)
+    );
+
+    const latest = repoState.detail ? repoState.detail.latest_version : 0;
+    const linked = !!repoState.detail && state.remote.treeId === repoState.detail.tree_id;
+    const canPushVersion = linked && state.remote.baseVersion === latest;
+    dom.repoPushVersion.disabled = !canPushVersion;
+    dom.repoPushVersion.textContent = '推送当前工作区作为新版本' + (canPushVersion ? '（v' + (latest + 1) + '）' : '');
+    dom.repoPushVersion.title = canPushVersion
+      ? ''
+      : (!linked ? '先在左侧选中当前工作区关联的那棵树' : '远端已有更新版本，请先拉取最新版本');
+  }
+
+  function showRepoError(error) {
+    const message = error && error.message ? error.message : String(error);
+    setRepoStatus('连接失败', '');
+    toast(message, 'error');
+    repoState.trees = [];
+    repoState.detail = null;
+    repoState.versions = [];
+    dom.repoTrees.innerHTML = '';
+    dom.repoTrees.append(el('div', { class: 'empty', text: '无法读取仓库：' + message }));
+    renderRepoVersions();
+  }
+
+  // ---------------------------------------------------------------- 交互小工具
+
+  function promptInput(title, label, defaultValue, multiline, allowEmpty) {
+    return new Promise(resolve => {
+      const input = multiline
+        ? el('textarea', { rows: 4 })
+        : el('input', { type: 'text', spellcheck: 'false' });
+      input.value = defaultValue || '';
+      setTimeout(() => input.focus(), 0);
+
+      showModal(title, [el('div', { text: label }), input], [
+        { label: '取消', action: () => resolve(null) },
+        {
+          label: '确定',
+          primary: true,
+          action: () => {
+            const value = input.value.trim();
+            if (!value && !allowEmpty) {
+              toast('不能为空', 'error');
+              return false;
+            }
+            resolve(value);
+            return undefined;
+          }
+        }
+      ]);
+    });
+  }
+
+  function confirmDialog(title, text, warnings) {
+    return new Promise(resolve => {
+      const body = [el('div', { text })];
+      if (warnings && warnings.length) {
+        body.push(el('ul', { class: 'warn-list' }, warnings.map(item => el('li', { text: item }))));
+      }
+      showModal(title, body, [
+        { label: '取消', action: () => resolve(false) },
+        { label: '继续', primary: true, action: () => resolve(true) }
+      ]);
+    });
+  }
+
+  async function ensureAuthor() {
+    const cached = repoAuthor();
+    if (cached) return cached;
+    const value = await promptInput('设置上传者 ID', '第一次上传需要填写你的名字，会记录在版本信息里。', '', false, false);
+    if (value) writeLocal(AUTHOR_KEY, value);
+    return value;
+  }
+
+  async function ensureToken() {
+    const cached = repoToken();
+    if (cached) return cached;
+    const value = await promptInput('设置访问令牌', '请输入服务端配置的 EDITOR_TOKEN（只保存在本机浏览器）。', '', false, false);
+    if (value) writeLocal(TOKEN_KEY, value);
+    return value;
+  }
+
+  // ---------------------------------------------------------------- 上传
+
+  function deriveFileName() {
+    const parts = splitTreeId(state.treeId);
+    return (parts ? parts.path.replace(/\//g, '_') : 'skill_tree') + '.json';
+  }
+
+  function backupWorkspace() {
+    const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..+$/, '');
+    downloadText(JSON.stringify(buildTreeJson(), null, 2), deriveFileName().replace(/\.json$/i, '') + '_backup_' + stamp + '.json');
+  }
+
+  async function applyPushResult(response) {
+    const meta = response.meta;
+    state.meta = {
+      originalAuthor: meta.original_author,
+      version: meta.version,
+      editors: Array.isArray(meta.editors) ? meta.editors.slice() : [],
+      editedAt: meta.edited_at,
+      message: meta.message
+    };
+    state.remote = {
+      treeId: meta.tree_id,
+      baseVersion: meta.version,
+      lastSyncedHash: await hashCurrentTree()
+    };
+    repoState.dirty = false;
+    save();
+    if (isRepoOpen()) updateRepoWorkspace();
+  }
+
+  async function uploadWorkspace(mode, authorOverride) {
+    const author = authorOverride || await ensureAuthor();
+    if (!author) return;
+    if (!await ensureToken()) return;
+
+    const check = validateTree();
+    if (check.errors.length) {
+      showReport('无法上传：发现 ' + check.errors.length + ' 个问题', check.errors, check.warnings, null);
+      return;
+    }
+    if (check.warnings.length && !await confirmDialog('上传前检查', '以下内容不会阻止上传：', check.warnings)) {
+      return;
+    }
+
+    const message = await promptInput('版本说明', '写一句这次改动的说明（可留空）。', '', true, true);
+    if (message === null) return;
+
+    const now = new Date().toISOString();
+    if (!state.meta.originalAuthor) state.meta.originalAuthor = author;
+    state.meta.editedAt = now;
+    state.meta.message = message;
+
+    const payload = {
+      tree: buildTreeJson(),
+      name: state.displayName.trim() || '未命名技能树',
+      original_author: state.meta.originalAuthor || author,
+      uploader: author,
+      message,
+      edited_at: now,
+      file_name: deriveFileName(),
+      game_tree_id: state.treeId
+    };
+
+    try {
+      let response;
+      if (mode === 'new') {
+        response = await repoRequest('/api/trees', { method: 'POST', body: payload });
+      } else {
+        if (!state.remote.treeId) throw new Error('当前工作区还没有关联远程树');
+        response = await repoRequest(
+          '/api/trees/' + encodeURIComponent(state.remote.treeId) + '/versions',
+          { method: 'POST', body: Object.assign({}, payload, { expected_latest: state.remote.baseVersion }) }
+        );
+      }
+
+      await applyPushResult(response);
+      toast(mode === 'new' ? '已推送为新树 v' + response.version : '已推送新版本 v' + response.version, 'ok');
+      repoState.selectedId = response.tree_id;
+      if (isRepoOpen()) await refreshTrees();
+    } catch (error) {
+      if (error.status === 401) {
+        toast('访问令牌不正确，请在仓库设置里检查', 'error');
+        return;
+      }
+      if (error.status === 409) {
+        const latest = error.data && error.data.latest_version;
+        toast('远端已更新到 v' + (latest || '?') + '，请先拉取最新版本', 'error');
+        if (isRepoOpen()) refreshTrees().catch(() => undefined);
+        return;
+      }
+      toast('上传失败：' + error.message, 'error');
+    }
+  }
+
+  /** 顶部「上传」：未关联远程则新建树，已关联则推送新版本 */
+  async function quickUpload() {
+    const author = await ensureAuthor();
+    if (!author) return;
+    if (!await ensureToken()) return;
+
+    if (!state.remote.treeId) {
+      if (!await confirmDialog('推送为新树', '当前工作区还没有关联远程树，将作为一棵新树上传。继续吗？', [])) return;
+      await uploadWorkspace('new', author);
+      return;
+    }
+
+    try {
+      const detail = await repoRequest('/api/trees/' + encodeURIComponent(state.remote.treeId) + '/versions');
+      if (detail.latest_version !== state.remote.baseVersion) {
+        showModal('无法上传新版本', [
+          el('div', { text: '远端已经有更新的版本 v' + detail.latest_version + '，而当前工作区基于 v' + state.remote.baseVersion + '。' }),
+          el('div', { text: '请先在「仓库」里拉取最新版本再上传，或把当前工作区作为一棵新树推送。' })
+        ], [
+          { label: '取消' },
+          { label: '作为新树推送', action: () => { uploadWorkspace('new', author); } }
+        ]);
+        return;
+      }
+    } catch (error) {
+      toast('无法检查远端版本：' + error.message, 'error');
+      return;
+    }
+
+    await uploadWorkspace('version', author);
+  }
+
+  // ---------------------------------------------------------------- 拉取与下载
+
+  async function pullVersion(treeId, version) {
+    let detail;
+    try {
+      detail = await repoRequest('/api/trees/' + encodeURIComponent(treeId) + '/versions/' + version);
+    } catch (error) {
+      toast('拉取失败：' + error.message, 'error');
+      return;
+    }
+
+    showModal('拉取 v' + version + ' 到工作区', [
+      el('div', {}, '目标：', el('b', { text: (detail.meta.tree_name || '技能树') + ' v' + version }),
+        '（编辑者：' + (detail.meta.uploader || '未知') + '）'),
+      detail.meta.message ? el('div', { class: 'cmd-summary', text: detail.meta.message }) : null,
+      el('div', { class: 'section-title' }, el('span', {}, '如何处置当前工作区')),
+      el('div', { text: '拉取会替换画布上的全部节点与连线。可以先导出当前工作区作为备份，再执行覆盖。' })
+    ], [
+      { label: '取消' },
+      {
+        label: '先备份再覆盖',
+        action: () => {
+          backupWorkspace();
+          applyRemoteVersion(detail).catch(error => toast('拉取失败：' + error.message, 'error'));
+        }
+      },
+      {
+        label: '直接覆盖',
+        danger: true,
+        action: () => applyRemoteVersion(detail).catch(error => toast('拉取失败：' + error.message, 'error'))
+      }
+    ]);
+  }
+
+  async function applyRemoteVersion(detail) {
+    applyTreeJson(detail.tree, detail.meta.file_name || null);
+    if (detail.meta.game_tree_id) state.treeId = detail.meta.game_tree_id;
+    state.meta = normalizeMeta(detail.tree.meta || {
+      original_author: detail.meta.original_author,
+      version: detail.meta.version,
+      editors: detail.meta.editors,
+      edited_at: detail.meta.edited_at,
+      message: detail.meta.message
+    });
+    state.remote = {
+      treeId: detail.meta.tree_id,
+      baseVersion: detail.meta.version,
+      lastSyncedHash: await hashCurrentTree()
+    };
+    repoState.dirty = false;
+    syncSettings();
+    save();
+    toast('已拉取 v' + detail.meta.version + ' 到工作区', 'ok');
+    if (isRepoOpen()) {
+      updateRepoWorkspace();
+      renderRepoVersions();
+    }
+  }
+
+  async function downloadVersion(treeId, version, treeName) {
+    try {
+      await repoDownload('/api/trees/' + encodeURIComponent(treeId) + '/versions/' + version + '/download');
+      toast('已开始下载 ' + treeName + ' v' + version + ' 的 zip', 'ok');
+    } catch (error) {
+      toast('下载失败：' + error.message, 'error');
+    }
+  }
+
+  // ==========================================================================================
   // 本地持久化
   // ==========================================================================================
 
@@ -2129,7 +2965,9 @@
         edges: state.edges,
         enums: state.enums,
         commands: Array.from(state.commands.values()),
-        seq: state.seq
+        seq: state.seq,
+        meta: state.meta,
+        remote: state.remote
       }));
     } catch (error) {
       console.warn('保存到 localStorage 失败', error);
@@ -2151,6 +2989,12 @@
       state.edges = Array.isArray(data.edges) ? data.edges : [];
       state.enums = (Array.isArray(data.enums) ? data.enums : []).map(normalizeEnum).filter(Boolean);
       state.seq = Number.isInteger(data.seq) ? data.seq : 1;
+      state.meta = normalizeMeta(data.meta);
+      state.remote = {
+        treeId: data.remote && typeof data.remote.treeId === 'string' ? data.remote.treeId : '',
+        baseVersion: data.remote && Number.isInteger(data.remote.baseVersion) ? data.remote.baseVersion : 0,
+        lastSyncedHash: data.remote && typeof data.remote.lastSyncedHash === 'string' ? data.remote.lastSyncedHash : ''
+      };
       if (Array.isArray(data.commands) && data.commands.length) {
         state.commands = new Map(data.commands.map(def => [def.id, def]));
       }
@@ -2171,6 +3015,28 @@
   document.getElementById('btn-export').addEventListener('click', exportTree);
   document.getElementById('btn-help').addEventListener('click', showHelp);
 
+  document.getElementById('btn-upload').addEventListener('click', () => {
+    quickUpload().catch(error => toast('上传失败：' + error.message, 'error'));
+  });
+  document.getElementById('btn-repo').addEventListener('click', openRepo);
+  document.getElementById('repo-close').addEventListener('click', closeRepo);
+  document.getElementById('repo-save-config').addEventListener('click', () => {
+    if (saveRepoConfig(false)) refreshTrees().catch(showRepoError);
+  });
+  document.getElementById('repo-refresh').addEventListener('click', () => {
+    if (saveRepoConfig(true)) refreshTrees().catch(showRepoError);
+  });
+  document.getElementById('repo-push-new').addEventListener('click', () => {
+    uploadWorkspace('new').catch(error => toast('上传失败：' + error.message, 'error'));
+  });
+  document.getElementById('repo-push-version').addEventListener('click', () => {
+    if (dom.repoPushVersion.disabled) return;
+    uploadWorkspace('version').catch(error => toast('上传失败：' + error.message, 'error'));
+  });
+  dom.repoModal.addEventListener('pointerdown', event => {
+    if (event.target === dom.repoModal) closeRepo();
+  });
+
   document.getElementById('btn-new').addEventListener('click', () => {
     showModal('新建技能树', [el('div', { text: '当前草稿会被清空，是否继续？' })], [
       { label: '取消' },
@@ -2186,6 +3052,8 @@
           state.defaultUnlocked = false;
           state.resetXpPerPoint = 0;
           state.seq = 1;
+          state.meta = { originalAuthor: repoAuthor(), version: 0, editors: [], editedAt: '', message: '' };
+          state.remote = { treeId: '', baseVersion: 0, lastSyncedHash: '' };
           updateBanner();
           renderAll();
           fitView();
