@@ -278,8 +278,18 @@ public class SkillTreeScreen extends Screen {
         if (!node.description().isBlank()) {
             lines.add(Component.literal(node.description()).withStyle(ChatFormatting.GRAY));
         }
-        for (NodeCommand command : node.commands()) {
-            lines.add(Component.literal("· " + command.renderedSummary()).withStyle(ChatFormatting.AQUA));
+        // 默认折叠属性明细，按住 Shift 才展开，避免长 tooltip 遮挡画布
+        if (!node.commands().isEmpty()) {
+            boolean shiftDown = InputConstants.isKeyDown(InputConstants.KEY_LSHIFT)
+                || InputConstants.isKeyDown(InputConstants.KEY_RSHIFT);
+            if (shiftDown) {
+                for (NodeCommand command : node.commands()) {
+                    lines.add(Component.literal("· " + command.renderedSummary()).withStyle(ChatFormatting.AQUA));
+                }
+            } else {
+                lines.add(Component.translatable("screen.newnew_warlock_core.skill_tree.expand_hint")
+                    .withStyle(ChatFormatting.DARK_GRAY));
+            }
         }
         lines.add(Component.translatable("screen.newnew_warlock_core.skill_tree.cost", format(node.cost()))
             .withStyle(this.isUnlocked(node) ? ChatFormatting.GREEN : ChatFormatting.YELLOW));

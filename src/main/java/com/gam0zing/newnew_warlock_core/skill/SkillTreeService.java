@@ -15,6 +15,7 @@ import com.gam0zing.newnew_warlock_core.skill.tree.SkillTreeDefinition;
 import com.gam0zing.newnew_warlock_core.skill.tree.SkillTreeNode;
 import com.gam0zing.newnew_warlock_core.skill.tree.SkillTrees;
 
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -142,12 +143,24 @@ public final class SkillTreeService {
         SkillTreeDefinition tree = SkillTrees.get(treeId);
         SkillProgress progress = SkillProgress.of(player);
         TreeProgress treeProgress = progress.treeOrNull(treeId);
-        if (tree == null || treeProgress == null) {
+        if (tree == null) {
+            return;
+        }
+        if (treeProgress == null) {
+            notify(player, "skill.newnew_warlock_core.reset.unavailable");
+            return;
+        }
+        if (treeProgress.applied().isEmpty() && treeProgress.nodeIds().isEmpty()) {
+            notify(player, "skill.newnew_warlock_core.reset.empty");
             return;
         }
 
-        int xpCost = resetXpCost(tree, treeProgress.spent());
-        if (xpCost > 0 && player.experienceLevel < xpCost) {
+        double spent = treeProgress.spent();
+        int xpCost = resetXpCost(tree, spent);
+        if (xpCost > 0 && player.totalExperience < xpCost) {
+            // 不能静默失败：否则玩家只会看到"点了没反应"，也说不清是被什么挡住了
+            player.sendSystemMessage(Component.translatable(
+                "skill.newnew_warlock_core.reset.not_enough_xp", xpCost, player.totalExperience), true);
             return;
         }
 
@@ -161,13 +174,32 @@ public final class SkillTreeService {
         treeProgress.clearNodes();
 
         if (xpCost > 0) {
-            player.giveExperienceLevels(-xpCost);
+            player.giveExperiencePoints(-xpCost);
+        }
+
+        if (xpCost > 0) {
+            player.sendSystemMessage(Component.translatable("skill.newnew_warlock_core.reset.done",
+                formatPoints(spent), xpCost), true);
+        } else {
+            player.sendSystemMessage(Component.translatable("skill.newnew_warlock_core.reset.done_free",
+                formatPoints(spent)), true);
         }
 
         syncAll(player);
     }
 
-    /** {@return 重置该树需要消耗的经验等级} */
+    private static void notify(ServerPlayer player, String translationKey) {
+        player.sendSystemMessage(Component.translatable(translationKey), true);
+    }
+
+    private static String formatPoints(double value) {
+        if (value == Math.rint(value)) {
+            return String.valueOf((long) value);
+        }
+        return String.format(java.util.Locale.ROOT, "%.1f", value);
+    }
+
+    /** {@return 重置该树需要消耗的经验点} */
     public static int resetXpCost(SkillTreeDefinition tree, double spentPoints) {
         if (tree.resetXpPerPoint() <= 0.0D) {
             return 0;

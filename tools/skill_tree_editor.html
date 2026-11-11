@@ -78,6 +78,7 @@
     white-space: nowrap;
   }
   .status.ok { color: var(--green); border-color: #2c4a38; }
+  select.status { background: var(--panel-2); font: inherit; font-size: 11px; color: var(--muted); padding: 4px 6px; border-radius: 6px; cursor: pointer; }
 
   /* ---------------------------------- 布局 ---------------------------------- */
 
@@ -543,6 +544,10 @@
     <button id="btn-new">新建</button>
     <button id="btn-import-tree">导入技能树</button>
     <button id="btn-export" class="primary">导出技能树</button>
+    <select id="pack-version" class="status" title="数据包格式对应的游戏版本">
+      <option value="26.3">MC 26.3</option>
+    </select>
+    <button id="btn-export-pack">导出为数据包</button>
     <button id="btn-upload">上传</button>
     <button id="btn-repo">仓库</button>
     <button id="btn-help">帮助</button>
@@ -567,7 +572,7 @@
         <input id="tree-order" type="number" step="1">
       </div>
       <div class="field">
-        <label for="tree-reset-xp">每重置 1 点消耗经验等级</label>
+        <label for="tree-reset-xp">每重置 1 点消耗经验点</label>
         <input id="tree-reset-xp" type="number" step="any" min="0">
       </div>
       <label class="check"><input id="tree-default-unlocked" type="checkbox"> 默认解锁本树</label>
@@ -730,6 +735,7 @@
     libSearch: document.getElementById('lib-search'),
     defsStatus: document.getElementById('defs-status'),
     enumsStatus: document.getElementById('enums-status'),
+    packVersion: document.getElementById('pack-version'),
     treeId: document.getElementById('tree-id'),
     treeName: document.getElementById('tree-name'),
     treeOrder: document.getElementById('tree-order'),
@@ -2463,6 +2469,155 @@
     setTimeout(() => URL.revokeObjectURL(url), 1500);
   }
 
+  function downloadBlob(blob, name) {
+    const url = URL.createObjectURL(blob);
+    const anchor = el('a', { href: url, download: name });
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  }
+
+  // ---------------------------------------------------------------- 数据包导出
+
+  // 各版本的数据包格式号（来自该版本 version.json 的 pack_version.data_major/data_minor）
+  const PACK_FORMATS = {
+    '26.3': [121, 0]
+  };
+
+  const CRC_TABLE = (() => {
+    const table = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+      let value = i;
+      for (let bit = 0; bit < 8; bit++) {
+        value = (value & 1) ? (0xEDB88320 ^ (value >>> 1)) : (value >>> 1);
+      }
+      table[i] = value >>> 0;
+    }
+    return table;
+  })();
+
+  function crc32(bytes) {
+    let crc = 0xFFFFFFFF;
+    for (let i = 0; i < bytes.length; i++) {
+      crc = CRC_TABLE[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
+    }
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  /**
+   * 生成不压缩（store）的 zip。只依赖浏览器自身，不需要任何第三方库。
+   * files: [{ name, text }]
+   */
+  function buildZip(files) {
+    const encoder = new TextEncoder();
+    const now = new Date();
+    const dosTime = ((now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1)) & 0xFFFF;
+    const dosDate = (((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate()) & 0xFFFF;
+
+    const parts = [];
+    const central = [];
+    let offset = 0;
+
+    for (const file of files) {
+      const nameBytes = encoder.encode(file.name);
+      const data = encoder.encode(file.text);
+      const checksum = crc32(data);
+
+      const local = new Uint8Array(30 + nameBytes.length);
+      const localView = new DataView(local.buffer);
+      localView.setUint32(0, 0x04034b50, true);
+      localView.setUint16(4, 20, true);
+      localView.setUint16(6, 0x0800, true); // 文件名按 UTF-8 解释
+      localView.setUint16(8, 0, true);      // 0 = store
+      localView.setUint16(10, dosTime, true);
+      localView.setUint16(12, dosDate, true);
+      localView.setUint32(14, checksum, true);
+      localView.setUint32(18, data.length, true);
+      localView.setUint32(22, data.length, true);
+      localView.setUint16(26, nameBytes.length, true);
+      localView.setUint16(28, 0, true);
+      local.set(nameBytes, 30);
+
+      const record = new Uint8Array(46 + nameBytes.length);
+      const recordView = new DataView(record.buffer);
+      recordView.setUint32(0, 0x02014b50, true);
+      recordView.setUint16(4, 20, true);
+      recordView.setUint16(6, 20, true);
+      recordView.setUint16(8, 0x0800, true);
+      recordView.setUint16(10, 0, true);
+      recordView.setUint16(12, dosTime, true);
+      recordView.setUint16(14, dosDate, true);
+      recordView.setUint32(16, checksum, true);
+      recordView.setUint32(20, data.length, true);
+      recordView.setUint32(24, data.length, true);
+      recordView.setUint16(28, nameBytes.length, true);
+      recordView.setUint32(42, offset, true);
+      record.set(nameBytes, 46);
+
+      parts.push(local, data);
+      central.push(record);
+      offset += local.length + data.length;
+    }
+
+    const centralSize = central.reduce((sum, item) => sum + item.length, 0);
+    const end = new Uint8Array(22);
+    const endView = new DataView(end.buffer);
+    endView.setUint32(0, 0x06054b50, true);
+    endView.setUint16(8, files.length, true);
+    endView.setUint16(10, files.length, true);
+    endView.setUint32(12, centralSize, true);
+    endView.setUint32(16, offset, true);
+
+    return new Blob([...parts, ...central, end], { type: 'application/zip' });
+  }
+
+  function exportDataPack() {
+    const parts = splitTreeId(state.treeId);
+    if (!parts) {
+      toast('树 ID 非法，格式应为 namespace:path', 'error');
+      return;
+    }
+
+    const version = dom.packVersion.value;
+    const format = PACK_FORMATS[version];
+    if (!format) {
+      toast('不支持的数据包版本：' + version, 'error');
+      return;
+    }
+
+    const result = validateTree();
+    if (result.errors.length) {
+      showReport('无法打包：发现 ' + result.errors.length + ' 个问题', result.errors, result.warnings, null);
+      return;
+    }
+
+    const perform = () => {
+      const treeFile = 'data/' + parts.namespace + '/skill_trees/' + parts.path + '.json';
+      const described = state.displayName.trim() || parts.path;
+      const mcmeta = {
+        pack: {
+          description: described + ' · NewNew Warlock Core',
+          min_format: format,
+          max_format: format
+        }
+      };
+      const blob = buildZip([
+        { name: 'pack.mcmeta', text: JSON.stringify(mcmeta, null, 2) + '\n' },
+        { name: treeFile, text: JSON.stringify(buildTreeJson(), null, 2) + '\n' }
+      ]);
+      const fileName = parts.path.replace(/\//g, '_') + '.zip';
+      downloadBlob(blob, fileName);
+      toast('已打包 ' + fileName + '（MC ' + version + '），放入 datapacks 后执行 /reload', 'ok');
+    };
+
+    if (result.warnings.length) {
+      showReport('打包前检查：' + result.warnings.length + ' 个提醒', [], result.warnings, perform);
+    } else {
+      perform();
+    }
+  }
+
   async function repoDownload(pathname) {
     const token = repoToken();
     if (!token) throw new Error('还没有设置访问令牌');
@@ -3013,6 +3168,7 @@
   document.getElementById('btn-enums').addEventListener('click', () => dom.fileEnums.click());
   document.getElementById('btn-import-tree').addEventListener('click', () => dom.fileTree.click());
   document.getElementById('btn-export').addEventListener('click', exportTree);
+  document.getElementById('btn-export-pack').addEventListener('click', exportDataPack);
   document.getElementById('btn-help').addEventListener('click', showHelp);
 
   document.getElementById('btn-upload').addEventListener('click', () => {

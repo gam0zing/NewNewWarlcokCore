@@ -305,9 +305,15 @@
   "screen.newnew_warlock_core.skill_tree.cost": "花费：%s 点",
   "screen.newnew_warlock_core.skill_tree.unlock": "解锁（%s 点）",
   "screen.newnew_warlock_core.skill_tree.reset": "重置",
-  "screen.newnew_warlock_core.skill_tree.reset.tooltip": "重置本树：返还 %s 点，消耗 %s 级经验",
-  "screen.newnew_warlock_core.skill_tree.reset.confirm": "将返还 %s 点，并消耗 %s 级经验。确定重置这棵技能树吗？",
+  "screen.newnew_warlock_core.skill_tree.reset.tooltip": "重置本树：返还 %s 点，消耗 %s 点经验",
+  "screen.newnew_warlock_core.skill_tree.reset.confirm": "将返还 %s 点，并消耗 %s 点经验。确定重置这棵技能树吗？",
+  "skill.newnew_warlock_core.reset.unavailable": "这棵技能树尚未开放，无法重置",
+  "skill.newnew_warlock_core.reset.empty": "没有可重置的节点",
+  "skill.newnew_warlock_core.reset.not_enough_xp": "重置需要 %s 点经验，你当前只有 %s 点",
+  "skill.newnew_warlock_core.reset.done": "已重置技能树：返还 %s 点，消耗 %s 点经验",
+  "skill.newnew_warlock_core.reset.done_free": "已重置技能树：返还 %s 点",
   "hud.newnew_warlock_core.difficulty": "难度：%s",
+  "screen.newnew_warlock_core.skill_tree.expand_hint": "按住 Shift 展开",
   "key.newnew_warlock_core.skill_tree": "打开技能树",
   "key.category.newnew_warlock_core.skill_tree": "NewNew Warlock Core"
 }

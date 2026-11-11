@@ -305,9 +305,15 @@
   "screen.newnew_warlock_core.skill_tree.cost": "Cost: %s points",
   "screen.newnew_warlock_core.skill_tree.unlock": "Unlock (%s points)",
   "screen.newnew_warlock_core.skill_tree.reset": "Reset",
-  "screen.newnew_warlock_core.skill_tree.reset.tooltip": "Reset this tree: refund %s points, cost %s levels",
-  "screen.newnew_warlock_core.skill_tree.reset.confirm": "Refund %s points and consume %s levels. Reset this skill tree?",
+  "screen.newnew_warlock_core.skill_tree.reset.tooltip": "Reset this tree: refund %s points, cost %s XP",
+  "screen.newnew_warlock_core.skill_tree.reset.confirm": "Refund %s points and consume %s XP. Reset this skill tree?",
+  "skill.newnew_warlock_core.reset.unavailable": "This skill tree is not unlocked yet",
+  "skill.newnew_warlock_core.reset.empty": "No nodes to reset",
+  "skill.newnew_warlock_core.reset.not_enough_xp": "Reset requires %s XP, you only have %s",
+  "skill.newnew_warlock_core.reset.done": "Skill tree reset: %s points refunded, %s XP consumed",
+  "skill.newnew_warlock_core.reset.done_free": "Skill tree reset: %s points refunded",
   "hud.newnew_warlock_core.difficulty": "Difficulty: %s",
+  "screen.newnew_warlock_core.skill_tree.expand_hint": "Hold Shift to expand",
   "key.newnew_warlock_core.skill_tree": "Open Skill Tree",
   "key.category.newnew_warlock_core.skill_tree": "NewNew Warlock Core"
 }
