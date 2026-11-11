@@ -18,7 +18,10 @@ public abstract class PlayerExperienceMixin {
 
     @ModifyVariable(method = "giveExperiencePoints", at = @At("HEAD"), argsOnly = true)
     private int newnew$scaleExperience(int amount) {
-        if (amount == 0) {
+        System.out.println("运行！！！");
+        // 只缩放"获得"的经验。负数同样是正式调用路径（技能树重置扣经验、/xp add 负值），
+        // 若一并缩放，倍率会顺带放大扣除量，例如 2 倍经验会让重置成本翻倍。
+        if (amount <= 0) {
             return amount;
         }
 

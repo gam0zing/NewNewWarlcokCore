@@ -143,7 +143,7 @@ public final class MobDifficultyConfig {
         changed |= setDefault(config, List.of("server_difficulty", "hard"), 1.5D, "困难难度总倍率");
         changed |= setDefault(config, List.of("day", "gain-per-day"), 0.1D, "每经过 1 个游戏日增加的难度");
         changed |= setDefault(config, List.of("day", "max"), 20.0D, "游戏天数难度上限");
-        changed |= setDefault(config, List.of("vertical", "gain-per-block"), 2.0D,
+        changed |= setDefault(config, List.of("vertical", "gain-per-block"), 0.2D,
             "相对海平面每格 y 轴增加的难度");
         changed |= setDefault(config, List.of("vertical", "max"), 20.0D, "垂直距离难度上限");
         changed |= setDefault(config, List.of("horizontal", "gain-per-100-blocks"), 1.0D,
