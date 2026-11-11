@@ -16,7 +16,7 @@
       ],
       "vmArgs": [
         "@D:\\工作区\\我的世界\\开发文件\\模组工程文件\\我的\\NewNewWarlockCore-26.3\\build\\moddev\\clientRunVmArgs.txt",
-        "-Dfml.modFolders\u003dnewnew_warlock_core%%D:\\工作区\\我的世界\\开发文件\\模组工程文件\\我的\\NewNewWarlockCore-26.3\\bin\\main"
+        "-Dfml.modFolders\u003dnewnew_warlock_core%%D:\\工作区\\我的世界\\开发文件\\模组工程文件\\我的\\NewNewWarlockCore-26.3\\bin\\main;newnew_warlock_core%%D:\\工作区\\我的世界\\开发文件\\模组工程文件\\我的\\NewNewWarlockCore-26.3\\bin\\client"
       ],
       "cwd": "${workspaceFolder}\\run",
       "env": {},
@@ -38,7 +38,7 @@
       ],
       "vmArgs": [
         "@D:\\工作区\\我的世界\\开发文件\\模组工程文件\\我的\\NewNewWarlockCore-26.3\\build\\moddev\\dataRunVmArgs.txt",
-        "-Dfml.modFolders\u003dnewnew_warlock_core%%D:\\工作区\\我的世界\\开发文件\\模组工程文件\\我的\\NewNewWarlockCore-26.3\\bin\\main"
+        "-Dfml.modFolders\u003dnewnew_warlock_core%%D:\\工作区\\我的世界\\开发文件\\模组工程文件\\我的\\NewNewWarlockCore-26.3\\bin\\main;newnew_warlock_core%%D:\\工作区\\我的世界\\开发文件\\模组工程文件\\我的\\NewNewWarlockCore-26.3\\bin\\client"
       ],
       "cwd": "${workspaceFolder}\\run",
       "env": {},
@@ -60,7 +60,7 @@
       ],
       "vmArgs": [
         "@D:\\工作区\\我的世界\\开发文件\\模组工程文件\\我的\\NewNewWarlockCore-26.3\\build\\moddev\\gameTestServerRunVmArgs.txt",
-        "-Dfml.modFolders\u003dnewnew_warlock_core%%D:\\工作区\\我的世界\\开发文件\\模组工程文件\\我的\\NewNewWarlockCore-26.3\\bin\\main"
+        "-Dfml.modFolders\u003dnewnew_warlock_core%%D:\\工作区\\我的世界\\开发文件\\模组工程文件\\我的\\NewNewWarlockCore-26.3\\bin\\main;newnew_warlock_core%%D:\\工作区\\我的世界\\开发文件\\模组工程文件\\我的\\NewNewWarlockCore-26.3\\bin\\client"
       ],
       "cwd": "${workspaceFolder}\\run",
       "env": {},
@@ -82,7 +82,7 @@
       ],
       "vmArgs": [
         "@D:\\工作区\\我的世界\\开发文件\\模组工程文件\\我的\\NewNewWarlockCore-26.3\\build\\moddev\\serverRunVmArgs.txt",
-        "-Dfml.modFolders\u003dnewnew_warlock_core%%D:\\工作区\\我的世界\\开发文件\\模组工程文件\\我的\\NewNewWarlockCore-26.3\\bin\\main"
+        "-Dfml.modFolders\u003dnewnew_warlock_core%%D:\\工作区\\我的世界\\开发文件\\模组工程文件\\我的\\NewNewWarlockCore-26.3\\bin\\main;newnew_warlock_core%%D:\\工作区\\我的世界\\开发文件\\模组工程文件\\我的\\NewNewWarlockCore-26.3\\bin\\client"
       ],
       "cwd": "${workspaceFolder}\\run",
       "env": {},

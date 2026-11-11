@@ -3,7 +3,7 @@ package com.gam0zing.newnew_warlock_core.body;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.gam0zing.newnew_warlock_core.combat.hit.HitFace;
+import com.gam0zing.newnew_warlock_core.body.hit.HitFace;
 
 import net.minecraft.world.entity.EquipmentSlot;
 
@@ -14,7 +14,7 @@ import net.minecraft.world.entity.EquipmentSlot;
  * <p>唯一的共用部分是坐标助手 {@link #band} / {@link #full}，它们只是“面上一条横带 / 整个面”的写法糖，
  * 不包含任何形态语义，也不替调用方决定任何数值：受伤倍率、刚性、护甲槽、受击效果都在每个调用点显式传入，
  * 这样每个部位都能单独调整，不会牵动其它部位。</p>
- * <p>坐标约定与 {@link com.gam0zing.newnew_warlock_core.combat.hit.HitLocation} 相同：
+ * <p>坐标约定与 {@link com.gam0zing.newnew_warlock_core.body.hit.HitLocation} 相同：
  * 从体外正对该面看，左下角 (0,0)、右上角 (1,1)。</p>
  * <p>此类的静态初始化只依赖 {@link BodyPart}，不触碰注册表，可离线验证。</p>
  */

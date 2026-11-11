@@ -6,9 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -35,10 +33,6 @@ public final class EnchantBaselineSync {
     public static void register(IEventBus modEventBus) {
         modEventBus.addListener(EnchantBaselineSync::registerPayloads);
         NeoForge.EVENT_BUS.addListener(EnchantBaselineSync::onDatapackSync);
-        if (FMLEnvironment.getDist() == Dist.CLIENT) {
-            // 只在物理客户端加载引用 client-only 事件的类，避免专用服务端类加载失败。
-            EnchantBaselineClientSync.register();
-        }
     }
 
     private static void registerPayloads(RegisterPayloadHandlersEvent event) {

@@ -10,7 +10,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.neoforge.common.CommonHooks;
 import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent;
 
-import com.gam0zing.newnew_warlock_core.combat.damage.DamagePipeline;
+import com.gam0zing.newnew_warlock_core.combat.standard.VanillaDamageUtils;
 
 /**
  * 击退断流。
@@ -18,8 +18,8 @@ import com.gam0zing.newnew_warlock_core.combat.damage.DamagePipeline;
  * float, boolean)} 是所有击退的统一入口（玩家近战与横扫、生物攻击、山羊冲撞、末影龙等最终都会走到这里），
  * 同时也是 {@code LivingKnockBackEvent} 的发出点。</p>
  * <p>这里把原版实现整体替换为：先照常发出 {@link LivingKnockBackEvent}（其他模组仍可取消或改写数值），
- * 再交给业务插槽 {@link DamagePipeline#handleKnockback} 决定是否以及如何推动实体。
- * 插槽默认什么都不做，因此不会产生击退。</p>
+ * 再由 {@link VanillaDamageUtils#handleKnockback} 按原版位移规则推动实体。
+ * 位移规则集中在那一个方法里，按伤害类型区分击退时只需要换调用目标。</p>
  */
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityKnockbackGateMixin {
@@ -41,7 +41,7 @@ public abstract class LivingEntityKnockbackGateMixin {
             return;
         }
 
-        // 插槽 F：击退（默认空实现 = 无击退）
-        DamagePipeline.handleKnockback(self, event);
+        // 位移：原版规则（按伤害类型区分时替换这里）
+        VanillaDamageUtils.handleKnockback(self, event);
     }
 }

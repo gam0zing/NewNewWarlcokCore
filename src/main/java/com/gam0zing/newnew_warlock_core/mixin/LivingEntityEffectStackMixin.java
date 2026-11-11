@@ -10,7 +10,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 
-import com.gam0zing.newnew_warlock_core.combat.effect.MobEffectStackHooks;
+import com.gam0zing.newnew_warlock_core.effect.MobEffectStackHooks;
 
 /**
  * 状态效果容器的原版施加入口适配。

@@ -13,7 +13,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 
-import com.gam0zing.newnew_warlock_core.combat.effect.EffectSources;
+import com.gam0zing.newnew_warlock_core.share.EffectSources;
 
 /**
  * 状态效果来源的伤害归因入口。

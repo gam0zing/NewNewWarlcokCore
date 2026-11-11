@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.gam0zing.newnew_warlock_core.NewNewWarlockCore;
-import com.gam0zing.newnew_warlock_core.registry.ModAttributes;
+import com.gam0zing.newnew_warlock_core.share.ModAttributes;
 import com.gam0zing.newnew_warlock_core.skill.command.AttributeCommand;
 import com.gam0zing.newnew_warlock_core.skill.command.PointAllocationCommand;
 import com.gam0zing.newnew_warlock_core.skill.command.PointAllocationCommands;

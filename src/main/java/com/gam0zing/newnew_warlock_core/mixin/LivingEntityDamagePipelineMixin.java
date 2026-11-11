@@ -28,10 +28,17 @@ import net.neoforged.neoforge.common.CommonHooks;
 import net.neoforged.neoforge.common.damagesource.DamageContainer;
 import net.neoforged.neoforge.event.entity.living.LivingShieldBlockEvent;
 
-import com.gam0zing.newnew_warlock_core.combat.damage.DamageContext;
-import com.gam0zing.newnew_warlock_core.combat.damage.DamagePipeline;
-import com.gam0zing.newnew_warlock_core.combat.damage.PipelineState;
-import com.gam0zing.newnew_warlock_core.combat.damage.WarlockDamageHost;
+import com.gam0zing.newnew_warlock_core.combat.api.DamageHandlerRegistry;
+import com.gam0zing.newnew_warlock_core.combat.api.IDamageHandler;
+import com.gam0zing.newnew_warlock_core.combat.spine.DamageContext;
+import com.gam0zing.newnew_warlock_core.combat.spine.DamagePipeline;
+import com.gam0zing.newnew_warlock_core.combat.spine.PipelineState;
+import com.gam0zing.newnew_warlock_core.combat.spine.WarlockDamageHost;
+import com.gam0zing.newnew_warlock_core.combat.spine.WarlockHealingHost;
+import com.gam0zing.newnew_warlock_core.combat.standard.DamageApplyScaling;
+import com.gam0zing.newnew_warlock_core.combat.standard.DamageDodge;
+import com.gam0zing.newnew_warlock_core.share.FatalWoundMobEffect;
+import com.gam0zing.newnew_warlock_core.share.ModAttributes;
 
 /**
  * 伤害管线骨架。
@@ -39,11 +46,11 @@ import com.gam0zing.newnew_warlock_core.combat.damage.WarlockDamageHost;
  * 会在事件处直接返回；此处接管事件之后的所有调用。</p>
  * <p><b>链路只保留骨架与外部注入钩子，不含任何原版伤害公式或表现：</b></p>
  * <ul>
- *     <li>骨架：容器数值同步与清理、无敌帧计时、死亡分派、仇恨归因</li>
+ *     <li>骨架：容器数值同步与清理、无敌帧状态存取、死亡分派、仇恨归因</li>
  *     <li>外部钩子：{@code LivingShieldBlockEvent}、{@code ArmorHurtEvent}、{@code LivingDamageEvent.Pre/Post}、
  *     {@code LivingDeathEvent}（随 {@code die} 发出）、{@code LivingUseTotemEvent}（在业务插槽内触发）</li>
  *     <li>兼容钩子：把业务归属的减免写回容器，保证 {@code addModifier} 与其他监听者仍能读到/改写数值</li>
- *     <li>业务：全部集中在 {@link DamagePipeline} 的 TODO 插槽（含扣血、击退）</li>
+ *     <li>业务：入口处按伤害标签选出一个 {@link IDamageHandler}，之后每个插槽都只转调它</li>
  * </ul>
  * <p>另外在 {@code hurt} 的返回处恢复被取消事件吞掉的返回值，并清理未弹出的 DamageContainer。</p>
  */
@@ -92,6 +99,10 @@ public abstract class LivingEntityDamagePipelineMixin implements WarlockDamageHo
     /** 原版头盔耐久只作用于头盔槽 */
     @Unique
     private static final EquipmentSlot[] NEWNEW$HELMET_SLOT = {EquipmentSlot.HEAD};
+
+    /** 最近一次实际生效的命中所在游戏刻 */
+    @Unique
+    private long newnew$lastHitGameTime = -1000L;
 
     /** 记录本次 hurt 调用的基线，用于返回时恢复返回值与清理容器 */
     @Inject(method = "hurtServer", at = @At("HEAD"))
@@ -153,7 +164,29 @@ public abstract class LivingEntityDamagePipelineMixin implements WarlockDamageHo
         blocksAttacks.hurtBlockingItem(self.level(), blockingItem, self, self.getUsedItemHand(), blockedDamage);
     }
 
-    // ---- 临时：原版受伤表现（业务逻辑在 DamagePipeline#playFeedback） ----
+    // ---- 无敌帧状态（判定规则在处理器里，这里只负责存取） ----
+
+    @Override
+    public long newnew$getLastHitGameTime() {
+        return this.newnew$lastHitGameTime;
+    }
+
+    @Override
+    public void newnew$setLastHitGameTime(long gameTime) {
+        this.newnew$lastHitGameTime = gameTime;
+    }
+
+    @Override
+    public float newnew$getLastHurt() {
+        return this.lastHurt;
+    }
+
+    @Override
+    public void newnew$setLastHurt(float damage) {
+        this.lastHurt = damage;
+    }
+
+    // ---- 临时：原版受伤表现（业务逻辑在 VanillaCombatViewHelper#playHurtFeedback） ----
 
     @Override
     public void newnew$markHurt() {
@@ -204,9 +237,19 @@ public abstract class LivingEntityDamagePipelineMixin implements WarlockDamageHo
 
         DamageContext ctx = new DamageContext(source, self, container);
 
+        // 骨架：按伤害标签选出本次流程的处理器，之后所有插槽都只转调它
+        ctx.setHandler(DamageHandlerRegistry.resolve(source));
+
         // 插槽 0：内部伤害按标签显式短路，直接扣除生命值
         if (DamagePipeline.routeInnerDamage(ctx)) {
+            // 扣血阶段结束后检查致命伤
+            FatalWoundMobEffect.afterHealthDeducted(self);
             return ctx.isDealtDamage();
+        }
+
+        // 插槽 0.5：闪避（内部伤害已在上面短路，因此不会走到这里）
+        if (DamageDodge.tryDodge(ctx)) {
+            return false;
         }
 
         // 插槽 A：预处理
@@ -247,29 +290,19 @@ public abstract class LivingEntityDamagePipelineMixin implements WarlockDamageHo
         container.setNewDamage(amount);
         ctx.setDamageAfterMain(amount);
 
-        // 骨架：原版无敌帧计时（如需自定义规则，可在此处或拆成插槽）
-        boolean applied = true;
-        if ((float) self.getInvulnerableTime() > 10.0F && !source.is(DamageTypeTags.BYPASSES_COOLDOWN)) {
-            if (amount <= this.lastHurt) {
-                return false;
-            }
-            container.setReduction(DamageContainer.Reduction.INVULNERABILITY, this.lastHurt);
-            this.lastHurt = amount;
-            applied = false;
-        } else {
-            this.lastHurt = amount;
-            self.setInvulnerableTime(container.getPostAttackInvulnerabilityTicks());
+        // 插槽 D：命中判定 / 无敌帧（规则在处理器里，状态由骨架存取）
+        if (!DamagePipeline.handleGate(ctx)) {
+            return false;
         }
-        ctx.setApplied(applied);
 
         // 骨架 + 外部钩子：护甲耐久(ArmorHurtEvent)、LivingDamageEvent.Pre/Post、扣血、onDamageTaken
         this.newnew$applyDamage(ctx);
         ctx.setDealtDamage(!ctx.isShieldFullyBlocked() || container.getNewDamage() > 0.0F);
 
-        // 插槽 F：视听表现与反馈
+        // 插槽 G：受伤表现与反馈
         DamagePipeline.playFeedback(ctx);
 
-        // 插槽 G：免死；死亡分派（die 内会发出 LivingDeathEvent、掉落与经验）
+        // 插槽 H：免死；死亡分派（die 内会发出 LivingDeathEvent、掉落与经验）
         if (self.isDeadOrDying() && !DamagePipeline.tryPreventDeath(ctx)) {
             self.die(source);
         }
@@ -297,7 +330,7 @@ public abstract class LivingEntityDamagePipelineMixin implements WarlockDamageHo
             this.lastDamageStamp = self.level().getGameTime();
         }
 
-        // 插槽 H：伤害后处理（状态效果回调、统计、进度、食物消耗……）
+        // 插槽 I：伤害后处理（状态效果回调、统计、进度、食物消耗……）
         DamagePipeline.onDamageApplied(ctx);
 
         return ctx.isDealtDamage();
@@ -311,28 +344,64 @@ public abstract class LivingEntityDamagePipelineMixin implements WarlockDamageHo
     private void newnew$applyDamage(DamageContext ctx) {
         LivingEntity self = (LivingEntity) (Object) this;
         DamageSource source = ctx.getSource();
-        if (self.level() instanceof ServerLevel serverLevel && self.isInvulnerableTo(serverLevel, source)) {
-            return;
-        }
 
         DamageContainer container = ctx.getContainer();
 
-        // 插槽 D：护甲耐久（防守方）
+        // 插槽 E：护甲耐久（防守方）
         DamagePipeline.applyArmorDurability(ctx);
 
         // 兼容钩子：把业务归属的减免写回容器（护甲 → 附魔 → 药水状态），随后才发 Pre
         this.newnew$writeBackReductions(ctx);
 
+        // 插槽 E2：LivingDamageEvent.Pre 之前的最后修正
+        DamagePipeline.onDamagePre(ctx);
+
         // 外部钩子：LivingDamageEvent.Pre
         float damage = CommonHooks.onLivingDamagePre(self, container);
+
+        // 扣血前修正：弹射物伤害、暴击、受伤倍率（作用在真正扣血的数值上）
+        damage = DamageApplyScaling.apply(ctx, damage);
+        container.setNewDamage(damage);
         ctx.setDamageAfterPre(damage);
         ctx.setFinalDamage(container.getNewDamage());
 
-        // 插槽 E：落地（伤害吸收、扣血、战斗追踪、onDamageTaken……）
+        // 插槽 F：落地（伤害吸收、扣血、战斗追踪、onDamageTaken……）
+        float healthBefore = self.getHealth();
         DamagePipeline.applyDamage(ctx, damage);
+
+        // 扣血阶段结束后：生命偷取按实际扣血量回复伤害来源自身
+        this.newnew$applyLifeStealing(ctx, healthBefore);
+
+        // 扣血阶段结束后：致命伤触发检查
+        FatalWoundMobEffect.afterHealthDeducted(self);
 
         // 外部钩子：LivingDamageEvent.Post
         CommonHooks.onLivingDamagePost(self, container);
+    }
+
+    /**
+     * 生命偷取：扣血阶段结束后，伤害来源按「实际扣血量 × 生命偷取」调用一次
+     * {@link WarlockHealingHost#healByLiving(LivingEntity, float)}，治疗来源为来源自身。
+     * <p>实际扣血量取扣血前后的生命值差，伤害吸收承担的部分不计入。</p>
+     */
+    @Unique
+    private void newnew$applyLifeStealing(DamageContext ctx, float healthBefore) {
+        LivingEntity attacker = ctx.getAttacker();
+        if (attacker == null) {
+            return;
+        }
+
+        float deducted = healthBefore - ctx.getTarget().getHealth();
+        if (!(deducted > 0.0F)) {
+            return;
+        }
+
+        float lifeStealing = (float) ModAttributes.getValue(attacker, ModAttributes.LIFE_STEALING);
+        if (!(lifeStealing > 0.0F)) {
+            return;
+        }
+
+        ((WarlockHealingHost) attacker).healByLiving(attacker, deducted * lifeStealing);
     }
 
     /**

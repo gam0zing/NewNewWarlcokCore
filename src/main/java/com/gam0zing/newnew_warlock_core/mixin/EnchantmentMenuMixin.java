@@ -37,6 +37,7 @@ import net.neoforged.neoforge.event.EventHooks;
 import com.gam0zing.newnew_warlock_core.enchant.EnchantContext;
 import com.gam0zing.newnew_warlock_core.enchant.EnchantScene;
 import com.gam0zing.newnew_warlock_core.enchant.WarlockEnchanting;
+import com.gam0zing.newnew_warlock_core.share.ModAttributes;
 
 /**
  * 附魔台的整段替换。
@@ -154,6 +155,7 @@ public abstract class EnchantmentMenuMixin extends AbstractContainerMenu {
 
         int power = Math.max(0, WarlockEnchanting.hooks().tablePower(ctx, stack, (int) shelfPower));
         power = Math.min(power, Math.max(1, WarlockEnchanting.hooks().tablePowerCap(ctx)));
+        power = this.warlock$applyPowerScale(ctx, power);
 
         this.random.setSeed((long) this.enchantmentSeed.get());
         for (int slot = 0; slot < 3; slot++) {
@@ -183,6 +185,24 @@ public abstract class EnchantmentMenuMixin extends AbstractContainerMenu {
         }
 
         this.broadcastChanges();
+    }
+
+    /**
+     * 附魔能量倍率。
+     * <p>在 {@code tablePower} 与上限截断之后应用，因此倍率不会被原版 15 点上限吃掉；
+     * 三档成本都由同一个 power 推导，乘以倍率后三档数值同时变化，客户端计算结果一致。</p>
+     */
+    @Unique
+    private int warlock$applyPowerScale(EnchantContext ctx, int power) {
+        if (ctx.player() == null) {
+            return power;
+        }
+        float scale = ModAttributes.getScale(ctx.player(), ModAttributes.ENCHANT_POWER_SCALE);
+        if (scale == 1.0F) {
+            return power;
+        }
+        long scaled = Math.round(power * (double) scale);
+        return (int) Math.max(0L, Math.min(Integer.MAX_VALUE, scaled));
     }
 
     /** {@code getEnchantmentList} 拿不到坐标，使用最近一次 {@code slotsChanged} 记录的位置。 */

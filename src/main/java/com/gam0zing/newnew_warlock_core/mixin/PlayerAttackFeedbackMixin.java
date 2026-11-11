@@ -12,15 +12,14 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.player.Player;
 
-import com.gam0zing.newnew_warlock_core.combat.damage.AttackParticleType;
-import com.gam0zing.newnew_warlock_core.combat.damage.DamagePipeline;
+import com.gam0zing.newnew_warlock_core.combat.spine.AttackParticleType;
+import com.gam0zing.newnew_warlock_core.combat.standard.VanillaCombatViewHelper;
 
 /**
  * 玩家攻击表现的断流。
  * <p>26.3 把攻击音效统一收敛到 {@code Player#playServerSideSound}（攻击、横扫、暴击、命中反馈），
  * 横扫粒子在 {@code doSweepAttack}，受击指示粒子在 {@code damageStatsAndHearts}。
- * 这些表现统一转到业务插槽 {@link DamagePipeline#handleAttackSound} /
- * {@link DamagePipeline#handleAttackParticle}，插槽默认都不放行，因此默认没有任何攻击音效与粒子。</p>
+ * 这些表现统一转到 {@link VanillaCombatViewHelper}，当前默认放行原版表现。</p>
  */
 @Mixin(Player.class)
 public abstract class PlayerAttackFeedbackMixin {
@@ -28,7 +27,7 @@ public abstract class PlayerAttackFeedbackMixin {
     /** 攻击相关音效（攻击、横扫、暴击、命中反馈）。 */
     @Inject(method = "playServerSideSound", at = @At("HEAD"), cancellable = true)
     private void newnew$attackSound(SoundEvent sound, CallbackInfo ci) {
-        if (!DamagePipeline.handleAttackSound((Player) (Object) this, sound)) {
+        if (!VanillaCombatViewHelper.handleAttackSound((Player) (Object) this, sound)) {
             ci.cancel();
         }
     }
@@ -43,7 +42,7 @@ public abstract class PlayerAttackFeedbackMixin {
     private int newnew$sweepParticles(
         ServerLevel level, ParticleOptions particle, double x, double y, double z, int count,
         double xOffset, double yOffset, double zOffset, double speed, Operation<Integer> original) {
-        if (!DamagePipeline.handleAttackParticle((Player) (Object) this, AttackParticleType.SWEEP)) {
+        if (!VanillaCombatViewHelper.handleAttackParticle((Player) (Object) this, AttackParticleType.SWEEP)) {
             return 0;
         }
         return original.call(level, particle, x, y, z, count, xOffset, yOffset, zOffset, speed);
@@ -58,7 +57,7 @@ public abstract class PlayerAttackFeedbackMixin {
     private int newnew$damageIndicatorParticles(
         ServerLevel level, ParticleOptions particle, double x, double y, double z, int count,
         double xOffset, double yOffset, double zOffset, double speed, Operation<Integer> original) {
-        if (!DamagePipeline.handleAttackParticle((Player) (Object) this, AttackParticleType.DAMAGE_INDICATOR)) {
+        if (!VanillaCombatViewHelper.handleAttackParticle((Player) (Object) this, AttackParticleType.DAMAGE_INDICATOR)) {
             return 0;
         }
         return original.call(level, particle, x, y, z, count, xOffset, yOffset, zOffset, speed);

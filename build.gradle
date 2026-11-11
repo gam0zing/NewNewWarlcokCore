@@ -20,6 +20,18 @@ sourceSets.main.resources {
     exclude("src/generated/**/.cache") // datagen cache files
 }
 
+// 客户端专用源码集。必须先由 Gradle 创建，再由 neoForge.mods 触发 Minecraft client API 配置。
+sourceSets {
+    create('client') {
+        java {
+            srcDirs = ['src/client/java']
+        }
+        resources {
+            srcDirs = ['src/client/resources']
+        }
+    }
+}
+
 repositories {
 }
 
@@ -64,6 +76,7 @@ neoForge {
     mods {
         "${mod_id}" {
             sourceSet(sourceSets.main)
+            sourceSet(sourceSets.client)
         }
     }
 }
@@ -80,7 +93,14 @@ tasks.matching { it.name == 'runGameTestServer' }.configureEach {
 
 configurations {
     runtimeClasspath.extendsFrom localRuntime
+    // NeoForge 2.0.x 不会自动给手动创建的 sourceSet 传依赖，
+    // 显式让 client 的编译/运行时 classpath 继承 main，才能拿到 Minecraft/NeoForge API。
+    clientCompileClasspath.extendsFrom compileClasspath
+    clientRuntimeClasspath.extendsFrom runtimeClasspath
 }
+
+// client 还需要 main 编译产物（SkillTreeClientData 等在 main 里，client 里的 SkillTreeClient 会引用它们）
+sourceSets.client.compileClasspath += sourceSets.main.output
 
 dependencies {
 }

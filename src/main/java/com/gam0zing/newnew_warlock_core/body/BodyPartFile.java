@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import com.gam0zing.newnew_warlock_core.combat.hit.HitFace;
+import com.gam0zing.newnew_warlock_core.body.hit.HitFace;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 

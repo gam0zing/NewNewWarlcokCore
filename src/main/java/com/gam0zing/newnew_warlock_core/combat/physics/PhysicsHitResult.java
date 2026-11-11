@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
  * @param armorVolume      护甲实际吸收的甲伤
  * @param directMeatDamage 穿透护甲后直接进入肉体部分的肉伤
  * @param knockDamage      护甲吸收冲击后以“震动”形式传递到肉体的肉伤
+ * @param knockBack        未被重量吸收的那部分冲击量，作为击退强度标量
  * @param durabilityLoss   本击造成的护甲耐久损耗
  * @param broke            本击是否击破护甲
  * @param armorSkipped     是否跳过了护甲（无视护甲、没有甲伤、或没有可结算护甲）
@@ -23,6 +24,7 @@ public record PhysicsHitResult(
     float armorVolume,
     float directMeatDamage,
     float knockDamage,
+    float knockBack,
     float durabilityLoss,
     boolean broke,
     boolean armorSkipped,

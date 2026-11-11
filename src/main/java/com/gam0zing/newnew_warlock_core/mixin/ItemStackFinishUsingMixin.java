@@ -9,7 +9,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-import com.gam0zing.newnew_warlock_core.combat.effect.EffectSources;
+import com.gam0zing.newnew_warlock_core.share.EffectSources;
 
 /**
  * 直接进食/饮用水路。

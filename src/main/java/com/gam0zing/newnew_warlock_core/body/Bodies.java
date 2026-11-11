@@ -14,7 +14,7 @@ import net.minecraft.resources.Identifier;
 /**
  * 内置 Body 常量。
  * <p>每个常量都是一套完整的受击部位定义，伤害倍率全部为 1、不带受击效果；坐标使用与
- * {@link com.gam0zing.newnew_warlock_core.combat.hit.HitLocation} 相同的面内坐标系：
+ * {@link com.gam0zing.newnew_warlock_core.body.hit.HitLocation} 相同的面内坐标系：
  * 从体外正对该面看，左下角为 (0,0)、右上角为 (1,1)，x 恒为 0-1，y 为竖直方向占比（0 为脚、1 为头）。</p>
  *
  * <p>内置 Body 用带命名空间的 id 引用（例如 {@code newnew_warlock_core:human_like}），

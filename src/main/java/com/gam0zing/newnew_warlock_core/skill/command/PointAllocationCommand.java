@@ -2,7 +2,7 @@ package com.gam0zing.newnew_warlock_core.skill.command;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.gam0zing.newnew_warlock_core.registry.ModAttributes;
+import com.gam0zing.newnew_warlock_core.share.ModAttributes;
 import com.mojang.serialization.MapCodec;
 
 import net.minecraft.resources.Identifier;

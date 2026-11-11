@@ -1,0 +1,9 @@
+com.gam0zing.newnew_warlock_core.share.ShareModule
+com.gam0zing.newnew_warlock_core.body.BodyModule
+com.gam0zing.newnew_warlock_core.effect.EffectModule
+com.gam0zing.newnew_warlock_core.combat.CombatModule
+com.gam0zing.newnew_warlock_core.enchant.EnchantModule
+com.gam0zing.newnew_warlock_core.loot.LootModule
+com.gam0zing.newnew_warlock_core.mob.MobModule
+com.gam0zing.newnew_warlock_core.skill.SkillModule
+com.gam0zing.newnew_warlock_core.gametest.GameTestModule

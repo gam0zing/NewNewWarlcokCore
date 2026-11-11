@@ -7,16 +7,19 @@ import java.util.List;
 import com.gam0zing.newnew_warlock_core.body.BodyEffect;
 import com.gam0zing.newnew_warlock_core.body.BodyPart;
 import com.gam0zing.newnew_warlock_core.body.BodyParts;
-import com.gam0zing.newnew_warlock_core.combat.damage.DamageCategory;
-import com.gam0zing.newnew_warlock_core.combat.damage.DamageContext;
-import com.gam0zing.newnew_warlock_core.combat.hit.HitLocation;
-import com.gam0zing.newnew_warlock_core.combat.hit.HitLocationResolver;
+import com.gam0zing.newnew_warlock_core.combat.spine.DamageCategory;
+import com.gam0zing.newnew_warlock_core.combat.spine.DamageContext;
+import com.gam0zing.newnew_warlock_core.body.hit.HitLocation;
+import com.gam0zing.newnew_warlock_core.body.hit.HitLocationResolver;
+import com.gam0zing.newnew_warlock_core.share.PhysicsWeapon;
 
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * 第一类伤害（{@link DamageCategory#PHYSICS}）的业务实现。
@@ -83,7 +86,7 @@ public final class PhysicsDamage {
      * @return 结算后的肉伤
      */
     public static float calculate(DamageContext ctx, float damage) {
-        PhysicsContext physics = ctx.getPhysics();
+        PhysicsContext physics = ctx.getAttachment(PhysicsContext.class);
         if (physics == null) {
             return damage;
         }
@@ -94,8 +97,6 @@ public final class PhysicsDamage {
         // 部位受伤倍率只放大最终肉伤，不影响护甲耐久与甲伤吸收
         float damageScale = Math.max(0.0F, physics.bodyPart().damageScale());
         ctx.setArmorReduction(armorReductionInMeat(result) * damageScale);
-        // DEBUG 临时代码
-        System.out.println("part=" + physics.bodyPart().name() + " damage=" + result.meatDamage() * damageScale);
 
         return result.meatDamage() * damageScale;
     }
@@ -117,7 +118,7 @@ public final class PhysicsDamage {
 
     /** 插槽 D：按结算结果扣除护甲耐久（不可破坏装备自动忽略） */
     public static void applyArmorDurability(DamageContext ctx) {
-        PhysicsContext physics = ctx.getPhysics();
+        PhysicsContext physics = ctx.getAttachment(PhysicsContext.class);
         if (physics == null) {
             return;
         }
@@ -133,6 +134,34 @@ public final class PhysicsDamage {
     }
 
     /**
+     * 插槽 F：把“未被重量吸收”的冲击量作为击退强度，推一下受击者。
+     * <p>强度来自 {@link PhysicsHitResult#knockBack()}；方向与原版 {@code dealDefaultKnockback}
+     * 一致（由伤害来源位置指向受击者）。最终位移仍走 {@code LivingEntity#knockback}，
+     * 因此 {@code LivingKnockBackEvent} 与其他模组的改写照常生效。</p>
+     *
+     * @param dealtDamage 本次实际扣除的生命值（交给 {@code knockback} 透传给事件）
+     */
+    public static void applyKnockback(DamageContext ctx, float dealtDamage) {
+        PhysicsContext physics = ctx.getAttachment(PhysicsContext.class);
+        if (physics == null) {
+            return;
+        }
+        PhysicsHitResult result = physics.result();
+        if (result == null || result.knockBack() <= 0.0F) {
+            return;
+        }
+        DamageSource source = ctx.getSource();
+        if (source.is(DamageTypeTags.NO_KNOCKBACK)) {
+            return;
+        }
+        LivingEntity target = ctx.getTarget();
+        Vec3 origin = source.getSourcePosition();
+        double dx = origin == null ? 0.0D : origin.x() - target.getX();
+        double dz = origin == null ? 0.0D : origin.z() - target.getZ();
+        target.knockback(result.knockBack(), dx, dz, source, dealtDamage);
+    }
+
+    /**
      * 落地之后：按实际扣血量折算概率，施加合并后的受击效果。
      * <p>效果列表由“身体部位基础值 + 武器增量 + 护甲增量”合并而成（见 {@link BodyEffect#merge}）。
      * 护甲增量只在受击部位确实有护甲时参与。</p>
@@ -141,7 +170,7 @@ public final class PhysicsDamage {
      * @param healthBefore 扣除前的生命值
      */
     public static void applyBodyEffects(DamageContext ctx, float dealtDamage, float healthBefore) {
-        PhysicsContext physics = ctx.getPhysics();
+        PhysicsContext physics = ctx.getAttachment(PhysicsContext.class);
         if (physics == null) {
             return;
         }

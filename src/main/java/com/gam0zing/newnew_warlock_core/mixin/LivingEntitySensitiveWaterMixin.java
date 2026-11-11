@@ -9,7 +9,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 
-import com.gam0zing.newnew_warlock_core.combat.damage.PeriodicDamageGate;
+import com.gam0zing.newnew_warlock_core.combat.spine.PeriodicDamageGate;
 
 /**
  * 怕水生物（末影人、烈焰人、炽足兽、雪傀儡）在水中/雨中的溺水。

@@ -17,7 +17,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 
-import com.gam0zing.newnew_warlock_core.combat.effect.EffectPersistence;
+import com.gam0zing.newnew_warlock_core.effect.EffectPersistence;
 
 /**
  * 状态效果附加数据的实体存档。

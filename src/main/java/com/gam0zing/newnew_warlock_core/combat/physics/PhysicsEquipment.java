@@ -5,7 +5,9 @@ import java.util.Optional;
 import org.jetbrains.annotations.Nullable;
 
 import com.gam0zing.newnew_warlock_core.body.BodyPart;
-import com.gam0zing.newnew_warlock_core.registry.ModDataComponents;
+import com.gam0zing.newnew_warlock_core.share.ModDataComponents;
+import com.gam0zing.newnew_warlock_core.share.PhysicsArmor;
+import com.gam0zing.newnew_warlock_core.share.PhysicsWeapon;
 
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;

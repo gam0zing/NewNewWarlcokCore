@@ -1,0 +1,2280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NewNew 技能树编辑器</title>
+<style>
+  :root {
+    --bg: #0b0e13;
+    --panel: #141922;
+    --panel-2: #1a212c;
+    --panel-3: #202936;
+    --line: #26303d;
+    --text: #dbe3ee;
+    --muted: #8b97a8;
+    --gold: #d7b45a;
+    --green: #67d08b;
+    --red: #e06060;
+    --blue: #5b9bd5;
+    --shadow: 0 10px 30px rgba(0, 0, 0, .45);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+    font-size: 13px;
+  }
+
+  button, input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
+  .hidden { display: none !important; }
+
+  /* ---------------------------------- 顶栏 ---------------------------------- */
+
+  #topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    height: 52px;
+    padding: 0 14px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, #171d27, #121722);
+  }
+
+  .brand { display: flex; align-items: baseline; gap: 10px; white-space: nowrap; }
+  .brand b { font-size: 15px; letter-spacing: .5px; }
+  .brand span { color: var(--muted); font-size: 11px; }
+
+  .actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+  button {
+    padding: 6px 11px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--panel-2);
+    cursor: pointer;
+    transition: background .12s, border-color .12s;
+  }
+  button:hover { background: var(--panel-3); border-color: #33415a; }
+  button:active { transform: translateY(1px); }
+  button.primary { border-color: #6d5a26; background: #2a2415; color: var(--gold); }
+  button.primary:hover { background: #372f1b; }
+  button.danger { border-color: #5a2b2b; color: #ffb4b4; background: #2a1a1a; }
+  button.danger:hover { background: #3a2222; }
+
+  .status {
+    padding: 3px 8px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--muted);
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .status.ok { color: var(--green); border-color: #2c4a38; }
+
+  /* ---------------------------------- 布局 ---------------------------------- */
+
+  main {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr) 352px;
+    height: calc(100% - 52px);
+  }
+
+  aside {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: var(--panel);
+    overflow: hidden;
+  }
+  #left { border-right: 1px solid var(--line); }
+  #right { border-left: 1px solid var(--line); }
+
+  .panel { border-bottom: 1px solid var(--line); padding: 12px; }
+  .panel.grow { flex: 1; min-height: 0; display: flex; flex-direction: column; border-bottom: 0; }
+  .panel h2 {
+    margin: 0 0 10px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 9px; }
+  .field label { font-size: 11px; color: var(--muted); }
+  .field input[type="text"], .field input[type="number"], .field select, .field textarea {
+    padding: 6px 8px;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    background: #0f141c;
+    outline: none;
+    resize: vertical;
+  }
+  .field input:focus, .field select:focus { border-color: #3d5170; }
+  .field .hint { font-size: 10px; color: #6a7280; word-break: break-all; }
+  .check { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text); }
+  .check input { width: 14px; height: 14px; accent-color: var(--gold); }
+
+  /* -------------------------------- 命令库 -------------------------------- */
+
+  #lib-search {
+    width: 100%;
+    padding: 6px 9px;
+    margin-bottom: 8px;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    background: #0f141c;
+    outline: none;
+  }
+
+  #lib-list { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 7px; padding-right: 2px; }
+
+  .card {
+    padding: 9px 10px;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--gold);
+    border-radius: 6px;
+    background: var(--panel-2);
+    cursor: grab;
+    transition: background .12s, transform .12s;
+  }
+  .card:hover { background: var(--panel-3); transform: translateX(1px); }
+  .card:active { cursor: grabbing; }
+  .card:focus { outline: 1px solid var(--gold); outline-offset: 1px; }
+  .card-name { font-weight: 600; margin-bottom: 2px; }
+  .card-id { font-size: 10px; color: var(--muted); word-break: break-all; }
+  .card-params { margin-top: 4px; font-size: 10px; color: #7d8ba0; }
+
+  .empty { color: #6a7280; font-size: 12px; line-height: 1.6; padding: 6px 2px; }
+
+  /* -------------------------------- 画布 -------------------------------- */
+
+  #canvas {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--bg);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+  }
+  #canvas.grabbing { cursor: grabbing; }
+
+  #world { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+
+  #edges { position: absolute; left: 0; top: 0; width: 1px; height: 1px; overflow: visible; pointer-events: none; }
+
+  #nodes { position: absolute; left: 0; top: 0; }
+
+  /* 游戏内窗口打开时的大致显示范围（红色空心矩形） */
+  #game-view {
+    position: absolute;
+    display: none;
+    box-sizing: border-box;
+    border: 2px solid #e05252;
+    pointer-events: none;
+    opacity: .85;
+  }
+
+  .node-wrap { position: absolute; width: 0; height: 0; cursor: pointer; }
+  .node-box {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #4a515c;
+    border-radius: 6px;
+    background: #2a2f38;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .5);
+  }
+  .node-box.root { border-color: var(--gold); background: #3e4a5c; }
+  .node-box.selected { border-color: #fff; box-shadow: 0 0 0 2px rgba(255, 255, 255, .35); }
+  .node-wrap.dragging .node-box { border-color: var(--green); }
+  .node-wrap.connect-target .node-box { border-style: dashed; border-color: var(--green); }
+
+  .node-icon { font-size: 14px; font-weight: 700; color: #c9d4e4; letter-spacing: .5px; }
+  .node-img { width: 24px; height: 24px; image-rendering: pixelated; object-fit: contain; }
+
+  .node-label {
+    position: absolute;
+    top: 23px;
+    left: 0;
+    transform: translateX(-50%);
+    max-width: 140px;
+    font-size: 9px;
+    line-height: 1.25;
+    color: #b7c3d4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+    text-shadow: 0 1px 3px #000;
+  }
+  .node-wrap.selected .node-label { color: #fff; }
+
+  #banner {
+    position: absolute;
+    left: 50%;
+    top: 14px;
+    transform: translateX(-50%);
+    padding: 7px 14px;
+    border: 1px solid #3a5a45;
+    border-radius: 999px;
+    background: rgba(22, 40, 30, .94);
+    color: #b6f0c9;
+    font-size: 12px;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: var(--shadow);
+  }
+
+  #hint {
+    position: absolute;
+    left: 50%;
+    bottom: 12px;
+    transform: translateX(-50%);
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: rgba(15, 19, 26, .8);
+    color: #6f7c8f;
+    font-size: 11px;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  /* -------------------------------- 检查器 -------------------------------- */
+
+  #right .panel { overflow-y: auto; flex: 1; border-bottom: 0; }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 14px 0 8px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .section-title:first-child { margin-top: 0; }
+
+  .cmd-card {
+    margin-bottom: 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--panel-2);
+    overflow: hidden;
+  }
+  .cmd-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 7px 9px;
+    background: var(--panel-3);
+  }
+  .cmd-head .name { font-weight: 600; }
+  .cmd-head .id { font-size: 10px; color: var(--muted); word-break: break-all; }
+  .cmd-body { padding: 9px; display: flex; flex-direction: column; gap: 7px; }
+  .cmd-summary { font-size: 11px; color: var(--gold); }
+  .cmd-summary.warn { color: var(--red); }
+
+  .param-row { display: flex; align-items: center; gap: 8px; }
+  .param-row > .param-name { flex: 0 0 92px; font-size: 11px; color: var(--muted); word-break: break-all; }
+  .param-row input[type="text"], .param-row input[type="number"] {
+    flex: 1;
+    min-width: 0;
+    padding: 5px 7px;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    background: #0f141c;
+    outline: none;
+  }
+  .param-row input:focus { border-color: #3d5170; }
+  .param-row input.invalid { border-color: var(--red); }
+  .param-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--green); }
+
+  .combo { position: relative; flex: 1; display: flex; min-width: 0; }
+  .combo input { flex: 1; }
+  .combo-btn {
+    flex: 0 0 auto;
+    padding: 0 8px;
+    border-left: 0;
+    border-radius: 0 5px 5px 0;
+    background: var(--panel-3);
+    color: var(--muted);
+  }
+  /* 固定定位：避免被检查器滚动容器或命令卡片的 overflow 裁切 */
+  .combo-list {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 240px;
+    z-index: 200;
+    border: 1px solid #33415a;
+    border-radius: 6px;
+    background: #121821;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .combo-search {
+    width: 100%;
+    padding: 6px 8px;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    background: #0d1219;
+    outline: none;
+  }
+  .combo-items { max-height: 190px; overflow-y: auto; }
+  .combo-item { padding: 5px 9px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+  .combo-item:hover { background: #1d2735; }
+  .combo-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .combo-item .v { font-size: 10px; color: var(--muted); word-break: break-all; }
+  .combo-icon { width: 18px; height: 18px; flex: 0 0 18px; image-rendering: pixelated; object-fit: contain; }
+  .icon-preview {
+    flex: 0 0 22px;
+    width: 22px;
+    height: 22px;
+    margin-left: 4px;
+    image-rendering: pixelated;
+    object-fit: contain;
+  }
+  .combo-empty { padding: 8px 9px; color: #6a7280; font-size: 11px; }
+
+  .edge-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 5px 8px;
+    margin-bottom: 5px;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    background: var(--panel-2);
+  }
+  .edge-row .edge-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .edge-row button { padding: 2px 7px; font-size: 11px; }
+
+  .row { display: flex; gap: 6px; align-items: center; }
+  .row select { flex: 1; min-width: 0; padding: 5px 7px; border: 1px solid var(--line); border-radius: 5px; background: #0f141c; }
+  .row .field { flex: 1; min-width: 0; margin-bottom: 0; }
+  .row .field input { width: 100%; box-sizing: border-box; }
+
+  /* --------------------------------- 菜单 --------------------------------- */
+
+  #menu {
+    position: fixed;
+    z-index: 60;
+    min-width: 188px;
+    padding: 4px;
+    border: 1px solid #33415a;
+    border-radius: 7px;
+    background: #121821;
+    box-shadow: var(--shadow);
+  }
+  .menu-item {
+    display: block;
+    width: 100%;
+    padding: 7px 10px;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    text-align: left;
+  }
+  .menu-item:hover { background: #1d2735; }
+  .menu-item.danger { color: #ffb4b4; }
+  .menu-item.danger:hover { background: #33201f; }
+
+  /* --------------------------------- 弹窗 --------------------------------- */
+
+  #modal { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; background: rgba(4, 6, 10, .7); }
+  .modal-box {
+    width: min(560px, 90vw);
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #33415a;
+    border-radius: 10px;
+    background: var(--panel);
+    box-shadow: var(--shadow);
+  }
+  .modal-head { padding: 14px 16px; border-bottom: 1px solid var(--line); font-size: 14px; font-weight: 600; }
+  .modal-body { padding: 14px 16px; overflow-y: auto; line-height: 1.65; font-size: 12px; }
+  .modal-body ul { margin: 6px 0; padding-left: 20px; }
+  .modal-body code { padding: 1px 5px; border-radius: 4px; background: #0d1219; color: #c8d6ea; font-size: 11px; }
+  .modal-body pre {
+    margin: 8px 0;
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: #0d1219;
+    font-size: 11px;
+    overflow-x: auto;
+  }
+  .modal-body ol { margin: 6px 0; padding-left: 20px; }
+  .modal-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--line); }
+
+  .error-list li { color: #ffb4b4; }
+  .warn-list li { color: #e8cf8a; }
+
+  #toast {
+    position: fixed;
+    left: 50%;
+    bottom: 34px;
+    z-index: 90;
+    transform: translateX(-50%) translateY(20px);
+    padding: 9px 16px;
+    border: 1px solid #33415a;
+    border-radius: 8px;
+    background: #121821;
+    box-shadow: var(--shadow);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s, transform .18s;
+    max-width: 70vw;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #toast.error { border-color: #5a2b2b; color: #ffb4b4; }
+  #toast.ok { border-color: #2c4a38; color: #b6f0c9; }
+
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-thumb { background: #26303d; border-radius: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+</style>
+</head>
+<body>
+
+<header id="topbar">
+  <div class="brand">
+    <b>技能树编辑器</b>
+    <span>NewNew Warlock Core</span>
+  </div>
+  <div class="actions">
+    <span id="defs-status" class="status">命令定义：未导入</span>
+    <span id="enums-status" class="status">enum：0</span>
+    <button id="btn-defs">导入命令定义</button>
+    <button id="btn-enums">导入 enum 表</button>
+    <button id="btn-new">新建</button>
+    <button id="btn-import-tree">导入技能树</button>
+    <button id="btn-export" class="primary">导出技能树</button>
+    <button id="btn-help">帮助</button>
+  </div>
+</header>
+
+<main>
+  <aside id="left">
+    <section class="panel">
+      <h2>技能树设置</h2>
+      <div class="field">
+        <label for="tree-id">树 ID（命名空间:名称）</label>
+        <input id="tree-id" type="text" spellcheck="false">
+        <div class="hint" id="tree-path-hint"></div>
+      </div>
+      <div class="field">
+        <label for="tree-name">显示名称</label>
+        <input id="tree-name" type="text">
+      </div>
+      <div class="field">
+        <label for="tree-order">页签排序</label>
+        <input id="tree-order" type="number" step="1">
+      </div>
+      <div class="field">
+        <label for="tree-reset-xp">每重置 1 点消耗经验等级</label>
+        <input id="tree-reset-xp" type="number" step="any" min="0">
+      </div>
+      <label class="check"><input id="tree-default-unlocked" type="checkbox"> 默认解锁本树</label>
+    </section>
+
+    <section class="panel grow">
+      <h2>命令库</h2>
+      <input id="lib-search" placeholder="搜索命令…">
+      <div id="lib-list"></div>
+    </section>
+  </aside>
+
+  <div id="canvas">
+    <div id="world">
+      <svg id="edges" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+                  markerWidth="7" markerHeight="7" orient="auto-start-reverse"
+                  markerUnits="userSpaceOnUse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#5b6b82"></path>
+          </marker>
+          <marker id="arrow-hi" viewBox="0 0 10 10" refX="9" refY="5"
+                  markerWidth="7" markerHeight="7" orient="auto-start-reverse"
+                  markerUnits="userSpaceOnUse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#d7b45a"></path>
+          </marker>
+        </defs>
+      </svg>
+      <div id="game-view" title="游戏内窗口打开时的大致显示范围"></div>
+      <div id="nodes"></div>
+    </div>
+    <div id="banner" class="hidden"></div>
+    <div id="hint">拖拽命令到画布创建节点 · 长按节点拖动 · Ctrl+拖拽吸附到父节点 · 点击节点打开菜单 · Ctrl+C / Ctrl+V 复制粘贴节点 · 滚轮缩放 · 拖动空白平移</div>
+  </div>
+
+  <aside id="right">
+    <section class="panel" id="inspector"></section>
+  </aside>
+</main>
+
+<div id="menu" class="hidden"></div>
+<div id="modal" class="hidden">
+  <div class="modal-box">
+    <div class="modal-head" id="modal-title"></div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-foot" id="modal-foot"></div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<input type="file" id="file-defs" accept=".json,application/json" hidden>
+<input type="file" id="file-enums" accept=".json,application/json" multiple hidden>
+<input type="file" id="file-tree" accept=".json,application/json" hidden>
+
+<!-- 内置 enum 数据（原版 + 本模组的物品/属性/药水效果），由 tools/builtin_enums.js 提供 -->
+<script src="builtin_enums.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  // ==========================================================================================
+  // 常量与状态
+  // ==========================================================================================
+
+  const STORAGE_KEY = 'newnew_skill_tree_editor_v1';
+  const SCHEMA_VERSION = 1;
+  const DEFAULT_NAMESPACE = 'newnew_warlock_core';
+  const BOX = 40;                 // 节点在世界坐标里的边长（与游戏内一致）
+  const GAME_VIEW_WIDTH = 480;    // 游戏内窗口大致显示宽度（约 16:9，1920×1080 / GUI 缩放 4）
+  const GAME_VIEW_HEIGHT = 270;   // 游戏内窗口大致显示高度
+  const LONG_PRESS_MS = 200;      // 长按开始拖拽
+  const MOVE_TOLERANCE = 4;       // 长按前的抖动容差
+
+  const state = {
+    treeId: DEFAULT_NAMESPACE + ':skill_tree',
+    displayName: '技能树',
+    order: 0,
+    defaultUnlocked: false,
+    resetXpPerPoint: 0,
+    nodes: [],          // { id, x, y, name, description, icon, commands: [{ command, params }] }
+    edges: [],          // { from, to }  from 为前置
+    commands: new Map(),// 命令 id -> 定义
+    enums: [],          // 导入的 enum 表：{ type, targets: [{ command, param }], values: [{ name, value, icon }] }
+    builtinEnums: [],   // 内置 enum 表（物品/属性/药水效果），来自 builtin_enums.js
+    selection: null,
+    connect: null,      // { mode: 'out' | 'in', id }
+    view: { x: 80, y: 80, scale: 2 },
+    seq: 1
+  };
+
+  const dom = {
+    canvas: document.getElementById('canvas'),
+    world: document.getElementById('world'),
+    edges: document.getElementById('edges'),
+    gameView: document.getElementById('game-view'),
+    nodes: document.getElementById('nodes'),
+    banner: document.getElementById('banner'),
+    inspector: document.getElementById('inspector'),
+    menu: document.getElementById('menu'),
+    toast: document.getElementById('toast'),
+    modal: document.getElementById('modal'),
+    modalTitle: document.getElementById('modal-title'),
+    modalBody: document.getElementById('modal-body'),
+    modalFoot: document.getElementById('modal-foot'),
+    libList: document.getElementById('lib-list'),
+    libSearch: document.getElementById('lib-search'),
+    defsStatus: document.getElementById('defs-status'),
+    enumsStatus: document.getElementById('enums-status'),
+    treeId: document.getElementById('tree-id'),
+    treeName: document.getElementById('tree-name'),
+    treeOrder: document.getElementById('tree-order'),
+    treeResetXp: document.getElementById('tree-reset-xp'),
+    treeDefaultUnlocked: document.getElementById('tree-default-unlocked'),
+    treePathHint: document.getElementById('tree-path-hint'),
+    fileDefs: document.getElementById('file-defs'),
+    fileEnums: document.getElementById('file-enums'),
+    fileTree: document.getElementById('file-tree')
+  };
+
+  let press = null;   // 节点按下状态
+  let pan = null;     // 画布平移状态
+  let toastTimer = 0;
+  let lastNodePointerUp = 0; // 防止 pointerup 与 click 重复处理同一次点击
+  let nodeClipboard = null;  // 复制的节点：{ source: 节点快照, offset: 连续粘贴的错位量 }
+
+  // 枚举值 -> 图标（data URI），用于节点图标与下拉渲染
+  const iconLookup = new Map();
+
+  // ==========================================================================================
+  // 小工具
+  // ==========================================================================================
+
+  function el(tag, attrs, ...children) {
+    const node = document.createElement(tag);
+    if (attrs) {
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value === null || value === undefined) continue;
+        if (key === 'class') node.className = value;
+        else if (key === 'text') node.textContent = value;
+        else if (key.startsWith('on') && typeof value === 'function') {
+          node.addEventListener(key.slice(2), value);
+        } else if (value === true) node.setAttribute(key, '');
+        else if (value !== false) node.setAttribute(key, value);
+      }
+    }
+    for (const child of children.flat()) {
+      if (child === null || child === undefined || child === false) continue;
+      node.append(child.nodeType ? child : document.createTextNode(String(child)));
+    }
+    return node;
+  }
+
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function round1(value) {
+    return Math.round(value * 10) / 10;
+  }
+
+  function toast(message, kind) {
+    dom.toast.textContent = message;
+    dom.toast.className = 'show' + (kind ? ' ' + kind : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { dom.toast.className = ''; }, 3200);
+  }
+
+  function nodeById(id) {
+    return state.nodes.find(node => node.id === id) || null;
+  }
+
+  function commandDef(id) {
+    return state.commands.get(id) || null;
+  }
+
+  function nodeLabel(node) {
+    return node.name.trim() || node.id;
+  }
+
+  function summaryOf(commandEntry) {
+    const def = commandDef(commandEntry.command);
+    if (!def) return '未知命令类型：' + commandEntry.command;
+    return String(def.summary || '').replace(/\{(\w+)\}/g, (_, key) => {
+      const value = commandEntry.params[key];
+      return value === undefined || value === null ? '' : String(value);
+    });
+  }
+
+  function costOf(node) {
+    let total = 0;
+    let found = false;
+    for (const command of node.commands) {
+      const value = Number(command.params.cost);
+      if (Number.isFinite(value)) { total += value; found = true; }
+    }
+    return found ? total : null;
+  }
+
+  function formatNumber(value) {
+    if (!Number.isFinite(value)) return '0';
+    return Number.isInteger(value) ? String(value) : String(Math.round(value * 100) / 100);
+  }
+
+  function iconGlyph(icon) {
+    const path = icon.split(':').pop() || '';
+    return path.replace(/[^a-z0-9]/gi, '').slice(0, 2).toUpperCase();
+  }
+
+  // ==========================================================================================
+  // 视图（平移 / 缩放）
+  // ==========================================================================================
+
+  function applyView() {
+    const view = state.view;
+    dom.world.style.transform = 'translate(' + view.x + 'px, ' + view.y + 'px) scale(' + view.scale + ')';
+    const grid = 24 * view.scale;
+    dom.canvas.style.backgroundImage = 'radial-gradient(#1b2330 1px, transparent 1px)';
+    dom.canvas.style.backgroundSize = grid + 'px ' + grid + 'px';
+    dom.canvas.style.backgroundPosition = view.x + 'px ' + view.y + 'px';
+  }
+
+  function screenToWorld(clientX, clientY) {
+    const rect = dom.canvas.getBoundingClientRect();
+    return {
+      x: (clientX - rect.left - state.view.x) / state.view.scale,
+      y: (clientY - rect.top - state.view.y) / state.view.scale
+    };
+  }
+
+  function fitView() {
+    const rect = dom.canvas.getBoundingClientRect();
+    if (!state.nodes.length) {
+      state.view = { x: rect.width / 2, y: rect.height / 2, scale: 2 };
+      applyView();
+      return;
+    }
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const node of state.nodes) {
+      minX = Math.min(minX, node.x);
+      maxX = Math.max(maxX, node.x);
+      minY = Math.min(minY, node.y);
+      maxY = Math.max(maxY, node.y);
+    }
+    const padding = 140;
+    const width = Math.max(1, maxX - minX) + padding * 2;
+    const height = Math.max(1, maxY - minY) + padding * 2;
+    const scale = clamp(Math.min(rect.width / width, rect.height / height), 0.5, 3);
+    state.view.scale = scale;
+    state.view.x = rect.width / 2 - ((minX + maxX) / 2) * scale;
+    state.view.y = rect.height / 2 - ((minY + maxY) / 2) * scale;
+    applyView();
+  }
+
+  // ==========================================================================================
+  // 渲染：节点与连线
+  // ==========================================================================================
+
+  function renderNodes() {
+    dom.nodes.innerHTML = '';
+    for (const node of state.nodes) {
+      const wrap = el('div', { class: 'node-wrap' });
+      wrap.dataset.id = node.id;
+      wrap.style.left = node.x + 'px';
+      wrap.style.top = node.y + 'px';
+
+      const isRoot = !state.edges.some(edge => edge.to === node.id);
+      const box = el('div', { class: 'node-box' + (isRoot ? ' root' : '') + (node.id === state.selection ? ' selected' : '') });
+      if (state.connect) box.classList.add('connect-target');
+      const iconSource = node.icon ? iconLookup.get(node.icon) : null;
+      if (iconSource) box.append(el('img', { class: 'node-img', src: iconSource, alt: '' }));
+      else if (node.icon) box.append(el('div', { class: 'node-icon', text: iconGlyph(node.icon) }));
+
+      const label = el('div', { class: 'node-label', text: nodeLabel(node) });
+      wrap.append(box, label);
+      wrap.title = tooltipOf(node);
+      wrap.addEventListener('pointerdown', event => onNodePointerDown(event, node, wrap));
+      // 兜底：某些输入方式只派发 click 而不派发 pointer 事件，这里补一次点击处理。
+      wrap.addEventListener('click', event => {
+        if (performance.now() - lastNodePointerUp < 500) return;
+        if (state.connect) return;
+        state.selection = node.id;
+        renderAll();
+        openNodeMenu(event.clientX, event.clientY, node.id);
+      });
+      dom.nodes.append(wrap);
+    }
+    updateGameViewRect();
+  }
+
+  /**
+   * 红色空心矩形：表示游戏内窗口打开时的大致显示范围。
+   * 游戏内会以整棵树的外接框为中心，所以这里也把矩形放在树的中心。
+   */
+  function updateGameViewRect() {
+    if (!state.nodes.length) {
+      dom.gameView.style.display = 'none';
+      return;
+    }
+    let minX = Infinity, maxX = -Infinity;
+    let minY = Infinity, maxY = -Infinity;
+    for (const node of state.nodes) {
+      minX = Math.min(minX, node.x);
+      maxX = Math.max(maxX, node.x);
+      minY = Math.min(minY, node.y);
+      maxY = Math.max(maxY, node.y);
+    }
+    dom.gameView.style.display = 'block';
+    dom.gameView.style.left = ((minX + maxX) / 2 - GAME_VIEW_WIDTH / 2) + 'px';
+    dom.gameView.style.top = ((minY + maxY) / 2 - GAME_VIEW_HEIGHT / 2) + 'px';
+    dom.gameView.style.width = GAME_VIEW_WIDTH + 'px';
+    dom.gameView.style.height = GAME_VIEW_HEIGHT + 'px';
+  }
+
+  function tooltipOf(node) {
+    const lines = [nodeLabel(node)];
+    if (node.description.trim()) lines.push(node.description.trim());
+    for (const command of node.commands) lines.push('· ' + summaryOf(command));
+    const cost = costOf(node);
+    if (cost !== null) lines.push('花费：' + formatNumber(cost) + ' 点');
+    if (!state.edges.some(edge => edge.to === node.id)) lines.push('（根节点，可直接解锁）');
+    return lines.join('\n');
+  }
+
+  function renderEdges() {
+    const svg = dom.edges;
+    for (const old of Array.from(svg.querySelectorAll('line'))) old.remove();
+    for (const edge of state.edges) {
+      const from = nodeById(edge.from);
+      const to = nodeById(edge.to);
+      if (!from || !to) continue;
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const length = Math.hypot(dx, dy);
+      if (length < 0.001) continue;
+      const nx = dx / length;
+      const ny = dy / length;
+      const x1 = from.x + nx * (BOX / 2);
+      const y1 = from.y + ny * (BOX / 2);
+      const x2 = to.x - nx * (BOX / 2 + 3);
+      const y2 = to.y - ny * (BOX / 2 + 3);
+      const highlighted = edge.to === state.selection || edge.from === state.selection;
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', x1);
+      line.setAttribute('y1', y1);
+      line.setAttribute('x2', x2);
+      line.setAttribute('y2', y2);
+      line.setAttribute('stroke', highlighted ? '#d7b45a' : '#3a4250');
+      line.setAttribute('stroke-width', highlighted ? '2' : '1.5');
+      line.setAttribute('marker-end', highlighted ? 'url(#arrow-hi)' : 'url(#arrow)');
+      svg.append(line);
+    }
+  }
+
+  function renderAll() {
+    renderNodes();
+    renderEdges();
+    renderInspector();
+    syncSettings();
+  }
+
+  // ==========================================================================================
+  // 渲染：命令库与状态
+  // ==========================================================================================
+
+  function renderLibrary() {
+    const query = dom.libSearch.value.trim().toLowerCase();
+    dom.libList.innerHTML = '';
+    updateStatuses();
+    if (state.commands.size === 0) {
+      dom.libList.append(el('div', {
+        class: 'empty',
+        text: '尚未导入命令定义。点击顶栏「导入命令定义」，选择游戏目录下的 newnew_warlock_core/command_definitions.json。'
+      }));
+      return;
+    }
+    let shown = 0;
+    for (const def of state.commands.values()) {
+      const haystack = (def.id + ' ' + def.name + ' ' + (def.doc || '')).toLowerCase();
+      if (query && !haystack.includes(query)) continue;
+      shown++;
+      const card = el('div', { class: 'card', draggable: 'true', tabindex: '0', title: def.doc || '' },
+        el('div', { class: 'card-name', text: def.name }),
+        el('div', { class: 'card-id', text: def.id }),
+        el('div', {
+          class: 'card-params',
+          text: def.params.length
+            ? def.params.map(param => param.name + ':' + param.type).join(' · ')
+            : '无参数'
+        })
+      );
+      card.addEventListener('dragstart', event => {
+        event.dataTransfer.setData('text/plain', def.id);
+        event.dataTransfer.effectAllowed = 'copy';
+      });
+      card.addEventListener('dblclick', () => addNodeAtCenter(def.id));
+      card.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          addNodeAtCenter(def.id);
+        }
+      });
+      dom.libList.append(card);
+    }
+    if (shown === 0) dom.libList.append(el('div', { class: 'empty', text: '没有匹配的命令' }));
+  }
+
+  function updateStatuses() {
+    if (state.commands.size) {
+      dom.defsStatus.textContent = '命令定义：' + state.commands.size + ' 个';
+      dom.defsStatus.classList.add('ok');
+    } else {
+      dom.defsStatus.textContent = '命令定义：未导入';
+      dom.defsStatus.classList.remove('ok');
+    }
+    dom.enumsStatus.textContent = 'enum：内置 ' + state.builtinEnums.length + ' / 导入 ' + state.enums.length;
+  }
+
+  // ==========================================================================================
+  // 节点操作
+  // ==========================================================================================
+
+  function defaultsFor(def) {
+    const params = {};
+    for (const spec of def.params) {
+      if (spec.default !== undefined && spec.default !== null) params[spec.name] = spec.default;
+      else if (spec.type === 'bool') params[spec.name] = false;
+      else if (spec.type === 'int' || spec.type === 'float') params[spec.name] = 0;
+      else params[spec.name] = '';
+    }
+    return params;
+  }
+
+  function nextNodeId() {
+    const used = new Set(state.nodes.map(node => node.id));
+    let candidate;
+    do { candidate = 'n' + state.seq++; } while (used.has(candidate));
+    return candidate;
+  }
+
+  function addNode(commandId, x, y) {
+    const def = commandDef(commandId);
+    if (!def) { toast('命令类型未导入：' + commandId, 'error'); return; }
+    const node = {
+      id: nextNodeId(),
+      x: round1(x),
+      y: round1(y),
+      name: def.name,
+      description: '',
+      icon: '',
+      commands: [{ command: def.id, params: defaultsFor(def) }]
+    };
+    state.nodes.push(node);
+    state.selection = node.id;
+    renderAll();
+    save();
+  }
+
+  function addNodeAtCenter(commandId) {
+    const rect = dom.canvas.getBoundingClientRect();
+    const point = screenToWorld(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    addNode(commandId, point.x, point.y);
+  }
+
+  function deleteNode(id) {
+    state.nodes = state.nodes.filter(node => node.id !== id);
+    state.edges = state.edges.filter(edge => edge.from !== id && edge.to !== id);
+    if (state.selection === id) state.selection = null;
+    renderAll();
+    save();
+  }
+
+  /** 复制当前节点（不含连接），供粘贴使用 */
+  function copyNode(id) {
+    const node = nodeById(id);
+    if (!node) return;
+    nodeClipboard = { source: JSON.parse(JSON.stringify(node)), offset: 0 };
+    toast('已复制节点「' + nodeLabel(node) + '」');
+  }
+
+  /** 粘贴节点：生成新 id、略微错位，不复制任何连接 */
+  function pasteNode() {
+    if (!nodeClipboard) {
+      toast('剪贴板为空，先按 Ctrl+C 复制节点', 'error');
+      return;
+    }
+    nodeClipboard.offset += 24;
+    const node = JSON.parse(JSON.stringify(nodeClipboard.source));
+    node.id = nextNodeId();
+    node.x = round1(node.x + nodeClipboard.offset);
+    node.y = round1(node.y + nodeClipboard.offset);
+    state.nodes.push(node);
+    state.selection = node.id;
+    renderAll();
+    save();
+    toast('已粘贴节点「' + nodeLabel(node) + '」');
+  }
+
+  function isTypingTarget(target) {
+    if (!(target instanceof HTMLElement)) return false;
+    if (target.isContentEditable) return true;
+    return target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT';
+  }
+
+  function addEdge(from, to) {
+    if (from === to) { toast('不能连接到节点自身', 'error'); return false; }
+    if (!nodeById(from) || !nodeById(to)) return false;
+    if (state.edges.some(edge => edge.from === from && edge.to === to)) {
+      toast('该连接已存在', 'error');
+      return false;
+    }
+    state.edges.push({ from, to });
+    renderAll();
+    save();
+    return true;
+  }
+
+  // ==========================================================================================
+  // 指针交互：点击菜单 / 长按拖拽 / 画布平移 / 滚轮缩放
+  // ==========================================================================================
+
+  /**
+   * 按相对位移移动节点及其所有后继节点（父节点拖动时子节点跟随）。
+   * 用 visited 记录已移动的节点：同一节点只移动一次且不再向下传递，
+   * 因此即使连接成环（A → B → A）也不会无限递归。
+   */
+  function moveNodeSubtree(rootId, dx, dy) {
+    const visited = new Set();
+    const queue = [rootId];
+    while (queue.length) {
+      const id = queue.shift();
+      if (visited.has(id)) continue;
+      visited.add(id);
+      const node = nodeById(id);
+      if (node) {
+        node.x = round1(node.x + dx);
+        node.y = round1(node.y + dy);
+      }
+      for (const edge of state.edges) {
+        if (edge.from === id) queue.push(edge.to);
+      }
+    }
+  }
+
+  /** 把 state 中的节点坐标同步到画布上的 DOM 节点（拖拽子树后使用）。 */
+  function syncNodePositions() {
+    for (const wrap of dom.nodes.children) {
+      const node = nodeById(wrap.dataset.id);
+      if (!node) continue;
+      wrap.style.left = node.x + 'px';
+      wrap.style.top = node.y + 'px';
+    }
+    updateGameViewRect();
+  }
+
+  /**
+   * Ctrl 拖拽吸附：以「离鼠标最近的父节点」为原点，
+   * 方向吸附到 30 度的整数倍（0/30/60/…/330 度），距离吸附到 2 个节点边长的整数倍。
+   */
+  function snapToParent(nodeId, x, y) {
+    let parent = null;
+    let nearest = Infinity;
+    for (const edge of state.edges) {
+      if (edge.to !== nodeId) continue;
+      const candidate = nodeById(edge.from);
+      if (!candidate) continue;
+      const distance = Math.hypot(x - candidate.x, y - candidate.y);
+      if (distance < nearest) { nearest = distance; parent = candidate; }
+    }
+    if (!parent) return null;
+
+    const dx = x - parent.x;
+    const dy = y - parent.y;
+    const distance = Math.hypot(dx, dy);
+    if (distance < 0.001) return null;
+
+    const step = Math.PI / 6;
+    const angle = Math.round(Math.atan2(dy, dx) / step) * step;
+    const radius = Math.max(1, Math.round(distance / (BOX * 2))) * BOX * 2;
+    return {
+      x: round1(parent.x + Math.cos(angle) * radius),
+      y: round1(parent.y + Math.sin(angle) * radius)
+    };
+  }
+
+  function onNodePointerDown(event, node, wrap) {
+    if (event.button !== 0) return;
+    event.stopPropagation();
+    event.preventDefault();
+    closeMenu();
+    press = {
+      id: node.id,
+      wrap,
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: node.x,
+      originY: node.y,
+      originClientX: event.clientX,
+      originClientY: event.clientY,
+      dragging: false,
+      timer: setTimeout(() => {
+        if (!press) return;
+        press.dragging = true;
+        press.wrap.classList.add('dragging');
+      }, LONG_PRESS_MS)
+    };
+  }
+
+  function clearPress() {
+    if (!press) return;
+    clearTimeout(press.timer);
+    press.wrap.classList.remove('dragging');
+    press = null;
+  }
+
+  window.addEventListener('pointermove', event => {
+    if (pan) {
+      const dx = event.clientX - pan.x;
+      const dy = event.clientY - pan.y;
+      if (Math.abs(dx) + Math.abs(dy) > 2) pan.moved = true;
+      pan.x = event.clientX;
+      pan.y = event.clientY;
+      state.view.x += dx;
+      state.view.y += dy;
+      applyView();
+      return;
+    }
+    if (!press) return;
+
+    const dx = event.clientX - press.startX;
+    const dy = event.clientY - press.startY;
+
+    if (!press.dragging) {
+      // 长按前移动：视为误触，取消这次按下
+      if (Math.hypot(dx, dy) > MOVE_TOLERANCE) clearPress();
+      return;
+    }
+
+    const node = nodeById(press.id);
+    if (!node) { clearPress(); return; }
+    const scale = state.view.scale;
+    let targetX = round1(press.originX + (event.clientX - press.originClientX) / scale);
+    let targetY = round1(press.originY + (event.clientY - press.originClientY) / scale);
+    if (event.ctrlKey) {
+      const snapped = snapToParent(press.id, targetX, targetY);
+      if (snapped) { targetX = snapped.x; targetY = snapped.y; }
+    }
+    moveNodeSubtree(press.id, targetX - node.x, targetY - node.y);
+    press.startX = event.clientX;
+    press.startY = event.clientY;
+    syncNodePositions();
+    renderEdges();
+  });
+
+  window.addEventListener('pointerup', event => {
+    if (pan) {
+      const wasClick = !pan.moved;
+      pan = null;
+      dom.canvas.classList.remove('grabbing');
+      if (wasClick) {
+        state.selection = null;
+        state.connect = null;
+        updateBanner();
+        renderAll();
+      }
+      return;
+    }
+    if (!press) return;
+
+    const current = press;
+    const dragged = current.dragging;
+    lastNodePointerUp = performance.now();
+    clearPress();
+
+    if (dragged) { renderInspector(); save(); return; }
+
+    if (state.connect) {
+      const mode = state.connect.mode;
+      const anchor = state.connect.id;
+      state.connect = null;
+      updateBanner();
+      if (mode === 'out') addEdge(anchor, current.id);
+      else addEdge(current.id, anchor);
+      renderAll();
+      return;
+    }
+
+    state.selection = current.id;
+    renderAll();
+    openNodeMenu(event.clientX, event.clientY, current.id);
+  });
+
+  dom.canvas.addEventListener('pointerdown', event => {
+    if (event.button !== 0) return;
+    closeMenu();
+    pan = { x: event.clientX, y: event.clientY, moved: false };
+    dom.canvas.classList.add('grabbing');
+  });
+
+  dom.canvas.addEventListener('wheel', event => {
+    event.preventDefault();
+    const rect = dom.canvas.getBoundingClientRect();
+    const mx = event.clientX - rect.left;
+    const my = event.clientY - rect.top;
+    const before = screenToWorld(event.clientX, event.clientY);
+    const factor = Math.exp(-event.deltaY * 0.0015);
+    state.view.scale = clamp(state.view.scale * factor, 0.4, 4);
+    state.view.x = mx - before.x * state.view.scale;
+    state.view.y = my - before.y * state.view.scale;
+    applyView();
+  }, { passive: false });
+
+  dom.canvas.addEventListener('dragover', event => {
+    if (event.dataTransfer && Array.from(event.dataTransfer.types).includes('text/plain')) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'copy';
+    }
+  });
+
+  dom.canvas.addEventListener('drop', event => {
+    const commandId = event.dataTransfer ? event.dataTransfer.getData('text/plain') : '';
+    if (!commandId || !commandDef(commandId)) return;
+    event.preventDefault();
+    const point = screenToWorld(event.clientX, event.clientY);
+    addNode(commandId, point.x, point.y);
+  });
+
+  // ==========================================================================================
+  // 右键菜单
+  // ==========================================================================================
+
+  function openNodeMenu(x, y, nodeId) {
+    const items = [
+      {
+        label: '建立连接：此节点 → 目标（此节点是前置）',
+        action: () => startConnect('out', nodeId)
+      },
+      {
+        label: '建立连接：目标 → 此节点（目标作为前置）',
+        action: () => startConnect('in', nodeId)
+      },
+      { label: '复制节点', action: () => copyNode(nodeId) },
+      ...(nodeClipboard ? [{ label: '粘贴节点', action: () => pasteNode() }] : []),
+      { label: '删除节点', danger: true, action: () => deleteNode(nodeId) }
+    ];
+    openMenu(x, y, items);
+  }
+
+  function openMenu(x, y, items) {
+    dom.menu.innerHTML = '';
+    for (const item of items) {
+      const button = el('button', {
+        class: 'menu-item' + (item.danger ? ' danger' : ''),
+        text: item.label
+      });
+      button.addEventListener('click', () => { closeMenu(); item.action(); });
+      dom.menu.append(button);
+    }
+    dom.menu.classList.remove('hidden');
+    const width = 220;
+    const height = items.length * 32 + 10;
+    dom.menu.style.left = Math.max(8, Math.min(x, window.innerWidth - width - 8)) + 'px';
+    dom.menu.style.top = Math.max(8, Math.min(y, window.innerHeight - height - 8)) + 'px';
+  }
+
+  function closeMenu() {
+    dom.menu.classList.add('hidden');
+    dom.menu.innerHTML = '';
+  }
+
+  document.addEventListener('pointerdown', event => {
+    if (!dom.menu.classList.contains('hidden') && !dom.menu.contains(event.target)) closeMenu();
+  }, true);
+
+  function startConnect(mode, nodeId) {
+    state.connect = { mode, id: nodeId };
+    updateBanner();
+    renderAll();
+  }
+
+  function updateBanner() {
+    if (!state.connect) {
+      dom.banner.classList.add('hidden');
+      return;
+    }
+    const node = nodeById(state.connect.id);
+    const name = node ? nodeLabel(node) : state.connect.id;
+    dom.banner.textContent = state.connect.mode === 'out'
+      ? '已选择「' + name + '」：点击目标节点，把它设为后继（Esc 取消）'
+      : '已选择「' + name + '」：点击目标节点，把它设为前置（Esc 取消）';
+    dom.banner.classList.remove('hidden');
+  }
+
+  window.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      if (!dom.modal.classList.contains('hidden')) {
+        dom.modal.classList.add('hidden');
+        return;
+      }
+      if (state.connect) {
+        state.connect = null;
+        updateBanner();
+        renderAll();
+        return;
+      }
+      closeMenu();
+    }
+    if ((event.ctrlKey || event.metaKey) && !event.altKey && !isTypingTarget(event.target)) {
+      const key = event.key.toLowerCase();
+      if (key === 'c' && state.selection) {
+        event.preventDefault();
+        copyNode(state.selection);
+        return;
+      }
+      if (key === 'v') {
+        event.preventDefault();
+        pasteNode();
+        return;
+      }
+    }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+      event.preventDefault();
+      exportTree();
+    }
+  });
+
+  // ==========================================================================================
+  // 检查器
+  // ==========================================================================================
+
+  function renderInspector() {
+    dom.inspector.innerHTML = '';
+    const node = nodeById(state.selection);
+    if (!node) {
+      dom.inspector.append(
+        el('div', { class: 'section-title' }, el('span', {}, '节点检查器')),
+        el('div', { class: 'empty', text: '未选中节点。点击画布上的节点进行编辑；从左侧命令库拖入命令可创建新节点。' })
+      );
+      return;
+    }
+
+    dom.inspector.append(el('div', { class: 'section-title' },
+      el('span', {}, '节点检查器'),
+      el('button', { class: 'danger', text: '删除', onclick: () => deleteNode(node.id) })
+    ));
+
+    // 图标：文本输入 + 内置物品下拉（带图标）+ 预览
+    const iconInput = el('input', {
+      type: 'text', value: node.icon, placeholder: 'minecraft:stone', spellcheck: 'false'
+    });
+    const iconPreview = el('img', { class: 'icon-preview', alt: '' });
+    const refreshIconPreview = () => {
+      const source = iconLookup.get(node.icon);
+      if (source) {
+        iconPreview.src = source;
+        iconPreview.classList.remove('hidden');
+      } else {
+        iconPreview.removeAttribute('src');
+        iconPreview.classList.add('hidden');
+      }
+    };
+    iconInput.addEventListener('input', () => {
+      node.icon = iconInput.value.trim();
+      refreshIconPreview();
+      renderNodes();
+      save();
+    });
+    const iconValues = findEnum('*', 'icon', 'string');
+    const iconField = el('div', { class: 'combo' }, iconPreview, iconInput,
+      iconValues ? buildComboButton() : null,
+      iconValues ? buildComboList(iconValues, value => {
+        node.icon = String(value);
+        iconInput.value = node.icon;
+        refreshIconPreview();
+        renderNodes();
+        save();
+      }) : null);
+    refreshIconPreview();
+
+    dom.inspector.append(
+      field('节点 ID', el('input', {
+        type: 'text', value: node.id, spellcheck: 'false',
+        onchange: event => {
+          const next = event.target.value.trim();
+          if (!/^[a-z0-9_./-]+$/.test(next)) { toast('节点 ID 只能包含小写字母、数字、_、-、.、/', 'error'); renderInspector(); return; }
+          if (state.nodes.some(other => other !== node && other.id === next)) { toast('节点 ID 已存在', 'error'); renderInspector(); return; }
+          const oldId = node.id;
+          node.id = next;
+          for (const edge of state.edges) {
+            if (edge.from === oldId) edge.from = next;
+            if (edge.to === oldId) edge.to = next;
+          }
+          if (state.selection === oldId) state.selection = next;
+          renderAll();
+          save();
+        }
+      })),
+      field('名称', el('input', {
+        type: 'text', value: node.name,
+        oninput: event => { node.name = event.target.value; renderNodes(); save(); }
+      })),
+      field('描述', el('textarea', {
+        rows: '3',
+        oninput: event => { node.description = event.target.value; renderNodes(); save(); }
+      }, node.description)),
+      el('div', { class: 'row' },
+        field('X 坐标', el('input', {
+          type: 'number', step: '0.1', value: node.x,
+          onchange: event => {
+            const value = Number(event.target.value);
+            if (!Number.isFinite(value)) { renderInspector(); return; }
+            moveNodeSubtree(node.id, round1(value) - node.x, 0);
+            syncNodePositions();
+            renderEdges();
+            save();
+          }
+        })),
+        field('Y 坐标', el('input', {
+          type: 'number', step: '0.1', value: node.y,
+          onchange: event => {
+            const value = Number(event.target.value);
+            if (!Number.isFinite(value)) { renderInspector(); return; }
+            moveNodeSubtree(node.id, 0, round1(value) - node.y);
+            syncNodePositions();
+            renderEdges();
+            save();
+          }
+        }))
+      ),
+      field('图标物品 ID', iconField),
+      el('div', { class: 'hint', text: '游戏内用该物品的图标显示节点，留空则显示空槽。可从内置物品枚举中选择。' })
+    );
+
+    // 前置节点
+    dom.inspector.append(el('div', { class: 'section-title' }, el('span', {}, '前置节点（至少一个已解锁才能解锁本节点）')));
+    const prerequisites = state.edges.filter(edge => edge.to === node.id);
+    if (!prerequisites.length) {
+      dom.inspector.append(el('div', { class: 'empty', text: '没有前置：本节点是根节点，可直接解锁。' }));
+    } else {
+      for (const edge of prerequisites) {
+        const from = nodeById(edge.from);
+        dom.inspector.append(el('div', { class: 'edge-row' },
+          el('span', { class: 'edge-name', text: from ? nodeLabel(from) : edge.from, title: edge.from }),
+          el('button', {
+            text: '移除',
+            onclick: () => {
+              state.edges = state.edges.filter(candidate => candidate !== edge);
+              renderAll();
+              save();
+            }
+          })
+        ));
+      }
+    }
+    const candidates = state.nodes.filter(other => other.id !== node.id
+      && !state.edges.some(edge => edge.from === other.id && edge.to === node.id));
+    if (candidates.length) {
+      const select = el('select', {},
+        el('option', { value: '', text: '选择节点…' }),
+        candidates.map(other => el('option', { value: other.id, text: nodeLabel(other) + ' (' + other.id + ')' }))
+      );
+      dom.inspector.append(el('div', { class: 'row' },
+        select,
+        el('button', {
+          text: '添加前置',
+          onclick: () => { if (select.value) addEdge(select.value, node.id); }
+        })
+      ));
+    }
+
+    // 命令
+    dom.inspector.append(el('div', { class: 'section-title' }, el('span', {}, '命令（解锁时依次执行）')));
+    if (!node.commands.length) {
+      dom.inspector.append(el('div', { class: 'empty', text: '没有命令：解锁不消耗点数，也不产生效果。' }));
+    }
+    node.commands.forEach((command, index) => {
+      dom.inspector.append(buildCommandCard(node, command, index));
+    });
+
+    if (state.commands.size) {
+      const select = el('select', {},
+        el('option', { value: '', text: '选择命令类型…' }),
+        Array.from(state.commands.values()).map(def => el('option', { value: def.id, text: def.name + ' (' + def.id + ')' }))
+      );
+      dom.inspector.append(el('div', { class: 'row' },
+        select,
+        el('button', {
+          text: '添加命令',
+          onclick: () => {
+            const def = commandDef(select.value);
+            if (!def) return;
+            node.commands.push({ command: def.id, params: defaultsFor(def) });
+            renderAll();
+            save();
+          }
+        })
+      ));
+    } else {
+      dom.inspector.append(el('div', { class: 'empty', text: '导入命令定义后才能给节点添加命令。' }));
+    }
+  }
+
+  function field(label, input) {
+    return el('div', { class: 'field' }, el('label', { text: label }), input);
+  }
+
+  function buildCommandCard(node, command, index) {
+    const def = commandDef(command.command);
+    const summary = el('div', { class: 'cmd-summary' });
+    const refreshSummary = () => {
+      if (!def) {
+        summary.textContent = '未知命令类型：' + command.command;
+        summary.classList.add('warn');
+        return;
+      }
+      summary.classList.remove('warn');
+      summary.textContent = summaryOf(command);
+    };
+    const afterEdit = () => {
+      refreshSummary();
+      renderNodes();
+      renderEdges();
+      save();
+    };
+
+    const head = el('div', { class: 'cmd-head' },
+      el('div', {},
+        el('div', { class: 'name', text: def ? def.name : command.command }),
+        el('div', { class: 'id', text: command.command })
+      ),
+      el('button', {
+        class: 'danger', text: '移除',
+        onclick: () => {
+          node.commands.splice(index, 1);
+          renderAll();
+          save();
+        }
+      })
+    );
+
+    const body = el('div', { class: 'cmd-body' }, summary);
+    if (def) {
+      for (const spec of def.params) body.append(buildParamRow(command, spec, afterEdit));
+      if (!def.params.length) body.append(el('div', { class: 'empty', text: '该命令没有参数。' }));
+    }
+    refreshSummary();
+    return el('div', { class: 'cmd-card' }, head, body);
+  }
+
+  function buildParamRow(command, spec, afterEdit) {
+    const row = el('div', { class: 'param-row' },
+      el('span', { class: 'param-name', text: spec.name, title: spec.name + ' · ' + spec.type })
+    );
+
+    const current = command.params[spec.name];
+
+    if (spec.type === 'bool') {
+      const checkbox = el('input', { type: 'checkbox' });
+      checkbox.checked = current === true;
+      checkbox.addEventListener('change', () => {
+        command.params[spec.name] = checkbox.checked;
+        afterEdit();
+      });
+      row.append(checkbox);
+      return row;
+    }
+
+    const input = el('input', {
+      type: spec.type === 'string' ? 'text' : 'number',
+      step: spec.type === 'int' ? '1' : 'any',
+      spellcheck: 'false'
+    });
+    input.value = current === undefined || current === null ? '' : String(current);
+    input.addEventListener('input', () => {
+      if (spec.type === 'string') {
+        command.params[spec.name] = input.value;
+        input.classList.remove('invalid');
+      } else {
+        const parsed = Number(input.value);
+        if (input.value.trim() === '' || !Number.isFinite(parsed)) {
+          input.classList.add('invalid');
+        } else {
+          input.classList.remove('invalid');
+          command.params[spec.name] = spec.type === 'int' ? Math.trunc(parsed) : parsed;
+        }
+      }
+      afterEdit();
+    });
+
+    const enumValues = findEnum(command.command, spec.name, spec.type);
+    if (enumValues && enumValues.length) {
+      const combo = el('div', { class: 'combo' }, input, buildComboButton(), buildComboList(enumValues, value => {
+        input.value = String(value);
+        input.classList.remove('invalid');
+        command.params[spec.name] = spec.type === 'string'
+          ? String(value)
+          : (spec.type === 'int' ? Math.trunc(Number(value)) : Number(value));
+        afterEdit();
+      }));
+      row.append(combo);
+    } else {
+      row.append(input);
+    }
+    return row;
+  }
+
+  /**
+   * 查找匹配某个命令参数的 enum 表。
+   * <p>targets 里的 command 支持 "*"，表示匹配任意命令里同名同类型的参数；
+   * 导入的 enum 表优先于内置表。</p>
+   */
+  function findEnum(commandId, paramName, paramType) {
+    for (const table of state.enums.concat(state.builtinEnums)) {
+      if (table.type && paramType && table.type !== paramType) continue;
+      const matched = table.targets.some(target =>
+        (target.command === '*' || target.command === commandId) && target.param === paramName);
+      if (matched) return table.values;
+    }
+    return null;
+  }
+
+  function buildComboButton() {
+    const button = el('button', { class: 'combo-btn', type: 'button', text: '▾', title: '选择预设值' });
+    button.addEventListener('click', event => {
+      event.stopPropagation();
+      const combo = button.closest('.combo');
+      const list = combo.querySelector('.combo-list');
+      const wasHidden = list.classList.contains('hidden');
+      hideAllCombos();
+      if (wasHidden) {
+        placeComboList(list, combo);
+        list.classList.remove('hidden');
+        const search = list.querySelector('.combo-search');
+        search.value = '';
+        search.dispatchEvent(new Event('input'));
+        search.focus();
+      }
+    });
+    return button;
+  }
+
+  /** 把下拉框贴到输入框下方；下方空间不足时翻到上方，并限制在视口内 */
+  function placeComboList(list, combo) {
+    const rect = combo.getBoundingClientRect();
+    const width = Math.max(240, rect.width);
+    const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
+    const gap = 4;
+    list.style.width = width + 'px';
+    list.style.left = left + 'px';
+    list.style.top = (rect.bottom + gap) + 'px';
+    list.classList.remove('hidden');
+    const height = list.offsetHeight;
+    const below = rect.bottom + gap;
+    const above = rect.top - gap - height;
+    list.style.top = (below + height > window.innerHeight - 8 && above >= 8 ? above : below) + 'px';
+  }
+
+  function hideAllCombos() {
+    document.querySelectorAll('.combo-list').forEach(list => list.classList.add('hidden'));
+  }
+
+  // 检查器滚动或窗口尺寸变化时收起下拉，避免固定定位的浮层飘在错误位置
+  document.addEventListener('scroll', event => {
+    if (event.target instanceof Element && event.target.closest('.combo-list')) return;
+    hideAllCombos();
+  }, true);
+  window.addEventListener('resize', hideAllCombos);
+
+  function buildComboList(values, onPick) {
+    const items = el('div', { class: 'combo-items' });
+    const search = el('input', { class: 'combo-search', type: 'text', placeholder: '搜索…' });
+    const list = el('div', { class: 'combo-list hidden' }, search, items);
+
+    const fill = query => {
+      const needle = query.trim().toLowerCase();
+      items.innerHTML = '';
+      let count = 0;
+      for (const option of values) {
+        const name = String(option.name ?? '');
+        const value = String(option.value ?? '');
+        if (needle && !(name + ' ' + value).toLowerCase().includes(needle)) continue;
+        count++;
+        const item = el('div', { class: 'combo-item' },
+          option.icon ? el('img', { class: 'combo-icon', src: option.icon, alt: '' }) : null,
+          el('div', { class: 'combo-text' },
+            el('span', { text: name }),
+            el('span', { class: 'v', text: value })
+          )
+        );
+        item.addEventListener('click', () => {
+          onPick(option.value);
+          list.classList.add('hidden');
+        });
+        items.append(item);
+      }
+      if (!count) items.append(el('div', { class: 'combo-empty', text: '没有匹配项' }));
+    };
+
+    search.addEventListener('input', () => fill(search.value));
+    search.addEventListener('keydown', event => {
+      if (event.key === 'Enter') {
+        const first = items.querySelector('.combo-item');
+        if (first) first.click();
+      }
+      if (event.key === 'Escape') list.classList.add('hidden');
+    });
+    fill('');
+    return list;
+  }
+
+  document.addEventListener('pointerdown', event => {
+    document.querySelectorAll('.combo-list').forEach(list => {
+      if (!list.contains(event.target) && !event.target.classList.contains('combo-btn')) {
+        list.classList.add('hidden');
+      }
+    });
+  });
+
+  // ==========================================================================================
+  // 树设置
+  // ==========================================================================================
+
+  function setValue(input, value) {
+    if (input.value !== value) input.value = value;
+  }
+
+  function syncSettings() {
+    setValue(dom.treeId, state.treeId);
+    setValue(dom.treeName, state.displayName);
+    setValue(dom.treeOrder, String(state.order));
+    setValue(dom.treeResetXp, String(state.resetXpPerPoint));
+    dom.treeDefaultUnlocked.checked = state.defaultUnlocked;
+    const parts = splitTreeId(state.treeId);
+    dom.treePathHint.textContent = parts
+      ? '数据包路径：data/' + parts.namespace + '/skill_trees/' + parts.path + '.json'
+      : '树 ID 格式应为 namespace:path';
+  }
+
+  function splitTreeId(treeId) {
+    const index = treeId.indexOf(':');
+    if (index <= 0 || index === treeId.length - 1) return null;
+    const namespace = treeId.slice(0, index);
+    const path = treeId.slice(index + 1);
+    if (!/^[a-z0-9_.-]+$/.test(namespace) || !/^[a-z0-9_./-]+$/.test(path)) return null;
+    return { namespace, path };
+  }
+
+  dom.treeId.addEventListener('input', () => { state.treeId = dom.treeId.value.trim(); syncSettings(); save(); });
+  dom.treeName.addEventListener('input', () => { state.displayName = dom.treeName.value; save(); });
+  dom.treeOrder.addEventListener('input', () => {
+    const parsed = Number(dom.treeOrder.value);
+    if (Number.isInteger(parsed)) { state.order = parsed; save(); }
+  });
+  dom.treeResetXp.addEventListener('input', () => {
+    const parsed = Number(dom.treeResetXp.value);
+    if (Number.isFinite(parsed) && parsed >= 0) { state.resetXpPerPoint = parsed; save(); }
+  });
+  dom.treeDefaultUnlocked.addEventListener('change', () => {
+    state.defaultUnlocked = dom.treeDefaultUnlocked.checked;
+    save();
+  });
+
+  dom.libSearch.addEventListener('input', renderLibrary);
+
+  // ==========================================================================================
+  // 导入 / 导出
+  // ==========================================================================================
+
+  function readJsonFile(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try { resolve(JSON.parse(String(reader.result))); }
+        catch (error) { reject(new Error(file.name + '：不是合法的 JSON（' + error.message + '）')); }
+      };
+      reader.onerror = () => reject(new Error(file.name + '：读取失败'));
+      reader.readAsText(file);
+    });
+  }
+
+  function loadDefinitions(json, silent) {
+    if (!json || !Array.isArray(json.commands)) throw new Error('不是命令定义表（缺少 commands 数组）');
+    const map = new Map();
+    for (const entry of json.commands) {
+      if (!entry || typeof entry.id !== 'string') continue;
+      map.set(entry.id, {
+        id: entry.id,
+        name: String(entry.name ?? entry.id),
+        doc: String(entry.doc ?? ''),
+        summary: String(entry.summary ?? ''),
+        params: Array.isArray(entry.params) ? entry.params.map(param => ({
+          name: String(param.name),
+          type: String(param.type ?? 'string'),
+          default: param.default
+        })) : []
+      });
+    }
+    state.commands = map;
+    renderLibrary();
+    renderInspector();
+    save();
+    if (!silent) toast('已导入 ' + map.size + ' 个命令类型', 'ok');
+  }
+
+  /**
+   * 把 enum 条目规范化为 { type, targets, values }。
+   * <p>新格式用 targets 数组声明“命令 id + 参数名”，command 为 "*" 时匹配任意命令的同名同类型参数；
+   * 同时兼容旧的单目标写法 { command, param, type, values }。</p>
+   */
+  function normalizeEnum(entry) {
+    if (!entry || !Array.isArray(entry.values)) return null;
+    const targets = [];
+    if (Array.isArray(entry.targets)) {
+      for (const target of entry.targets) {
+        if (!target || typeof target.command !== 'string' || typeof target.param !== 'string') continue;
+        targets.push({ command: target.command.trim(), param: target.param.trim() });
+      }
+    } else if (typeof entry.command === 'string' && typeof entry.param === 'string') {
+      targets.push({ command: entry.command.trim(), param: entry.param.trim() });
+    }
+    if (!targets.length) return null;
+    return {
+      id: typeof entry.id === 'string' ? entry.id : '',
+      type: typeof entry.type === 'string' ? entry.type : '',
+      targets,
+      values: entry.values.map(option => ({
+        name: String(option.name ?? option.value ?? ''),
+        value: option.value,
+        icon: typeof option.icon === 'string' ? option.icon : ''
+      }))
+    };
+  }
+
+  function enumSignature(table) {
+    return table.targets.map(target => target.command + '\u0000' + target.param).sort().join('\u0001');
+  }
+
+  function loadEnums(json, silent) {
+    let entries = [];
+    if (Array.isArray(json)) entries = json;
+    else if (json && Array.isArray(json.enums)) entries = json.enums;
+    else if (json && Array.isArray(json.values)) entries = [json];
+    else throw new Error('不是 enum 表（需要 enums 数组，或 { targets, values } / { command, param, values }）');
+
+    const normalized = entries.map(normalizeEnum).filter(Boolean);
+    if (!normalized.length) throw new Error('enum 表格式不正确：缺少 targets（命令 id + 参数名）或 values');
+
+    for (const table of normalized) {
+      const signature = enumSignature(table);
+      const index = state.enums.findIndex(existing => enumSignature(existing) === signature);
+      if (index >= 0) state.enums[index] = table;
+      else state.enums.push(table);
+      registerEnumIcons(table);
+    }
+    updateStatuses();
+    renderInspector();
+    renderNodes();
+    save();
+    if (!silent) toast('已加载 ' + normalized.length + ' 组 enum（导入共 ' + state.enums.length + ' 组）', 'ok');
+  }
+
+  /** 把 enum 值上带的图标登记到 iconLookup，供节点图标渲染 */
+  function registerEnumIcons(table) {
+    for (const option of table.values) {
+      if (option.icon) iconLookup.set(String(option.value), option.icon);
+    }
+  }
+
+  /** 载入页面自带的 enum 表（物品/属性/药水效果） */
+  function loadBuiltins() {
+    const tables = Array.isArray(window.NEWNEW_BUILTIN_ENUMS) ? window.NEWNEW_BUILTIN_ENUMS : [];
+    state.builtinEnums = tables.map(normalizeEnum).filter(Boolean);
+    for (const table of state.builtinEnums) registerEnumIcons(table);
+  }
+
+  function applyTreeJson(json, filename) {
+    if (!json || !Array.isArray(json.nodes)) throw new Error('不是技能树 JSON（缺少 nodes 数组）');
+    state.displayName = String(json.display_name ?? '技能树');
+    state.order = Number.isInteger(json.order) ? json.order : 0;
+    state.defaultUnlocked = json.default_unlocked === true;
+    state.resetXpPerPoint = Number.isFinite(json.reset_xp_per_point) ? json.reset_xp_per_point : 0;
+    state.nodes = json.nodes.map(node => ({
+      id: String(node.id ?? ''),
+      x: Number(node.x) || 0,
+      y: Number(node.y) || 0,
+      name: String(node.name ?? ''),
+      description: String(node.description ?? ''),
+      icon: String(node.icon ?? ''),
+      commands: Array.isArray(node.commands) ? node.commands.map(command => ({
+        command: String(command.command ?? ''),
+        params: Object.assign({}, command.params || {})
+      })) : []
+    }));
+    state.edges = Array.isArray(json.edges) ? json.edges.map(edge => ({
+      from: String(edge.from ?? ''),
+      to: String(edge.to ?? '')
+    })) : [];
+
+    if (filename) {
+      const base = filename.replace(/\.json$/i, '');
+      state.treeId = base.includes(':') ? base : DEFAULT_NAMESPACE + ':' + base;
+    }
+
+    let maxSeq = 0;
+    for (const node of state.nodes) {
+      const match = /^n(\d+)$/.exec(node.id);
+      if (match) maxSeq = Math.max(maxSeq, Number(match[1]));
+    }
+    state.seq = maxSeq + 1;
+    state.selection = null;
+    state.connect = null;
+    updateBanner();
+    renderAll();
+    fitView();
+    save();
+  }
+
+  function buildTreeJson() {
+    return {
+      schema: SCHEMA_VERSION,
+      display_name: state.displayName,
+      order: state.order,
+      default_unlocked: state.defaultUnlocked,
+      reset_xp_per_point: state.resetXpPerPoint,
+      nodes: state.nodes.map(node => {
+        const entry = { id: node.id, x: round1(node.x), y: round1(node.y), name: node.name };
+        if (node.description) entry.description = node.description;
+        if (node.icon) entry.icon = node.icon;
+        if (node.commands.length) {
+          entry.commands = node.commands.map(command => ({
+            command: command.command,
+            params: Object.assign({}, command.params)
+          }));
+        }
+        return entry;
+      }),
+      edges: state.edges.map(edge => ({ from: edge.from, to: edge.to }))
+    };
+  }
+
+  function validateTree() {
+    const errors = [];
+    const warnings = [];
+
+    if (!splitTreeId(state.treeId)) {
+      errors.push('树 ID 必须形如 namespace:path（小写字母、数字、_、-、.、/）');
+    }
+    if (!state.displayName.trim()) errors.push('显示名称不能为空');
+
+    const ids = new Set();
+    for (const node of state.nodes) {
+      if (!/^[a-z0-9_./-]+$/.test(node.id)) errors.push('节点 ID 非法："' + node.id + '"');
+      if (ids.has(node.id)) errors.push('节点 ID 重复："' + node.id + '"');
+      ids.add(node.id);
+      if (!node.name.trim()) warnings.push('节点 "' + node.id + '" 没有名称');
+      if (node.icon && !/^[a-z0-9_.-]+:[a-z0-9_./-]+$/.test(node.icon)) {
+        errors.push('节点 "' + node.id + '" 的图标物品 ID 非法："' + node.icon + '"');
+      }
+      if (!node.commands.length) warnings.push('节点 "' + node.id + '" 没有命令（解锁不消耗点数）');
+      for (const command of node.commands) {
+        const def = commandDef(command.command);
+        if (!def) {
+          errors.push('节点 "' + node.id + '" 使用了未导入的命令类型："' + command.command + '"');
+          continue;
+        }
+        for (const spec of def.params) {
+          const value = command.params[spec.name];
+          if (value === undefined || value === null) {
+            errors.push('节点 "' + node.id + '" 的命令 ' + def.id + ' 缺少参数 ' + spec.name);
+            continue;
+          }
+          if (spec.type === 'string') {
+            if (typeof value !== 'string') errors.push('节点 "' + node.id + '" 的参数 ' + spec.name + ' 必须是字符串');
+            else if (!value.trim()) errors.push('节点 "' + node.id + '" 的参数 ' + spec.name + ' 为空，游戏内加载会失败');
+          } else if (spec.type === 'int') {
+            if (!Number.isInteger(value)) errors.push('节点 "' + node.id + '" 的参数 ' + spec.name + ' 必须是整数');
+          } else if (spec.type === 'float') {
+            if (!Number.isFinite(value)) errors.push('节点 "' + node.id + '" 的参数 ' + spec.name + ' 必须是有限数值');
+          } else if (spec.type === 'bool') {
+            if (typeof value !== 'boolean') errors.push('节点 "' + node.id + '" 的参数 ' + spec.name + ' 必须是布尔值');
+          }
+        }
+      }
+    }
+
+    const edgeKeys = new Set();
+    for (const edge of state.edges) {
+      if (!ids.has(edge.from) || !ids.has(edge.to)) {
+        errors.push('连接 ' + edge.from + ' → ' + edge.to + ' 引用了不存在的节点');
+      } else if (edge.from === edge.to) {
+        errors.push('连接 ' + edge.from + ' → ' + edge.to + ' 是自环');
+      }
+      const key = edge.from + '\u0000' + edge.to;
+      if (edgeKeys.has(key)) errors.push('重复连接 ' + edge.from + ' → ' + edge.to);
+      edgeKeys.add(key);
+    }
+
+    if (!state.nodes.length) warnings.push('技能树没有任何节点');
+    return { errors, warnings };
+  }
+
+  function exportTree() {
+    const result = validateTree();
+    const parts = splitTreeId(state.treeId);
+    const targetPath = parts
+      ? 'data/' + parts.namespace + '/skill_trees/' + parts.path + '.json'
+      : '（树 ID 非法）';
+
+    if (result.errors.length) {
+      showReport('无法导出：发现 ' + result.errors.length + ' 个问题', result.errors, result.warnings, null);
+      return;
+    }
+
+    const perform = () => {
+      const json = buildTreeJson();
+      const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const name = parts ? parts.path.replace(/\//g, '_') + '.json' : 'skill_tree.json';
+      const anchor = el('a', { href: url, download: name });
+      document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+      toast('已导出，目标路径：' + targetPath, 'ok');
+    };
+
+    if (result.warnings.length) {
+      showReport('导出前检查：' + result.warnings.length + ' 个提醒', [], result.warnings, perform);
+    } else {
+      perform();
+    }
+  }
+
+  // ==========================================================================================
+  // 弹窗
+  // ==========================================================================================
+
+  function showModal(title, bodyNodes, actions) {
+    dom.modalTitle.textContent = title;
+    dom.modalBody.innerHTML = '';
+    for (const child of bodyNodes) dom.modalBody.append(child);
+    dom.modalFoot.innerHTML = '';
+    for (const action of actions) {
+      dom.modalFoot.append(el('button', {
+        class: action.primary ? 'primary' : (action.danger ? 'danger' : ''),
+        text: action.label,
+        onclick: () => {
+          if (!action.keepOpen) dom.modal.classList.add('hidden');
+          if (action.action) action.action();
+        }
+      }));
+    }
+    dom.modal.classList.remove('hidden');
+  }
+
+  function showReport(title, errors, warnings, onConfirm) {
+    const body = [];
+    if (errors.length) {
+      body.push(el('div', { text: '错误' }));
+      body.push(el('ul', { class: 'error-list' }, errors.map(text => el('li', { text }))));
+    }
+    if (warnings.length) {
+      body.push(el('div', { text: errors.length ? '提醒' : '以下内容不会阻止导出：' }));
+      body.push(el('ul', { class: 'warn-list' }, warnings.map(text => el('li', { text }))));
+    }
+    const actions = [{
+      label: errors.length ? '关闭' : '取消'
+    }];
+    if (!errors.length && onConfirm) {
+      actions.push({ label: '仍然导出', primary: true, action: onConfirm });
+    }
+    showModal(title, body, actions);
+  }
+
+  function builtinLabel(table) {
+    if (table.id === 'builtin_items') return '物品';
+    if (table.id === 'builtin_attributes') return '属性';
+    if (table.id === 'builtin_effects') return '药水效果';
+    if (table.id === 'builtin_operations') return '属性修饰方式';
+    return table.id || 'enum';
+  }
+
+  function showHelp() {
+    const body = [
+      el('div', { text: '基本流程' }),
+      el('ol', {},
+        el('li', {}, '启动游戏（或 GameTest 服务端）后，模组会把命令定义表写到游戏目录下的 ', el('code', { text: 'newnew_warlock_core/command_definitions.json' }), '。'),
+        el('li', {}, '点击「导入命令定义」，选择该文件。左侧命令库出现命令卡片。'),
+        el('li', {}, '把命令卡片拖到画布上创建节点；也可以选中卡片后按 Enter（或双击卡片）在画布中心创建。'),
+        el('li', {}, '长按节点约 0.1 秒后拖动；单击节点选中并弹出菜单（建立连接 / 删除）。'),
+        el('li', {}, '单击节点选中后可按 Ctrl+C 复制、Ctrl+V 粘贴（只复制节点本身，不复制连接）。'),
+        el('li', {}, '右侧检查器修改节点名称、描述、图标物品与命令参数。'),
+        el('li', {}, '点击「导出技能树」，把文件放到 ', el('code', { text: 'data/<命名空间>/skill_trees/<名称>.json' }), '，执行 /reload。')
+      ),
+      el('div', { class: 'section-title' }, el('span', {}, '前置规则')),
+      el('div', { text: '连线方向为「前置 → 后继」。一个节点有多个前置时，只要其中任意一个已解锁即可解锁；没有前置的节点是根节点，可直接解锁。' }),
+      el('div', { class: 'section-title' }, el('span', {}, 'enum 表（编辑期辅助）')),
+      el('div', {
+        text: state.builtinEnums.length
+          ? '页面内置：' + state.builtinEnums.map(table => builtinLabel(table) + ' ' + table.values.length).join('、')
+            + '（物品与药水效果带图标）。参数名匹配时，输入框右侧出现可搜索下拉。'
+          : '未找到 builtin_enums.js，内置 enum 不可用；仍可手动导入 enum 表。'
+      }),
+      el('div', { text: 'enum 只影响编辑器的输入提示，导出 JSON 仍然只写基本类型。导入格式（targets 为“命令 id + 参数名”数组，command 写 * 表示匹配任意命令的同名同类型参数）：' }),
+      el('pre', { class: 'code-block' }, JSON.stringify({
+        enums: [{
+          type: 'string',
+          targets: [
+            { command: 'newnew_warlock_core:attribute', param: 'attribute' },
+            { command: '*', param: 'effect' }
+          ],
+          values: [
+            { name: '力量', value: 'newnew_warlock_core:newnew_strength' },
+            { name: '坚韧', value: 'newnew_warlock_core:newnew_toughness' }
+          ]
+        }]
+      }, null, 2)),
+      el('div', { class: 'section-title' }, el('span', {}, '其它')),
+      el('div', { text: '快捷保存：Ctrl+S 导出。导出文件名会使用树 ID 的路径部分（子目录用下划线代替），请按提示的路径放到数据包中。' }),
+      el('div', { text: '使用 http 打开本页面时，会自动尝试加载同目录下的 command_definitions.json。' })
+    ];
+    showModal('使用说明', body, [{ label: '知道了', primary: true }]);
+  }
+
+  // ==========================================================================================
+  // 本地持久化
+  // ==========================================================================================
+
+  function save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        treeId: state.treeId,
+        displayName: state.displayName,
+        order: state.order,
+        defaultUnlocked: state.defaultUnlocked,
+        resetXpPerPoint: state.resetXpPerPoint,
+        nodes: state.nodes,
+        edges: state.edges,
+        enums: state.enums,
+        commands: Array.from(state.commands.values()),
+        seq: state.seq
+      }));
+    } catch (error) {
+      console.warn('保存到 localStorage 失败', error);
+    }
+  }
+
+  function load() {
+    let raw = null;
+    try { raw = localStorage.getItem(STORAGE_KEY); } catch (error) { raw = null; }
+    if (!raw) return false;
+    try {
+      const data = JSON.parse(raw);
+      state.treeId = typeof data.treeId === 'string' ? data.treeId : state.treeId;
+      state.displayName = typeof data.displayName === 'string' ? data.displayName : state.displayName;
+      state.order = Number.isInteger(data.order) ? data.order : 0;
+      state.defaultUnlocked = data.defaultUnlocked === true;
+      state.resetXpPerPoint = Number.isFinite(data.resetXpPerPoint) ? data.resetXpPerPoint : 0;
+      state.nodes = Array.isArray(data.nodes) ? data.nodes : [];
+      state.edges = Array.isArray(data.edges) ? data.edges : [];
+      state.enums = (Array.isArray(data.enums) ? data.enums : []).map(normalizeEnum).filter(Boolean);
+      state.seq = Number.isInteger(data.seq) ? data.seq : 1;
+      if (Array.isArray(data.commands) && data.commands.length) {
+        state.commands = new Map(data.commands.map(def => [def.id, def]));
+      }
+      return true;
+    } catch (error) {
+      console.warn('读取本地草稿失败', error);
+      return false;
+    }
+  }
+
+  // ==========================================================================================
+  // 文件与按钮
+  // ==========================================================================================
+
+  document.getElementById('btn-defs').addEventListener('click', () => dom.fileDefs.click());
+  document.getElementById('btn-enums').addEventListener('click', () => dom.fileEnums.click());
+  document.getElementById('btn-import-tree').addEventListener('click', () => dom.fileTree.click());
+  document.getElementById('btn-export').addEventListener('click', exportTree);
+  document.getElementById('btn-help').addEventListener('click', showHelp);
+
+  document.getElementById('btn-new').addEventListener('click', () => {
+    showModal('新建技能树', [el('div', { text: '当前草稿会被清空，是否继续？' })], [
+      { label: '取消' },
+      {
+        label: '新建', primary: true, action: () => {
+          state.nodes = [];
+          state.edges = [];
+          state.selection = null;
+          state.connect = null;
+          state.treeId = DEFAULT_NAMESPACE + ':skill_tree';
+          state.displayName = '技能树';
+          state.order = 0;
+          state.defaultUnlocked = false;
+          state.resetXpPerPoint = 0;
+          state.seq = 1;
+          updateBanner();
+          renderAll();
+          fitView();
+          save();
+        }
+      }
+    ]);
+  });
+
+  dom.fileDefs.addEventListener('change', async () => {
+    const file = dom.fileDefs.files && dom.fileDefs.files[0];
+    dom.fileDefs.value = '';
+    if (!file) return;
+    try { loadDefinitions(await readJsonFile(file)); }
+    catch (error) { toast(error.message, 'error'); }
+  });
+
+  dom.fileEnums.addEventListener('change', async () => {
+    const files = Array.from(dom.fileEnums.files || []);
+    dom.fileEnums.value = '';
+    if (!files.length) return;
+    try {
+      for (const file of files) loadEnums(await readJsonFile(file), true);
+      toast('已加载 ' + files.length + ' 个 enum 文件，共 ' + state.enums.length + ' 条表', 'ok');
+    } catch (error) { toast(error.message, 'error'); }
+  });
+
+  dom.fileTree.addEventListener('change', async () => {
+    const file = dom.fileTree.files && dom.fileTree.files[0];
+    dom.fileTree.value = '';
+    if (!file) return;
+    try {
+      applyTreeJson(await readJsonFile(file), file.name);
+      toast('已导入技能树：' + file.name, 'ok');
+    } catch (error) { toast(error.message, 'error'); }
+  });
+
+  // 直接把 JSON 拖进页面：自动识别命令定义 / enum 表 / 技能树
+  function handleJsonObject(json, filename) {
+    if (json && Array.isArray(json.commands)) { loadDefinitions(json); return true; }
+    if (json && (Array.isArray(json.enums) || Array.isArray(json.values))) { loadEnums(json); return true; }
+    if (json && Array.isArray(json.nodes)) { applyTreeJson(json, filename); toast('已导入技能树：' + filename, 'ok'); return true; }
+    return false;
+  }
+
+  document.addEventListener('dragover', event => {
+    if (event.dataTransfer && Array.from(event.dataTransfer.types).includes('Files')) event.preventDefault();
+  });
+
+  document.addEventListener('drop', async event => {
+    const files = Array.from((event.dataTransfer && event.dataTransfer.files) || []);
+    if (!files.length) return;
+    event.preventDefault();
+    for (const file of files) {
+      try {
+        const json = await readJsonFile(file);
+        if (!handleJsonObject(json, file.name)) toast('无法识别文件：' + file.name, 'error');
+      } catch (error) { toast(error.message, 'error'); }
+    }
+  });
+
+  // ==========================================================================================
+  // 启动
+  // ==========================================================================================
+
+  function boot() {
+    const restored = load();
+    loadBuiltins();
+    renderLibrary();
+    renderAll();
+    updateBanner();
+    applyView();
+    if (state.nodes.length) fitView();
+
+    if (!state.commands.size) {
+      // 通过 http 打开时，尝试自动读取同目录的定义表；file:// 下会被浏览器拦截，忽略即可。
+      fetch('./command_definitions.json', { cache: 'no-store' })
+        .then(response => response.ok ? response.json() : null)
+        .then(json => { if (json) loadDefinitions(json, true); })
+        .catch(() => { /* 忽略：手动导入即可 */ });
+    }
+
+    if (!restored) {
+      toast('提示：先导入命令定义，再把命令拖到画布上创建节点', 'ok');
+    }
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>

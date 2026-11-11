@@ -21,17 +21,17 @@ import com.gam0zing.newnew_warlock_core.NewNewWarlockCore;
 import com.gam0zing.newnew_warlock_core.body.BodyEffect;
 import com.gam0zing.newnew_warlock_core.body.BodyPart;
 import com.gam0zing.newnew_warlock_core.body.EffectDelta;
-import com.gam0zing.newnew_warlock_core.combat.damage.DamageContext;
-import com.gam0zing.newnew_warlock_core.combat.effect.BleedingEffectInstance;
-import com.gam0zing.newnew_warlock_core.combat.effect.BleedingEffectStack;
-import com.gam0zing.newnew_warlock_core.combat.effect.BleedingMobEffect;
-import com.gam0zing.newnew_warlock_core.combat.effect.EffectPersistence;
-import com.gam0zing.newnew_warlock_core.combat.effect.EffectSources;
-import com.gam0zing.newnew_warlock_core.combat.hit.HitFace;
+import com.gam0zing.newnew_warlock_core.combat.spine.DamageContext;
+import com.gam0zing.newnew_warlock_core.share.BleedingEffectInstance;
+import com.gam0zing.newnew_warlock_core.effect.BleedingEffectStack;
+import com.gam0zing.newnew_warlock_core.share.BleedingMobEffect;
+import com.gam0zing.newnew_warlock_core.effect.EffectPersistence;
+import com.gam0zing.newnew_warlock_core.share.EffectSources;
+import com.gam0zing.newnew_warlock_core.body.hit.HitFace;
 import com.gam0zing.newnew_warlock_core.combat.physics.PhysicsContext;
 import com.gam0zing.newnew_warlock_core.combat.physics.PhysicsDamage;
-import com.gam0zing.newnew_warlock_core.combat.physics.PhysicsWeapon;
-import com.gam0zing.newnew_warlock_core.registry.ModMobEffects;
+import com.gam0zing.newnew_warlock_core.share.PhysicsWeapon;
+import com.gam0zing.newnew_warlock_core.share.ModMobEffects;
 
 /**
  * 部位受伤效果的数据验证：概率折算、效果合并、物理命中落地、出血容器聚合与逐刻伤害。
@@ -440,7 +440,8 @@ public final class BodyEffectDataGameTests {
         var source = target.damageSources().generic();
         DamageContainer container = new DamageContainer(source, 20.0F);
         DamageContext ctx = new DamageContext(source, target, container);
-        ctx.setPhysics(new PhysicsContext(PhysicsWeapon.DEFAULT, bodyPart, null, false, 1.0D));
+        ctx.setAttachment(PhysicsContext.class,
+            new PhysicsContext(PhysicsWeapon.DEFAULT, bodyPart, null, false, 1.0D));
         return ctx;
     }
 

@@ -14,8 +14,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 
-import com.gam0zing.newnew_warlock_core.combat.effect.EffectSources;
-import com.gam0zing.newnew_warlock_core.combat.effect.WarlockEffectHost;
+import com.gam0zing.newnew_warlock_core.share.EffectSources;
+import com.gam0zing.newnew_warlock_core.share.WarlockEffectHost;
 
 /**
  * 给 {@link MobEffectInstance} 增加“来源生物”的可空引用 + 来源 UUID。

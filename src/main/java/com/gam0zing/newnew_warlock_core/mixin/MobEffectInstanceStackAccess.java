@@ -9,10 +9,14 @@ import net.minecraft.world.effect.MobEffectInstance;
  * 给容器暴露递减子实例时长的能力。
  * <p>原版 {@code duration} 为 private 且没有 setter；容器逐 tick 结算子实例时需要写回剩余时长。
  * 容器的聚合展示值全部走重写的 getter，不再需要写回其它字段。</p>
+ * <p>另有 {@code amplifier} 的 setter，供药水属性在施加前原地改写等级。</p>
  */
 @Mixin(MobEffectInstance.class)
 public interface MobEffectInstanceStackAccess {
 
     @Accessor("duration")
     void newnew$setDuration(int duration);
+
+    @Accessor("amplifier")
+    void newnew$setAmplifier(int amplifier);
 }

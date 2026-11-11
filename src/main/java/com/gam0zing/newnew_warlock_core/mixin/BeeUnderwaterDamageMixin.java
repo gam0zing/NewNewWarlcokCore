@@ -9,7 +9,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.animal.bee.Bee;
 
-import com.gam0zing.newnew_warlock_core.combat.damage.PeriodicDamageGate;
+import com.gam0zing.newnew_warlock_core.combat.spine.PeriodicDamageGate;
 
 /**
  * 蜜蜂水下溺水。

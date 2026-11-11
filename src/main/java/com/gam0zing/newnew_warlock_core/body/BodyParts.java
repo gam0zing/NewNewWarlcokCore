@@ -11,8 +11,8 @@ import org.jetbrains.annotations.Nullable;
 
 import com.gam0zing.newnew_warlock_core.NewNewWarlockCore;
 import com.gam0zing.newnew_warlock_core.body.BodyPartFile.RawPart;
-import com.gam0zing.newnew_warlock_core.combat.hit.HitFace;
-import com.gam0zing.newnew_warlock_core.combat.hit.HitLocation;
+import com.gam0zing.newnew_warlock_core.body.hit.HitFace;
+import com.gam0zing.newnew_warlock_core.body.hit.HitLocation;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
@@ -60,7 +60,7 @@ public final class BodyParts {
      * 按受击位置查找目标生物命中的受击部位。
      *
      * @param target   受击的生物，可为 null
-     * @param location 受击位置（由 {@link com.gam0zing.newnew_warlock_core.combat.hit.HitLocationResolver} 得到），可为 null
+     * @param location 受击位置（由 {@link com.gam0zing.newnew_warlock_core.body.hit.HitLocationResolver} 得到），可为 null
      * @return 命中的部位；位置为 null 时返回该生物的默认受击部位（未配置则 {@link BodyPart#DEFAULT}）；
      *         命中但没有部位覆盖该点时返回 {@link BodyPart#DEFAULT}
      */

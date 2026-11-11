@@ -8,9 +8,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import net.minecraft.world.entity.LivingEntity;
 
-import com.gam0zing.newnew_warlock_core.combat.effect.EffectSources;
-import com.gam0zing.newnew_warlock_core.combat.healing.Healing;
-import com.gam0zing.newnew_warlock_core.combat.healing.WarlockHealingHost;
+import com.gam0zing.newnew_warlock_core.share.EffectSources;
+import com.gam0zing.newnew_warlock_core.combat.spine.Healing;
+import com.gam0zing.newnew_warlock_core.combat.spine.WarlockHealingHost;
 
 /**
  * 给 {@link LivingEntity} 增加 {@code healByLiving(LivingEntity source, float amount)}。

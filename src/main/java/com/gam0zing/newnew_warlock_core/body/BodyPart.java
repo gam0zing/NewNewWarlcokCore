@@ -4,14 +4,14 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.gam0zing.newnew_warlock_core.combat.hit.HitFace;
+import com.gam0zing.newnew_warlock_core.body.hit.HitFace;
 
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
 
 /**
  * 生物的一个自定义受击部位（合并后的最终数据）。
- * <p>部位在某个受击面上占据一块矩形区域，坐标与 {@link com.gam0zing.newnew_warlock_core.combat.hit.HitLocation}
+ * <p>部位在某个受击面上占据一块矩形区域，坐标与 {@link com.gam0zing.newnew_warlock_core.body.hit.HitLocation}
  * 一致：以“从体外正对该面看”的左下角为 (0, 0)、右上角为 (1, 1)。</p>
  *
  * @param name        可读名称（数据文件里的 {@code part_name}），便于查找与调试

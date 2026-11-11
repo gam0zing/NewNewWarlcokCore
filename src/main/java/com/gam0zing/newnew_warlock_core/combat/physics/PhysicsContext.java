@@ -3,6 +3,7 @@ package com.gam0zing.newnew_warlock_core.combat.physics;
 import org.jetbrains.annotations.Nullable;
 
 import com.gam0zing.newnew_warlock_core.body.BodyPart;
+import com.gam0zing.newnew_warlock_core.share.PhysicsWeapon;
 
 /**
  * 一次物理伤害流程内共享的数据。
