@@ -100,7 +100,7 @@ public final class ModAttributes {
     /** 邪恶化：大于 0 生效——受到的一切治疗减半，免疫凋零，中毒转为同等级的生命恢复 */
     public static final DeferredHolder<Attribute, Attribute> CORRUPTION = registerRanged("corruption", 0.0D, 0.0D, 1.0D);
     /** 受伤限制：大于等于 0 生效——单次扣血量不超过 最大生命值 × (1 - 该值) */
-    public static final DeferredHolder<Attribute, Attribute> HURT_LIMIT = registerRanged("hurt_limit", -1.0D, -1.0D, 1.0D);
+    public static final DeferredHolder<Attribute, Attribute> HURT_LIMIT = registerRanged("hurt_limit", 0.0D, 0.0D, 1.0D);
     /** 石肤：扣血阶段扣除的血量减去该数值 */
     public static final DeferredHolder<Attribute, Attribute> ROCK_SKIN = registerRanged("rock_skin", 0.0D, 0.0D, 65536.0D);
     /** 移动治疗：每累积移动 1 格对自己治疗一次该数值，等于 0 不结算 */

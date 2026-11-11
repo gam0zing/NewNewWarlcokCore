@@ -68,7 +68,7 @@ public final class DamageApplyScaling {
         result *= ModAttributes.getScale(target, ModAttributes.HURT_SCALE);
 
         double hurtLimit = ModAttributes.getValue(target, ModAttributes.HURT_LIMIT);
-        if (hurtLimit >= 0.0D) {
+        if (hurtLimit > 0.0D) {
             result = Math.min(result, (float) (target.getMaxHealth() * (1.0D - hurtLimit)));
         }
         return Math.max(0.0F, result);
