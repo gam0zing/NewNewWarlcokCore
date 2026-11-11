@@ -25,6 +25,7 @@ public final class SkillTreeNetwork {
         modEventBus.addListener(SkillTreeNetwork::registerPayloads);
         NeoForge.EVENT_BUS.addListener(SkillTreeNetwork::onDatapackSync);
         NeoForge.EVENT_BUS.addListener(SkillTreeNetwork::onPlayerLoggedIn);
+        NeoForge.EVENT_BUS.addListener(SkillTreeNetwork::onPlayerRespawn);
     }
 
     private static void registerPayloads(RegisterPayloadHandlersEvent event) {
@@ -45,6 +46,13 @@ public final class SkillTreeNetwork {
     private static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             SkillTreeService.onLogin(player);
+        }
+    }
+
+    private static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            // 死亡重生会换成新的玩家实体，永久属性修饰符不会随 clone 复制
+            SkillTreeService.onRespawn(player, event.isEndConquered());
         }
     }
 

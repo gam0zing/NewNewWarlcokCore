@@ -44,14 +44,43 @@ public final class SkillTreeService {
                 continue;
             }
             // 幂等重放：修复修饰符丢失等漂移
-            for (AppliedNode applied : target.applied()) {
-                for (PointAllocationCommand command : applied.commands()) {
-                    command.doCommand(player);
-                }
-            }
+            replay(target, player);
         }
 
         syncAll(player);
+    }
+
+    /**
+     * 重生后：死亡会创建新的玩家实体，{@code restoreFrom} 只复制基础属性值、不复制永久修饰符，
+     * 所以这里要把已应用的命令重新执行一遍，并补发进度。
+     *
+     * @param endConquered 是否为通关末地返回（此时玩家数据整体保留，血量不应重置）
+     */
+    public static void onRespawn(ServerPlayer player, boolean endConquered) {
+        SkillProgress progress = SkillProgress.of(player);
+        for (SkillTreeDefinition tree : SkillTrees.all().values()) {
+            TreeProgress target = progress.treeOrNull(tree.id());
+            if (target == null || !target.isUnlocked()) {
+                continue;
+            }
+            replay(target, player);
+        }
+
+        if (!endConquered) {
+            // 重放可能提高了最大生命值，按满血重生（与原版重生行为一致）
+            player.setHealth(player.getMaxHealth());
+        }
+
+        syncProgress(player);
+    }
+
+    /** 重放一棵树已应用的命令（幂等，修饰符用 addOrReplace） */
+    private static void replay(TreeProgress target, ServerPlayer player) {
+        for (AppliedNode applied : target.applied()) {
+            for (PointAllocationCommand command : applied.commands()) {
+                command.doCommand(player);
+            }
+        }
     }
 
     /** 解锁一个节点 */
@@ -149,6 +178,11 @@ public final class SkillTreeService {
     /** 下发全部树定义与玩家进度 */
     public static void syncAll(ServerPlayer player) {
         PacketDistributor.sendToPlayer(player, SkillTreeSyncPayload.of(List.copyOf(SkillTrees.all().values())));
+        syncProgress(player);
+    }
+
+    /** 只下发玩家进度 */
+    public static void syncProgress(ServerPlayer player) {
         PacketDistributor.sendToPlayer(player, SkillProgressSyncPayload.of(SkillProgress.of(player)));
     }
 
