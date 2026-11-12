@@ -26,5 +26,7 @@ public final class EffectModule implements ModModule {
     public void init(IEventBus modEventBus, ModContainer modContainer) {
         // 出血按“多来源、多等级、多时长”方式合并，因此注册为容器管理效果
         MobEffectStackRegistry.register(ModMobEffects.BLEEDING, BleedingEffectStack::new);
+        // 致命伤同样按多份施加累加等级
+        MobEffectStackRegistry.register(ModMobEffects.FATAL_WOUND, FatalWoundEffectStack::new);
     }
 }

@@ -17,7 +17,11 @@ import com.gam0zing.newnew_warlock_core.mob.DifficultyDisplay;
  * 左上角 HUD：显示当前位置的总难度（生物重建使用的那个难度）。
  * <p>数值由服务端每 tick 计算并同步（{@link com.gam0zing.newnew_warlock_core.mob.net.DifficultySync}），
  * 因此包含游戏天数、垂直/水平距离、传送门进度、维度与群系等全部因素，客户端不做本地估算。</p>
- * <p>颜色：不超过 15 白字，高于 15 黄字，高于 30 红字。</p>
+ * <p>显示格式为「难度(偏移)」，例如 {@code 50.0(+12.0)}：难度是不含服务器游戏难度偏移的原始值，
+ * 括号内是服务器游戏难度带来的固定偏移（简单 -12 / 普通 0 / 困难 +12），仅用于参考，
+ * 不影响难度本身的颜色判定。</p>
+ * <p>颜色阈值取服务端下发的通用难度档位（默认中档 20、高档 40）：低于中档白字，达到中档黄字，
+ * 达到高档红字。</p>
  */
 @EventBusSubscriber(modid = NewNewWarlockCore.MOD_ID, value = Dist.CLIENT)
 public final class DifficultyHud {
@@ -42,9 +46,11 @@ public final class DifficultyHud {
             return;
         }
 
-        int color = difficulty > 30.0D ? COLOR_RED : difficulty > 15.0D ? COLOR_YELLOW : COLOR_WHITE;
-        Component text = Component.translatable(
-            "hud.newnew_warlock_core.difficulty", String.format("%.1f", difficulty));
+        int color = difficulty >= DifficultyDisplay.getHighThreshold() ? COLOR_RED
+            : difficulty >= DifficultyDisplay.getMediumThreshold() ? COLOR_YELLOW
+            : COLOR_WHITE;
+        String value = String.format("%.1f(%+.1f)", difficulty, DifficultyDisplay.getOffset());
+        Component text = Component.translatable("hud.newnew_warlock_core.difficulty", value);
         graphics.text(minecraft.font, text, 4, 4, color);
     }
 }

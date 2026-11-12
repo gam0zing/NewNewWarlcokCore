@@ -64,7 +64,7 @@ public final class ModMobEffects {
         MOB_EFFECTS.register("hemorrhage",
             () -> new HemorrhageMobEffect(MobEffectCategory.HARMFUL, 0xB30000));
 
-    /** 致命伤：持续效果，扣血后生命值低于 6×等级时由效果来源追加一次流血伤害 */
+    /** 致命伤：持续效果，可叠加；扣血后生命值低于 15%×等级的最大生命值时由效果来源追加一次流血伤害 */
     public static final DeferredHolder<MobEffect, MobEffect> FATAL_WOUND =
         MOB_EFFECTS.register("fatal_wound",
             () -> new FatalWoundMobEffect(MobEffectCategory.HARMFUL, 0x990000));

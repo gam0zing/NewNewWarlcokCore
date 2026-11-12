@@ -16,19 +16,18 @@ import net.minecraft.world.entity.LivingEntity;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 致命伤：持续效果。
+ * 致命伤：持续效果，按「多份施加累加等级」的方式叠加（与出血同一套容器机制）。
  * <p>持续期间，目标任意伤害流程的扣血阶段结束后，若剩余生命值小于
- * {@code 6 × 效果等级} 且未死亡，则立刻由效果来源造成 {@code 6 × 效果等级}
- * 的流血伤害，并移除本效果。</p>
+ * {@code 最大生命值 × 15% × 效果等级} 且未死亡，则立刻由效果来源造成同样数值
+ * 的流血伤害，并移除本效果（连同整个容器的所有子实例）。</p>
+ * <p>等级取全部子实例的等级之和（容器模式），普通实例仍按 {@code amplifier + 1}。</p>
  * <p>流血伤害使用 {@code newnew_warlock_core:bleeding} 伤害类型（属于 {@code inner_damage}），
  * 按内部伤害直接扣血，不经过护甲、附魔与无敌帧。</p>
  */
 public class FatalWoundMobEffect extends MobEffect {
 
-    /** 触发阈值：每级 6 点生命值 */
-    public static final float THRESHOLD_PER_LEVEL = 6.0F;
-    /** 触发伤害：每级 6 点流血伤害 */
-    public static final float DAMAGE_PER_LEVEL = 6.0F;
+    /** 触发阈值与伤害：每级为最大生命值的 15% */
+    public static final float HEALTH_RATIO_PER_LEVEL = 0.15F;
 
     private static final ResourceKey<DamageType> DAMAGE_TYPE =
         ResourceKey.create(Registries.DAMAGE_TYPE,
@@ -40,7 +39,7 @@ public class FatalWoundMobEffect extends MobEffect {
 
     /**
      * 任意伤害流程的扣血阶段结束后调用。
-     * <p>命中条件：目标持有本效果、剩余生命值低于 {@code 6 × 等级}、且没有死亡。</p>
+     * <p>命中条件：目标持有本效果、剩余生命值低于 {@code 最大生命值 × 15% × 等级}、且没有死亡。</p>
      *
      * @param target 刚刚扣除过生命值的生物
      */
@@ -50,16 +49,29 @@ public class FatalWoundMobEffect extends MobEffect {
             return;
         }
 
-        int level = instance.getAmplifier() + 1;
-        if (target.isDeadOrDying() || target.getHealth() >= THRESHOLD_PER_LEVEL * level) {
+        int level = effectLevel(instance);
+        float amount = target.getMaxHealth() * HEALTH_RATIO_PER_LEVEL * level;
+        if (target.isDeadOrDying() || target.getHealth() >= amount) {
             return;
         }
 
-        LivingEntity source = EffectSources.resolvedSourceOf(instance, target);
+        LivingEntity source = EffectSources.attributionSourceOf(instance, target);
 
         // 先移除效果再造成伤害，避免这次流血伤害再次触发本效果
         target.removeEffect(ModMobEffects.FATAL_WOUND);
-        dealBleedingDamage(target, source, DAMAGE_PER_LEVEL * level);
+        dealBleedingDamage(target, source, amount);
+    }
+
+    /**
+     * {@return 本次结算使用的等级}
+     * <p>容器模式下读取全部子实例的等级合计值，不受 {@code amplifier} 的 255 上限限制；
+     * 普通实例仍按原版语义 {@code amplifier + 1} 计算。</p>
+     */
+    private static int effectLevel(MobEffectInstance instance) {
+        if (instance instanceof EffectStack stack) {
+            return Math.max(1, stack.totalLevel());
+        }
+        return instance.getAmplifier() + 1;
     }
 
     /** 对目标造成一次流血伤害，来源为施加本效果的生物（可为 null）。 */

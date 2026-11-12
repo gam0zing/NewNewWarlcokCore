@@ -35,6 +35,8 @@
   "attribute.newnew_warlock_core.move_healing": "Move Healing",
   "attribute.newnew_warlock_core.life_stealing": "Life Stealing",
   "attribute.newnew_warlock_core.concealment": "Concealment",
+  "attribute.newnew_warlock_core.extra_anvil_max_cost": "Extra Anvil Cost Cap",
+  "attribute.newnew_warlock_core.extra_enchant_max_level": "Extra Enchantment Level Cap",
   "attribute.newnew_warlock_core.dodge": "Dodge",
   "attribute.newnew_warlock_core.newnew_points": "Attribute Points",
   "attribute.newnew_warlock_core.newnew_strength": "Strength",

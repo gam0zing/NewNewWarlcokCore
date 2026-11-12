@@ -21,8 +21,10 @@ import com.gam0zing.newnew_warlock_core.mob.config.MobPointsConfig;
  *     <li>传送门进度（主世界专用）</li>
  *     <li>维度附加难度、群系附加难度</li>
  * </ul>
- * <p>服务器游戏难度（简单/普通/困难）作为总倍率，作用在该生物 points 计算的最后一步；
- * 和平固定为 1。随机化使用均值 = 难度增幅后的 points、标准差 = 均值的 15%，
+ * <p>服务器游戏难度（简单/普通/困难）是一个固定难度偏移（默认 -12 / 0 / +12），只影响怪物：
+ * 怪物使用 {@link #scaledDifficulty(LivingEntity)}（原始难度 + 偏移）计算 points；
+ * 玩家侧加成（探险家、险地矿工等）使用不含偏移的原始难度，保证阶段进度不随难度选择变化。
+ * 和平固定为 0。随机化使用均值 = 难度增幅后的 points、标准差 = 均值的 15%，
  * 结果下限截断为 0。</p>
  */
 public final class MobDifficulty {
@@ -32,7 +34,7 @@ public final class MobDifficulty {
 
     private MobDifficulty() {}
 
-    /** 汇总当前实体位置、时间与世界进度得到的难度值。 */
+    /** 汇总当前实体位置、时间与世界进度得到的原始难度（不含服务器游戏难度偏移）。 */
     public static double rawDifficulty(LivingEntity entity) {
         if (!(entity.level() instanceof ServerLevel)) {
             return 0.0D;
@@ -42,7 +44,20 @@ public final class MobDifficulty {
     }
 
     /**
-     * 汇总指定位置、时间与世界进度得到的难度值。
+     * 怪物使用的难度：原始难度再加上服务器游戏难度的固定偏移。
+     * <p>只有怪物侧的数值（points）应该用它；玩家侧加成一律使用 {@link #rawDifficulty(LivingEntity)}。
+     * 与非 ServerLevel 上的原始难度一致返回 0。</p>
+     */
+    public static double scaledDifficulty(LivingEntity entity) {
+        if (!(entity.level() instanceof ServerLevel)) {
+            return 0.0D;
+        }
+        return rawDifficulty(entity)
+            + MobDifficultyConfig.difficultyOffset(entity.level().getDifficulty());
+    }
+
+    /**
+     * 汇总指定位置、时间与世界进度得到的原始难度（不含服务器难度偏移）。
      * <p>需要 {@link ServerLevel} 才能读到传送门进度（{@link WorldProgressData}）；
      * 其它层级上该因素按 0 处理。客户端显示走服务端同步，不调用本方法。</p>
      */
@@ -69,17 +84,17 @@ public final class MobDifficulty {
         return difficulty;
     }
 
-    /** points 基准值经难度增幅、并乘上服务器难度总倍率后的结果。 */
+    /** points 基准值加上经“难度 + 服务器难度偏移”增幅后的增量。 */
     public static double scaledPoints(LivingEntity entity, MobPointsConfig.Entry entry) {
-        double points = entry.pointsBase() + rawDifficulty(entity) * entry.pointsGainPerDifficulty();
-        double multiplier = MobDifficultyConfig.globalMultiplier(entity.level().getDifficulty());
-        return Math.max(0.0D, points * multiplier);
+        double points = entry.pointsBase() + scaledDifficulty(entity) * entry.pointsGainPerDifficulty();
+        return Math.max(0.0D, points);
     }
 
     /**
      * 险地类概率翻倍：按位置难度把概率值折算成翻倍次数。
-     * <p>难度 &gt;= 30 时概率取全值；难度 15~30 时概率减半；低于 15 不生效。
-     * 整数部分为必定翻倍的次数，小数部分为再翻一次的概率（可连续翻倍：2 变 4、4 变 8）。</p>
+     * <p>难度阈值取 {@code difficulty_global.toml} 的通用档位：
+     * 达到高档（默认 40）时概率取全值；达到中档（默认 20）时概率减半；低于中档不生效。
+     * 该判定属于玩家侧加成，使用不含服务器难度偏移的原始难度。</p>
      *
      * @param value 属性给出的概率值（如险地矿工、探险家）
      * @return 翻倍次数；数量应乘以 2 的该次幂
@@ -90,7 +105,9 @@ public final class MobDifficulty {
             return 0;
         }
         double difficulty = rawDifficultyAt(level, x, y, z, pos);
-        double chance = difficulty >= 30.0D ? value : difficulty >= 15.0D ? value * 0.5D : 0.0D;
+        double medium = MobDifficultyConfig.mediumThreshold();
+        double high = MobDifficultyConfig.highThreshold();
+        double chance = difficulty >= high ? value : difficulty >= medium ? value * 0.5D : 0.0D;
         int times = (int) Math.floor(chance);
         if (random.nextDouble() < chance - times) {
             times++;

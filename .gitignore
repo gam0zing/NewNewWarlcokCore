@@ -24,3 +24,4 @@ eclipse
 *.log
 src/generated/resources/.cache
 tools/release/
+.trae/

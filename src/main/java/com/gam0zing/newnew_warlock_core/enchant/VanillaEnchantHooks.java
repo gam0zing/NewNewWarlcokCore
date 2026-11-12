@@ -27,6 +27,7 @@ import net.minecraft.world.item.trading.ItemCost;
 import net.minecraft.world.item.trading.MerchantOffer;
 
 import com.gam0zing.newnew_warlock_core.enchant.config.EnchantBaselineConfig;
+import com.gam0zing.newnew_warlock_core.share.ModAttributes;
 
 /**
  * 原版行为的默认实现。
@@ -63,13 +64,16 @@ public enum VanillaEnchantHooks implements WarlockEnchantHooks {
     @Override
     public int tablePower(EnchantContext ctx, ItemStack stack, int vanillaPower) {
         EnchantBaselineConfig.GlobalSettings settings = EnchantBaselineConfig.settings();
-        return effectivePower(vanillaPower, settings.maxPower(), settings.extraPower());
+        // 首次击杀凋零后的世界加成叠加在 extra_power 上（截断之后再叠加）。
+        int extraPower = settings.extraPower() + EnchantUnlockData.extraTablePower();
+        return effectivePower(vanillaPower, settings.maxPower(), extraPower);
     }
 
     @Override
     public int tablePowerCap(EnchantContext ctx) {
         EnchantBaselineConfig.GlobalSettings settings = EnchantBaselineConfig.settings();
-        return effectivePowerCap(settings.maxPower(), settings.extraPower());
+        // 上限必须同步叠加，否则上面的 +5 会被 cap 吃掉。
+        return effectivePowerCap(settings.maxPower(), settings.extraPower() + EnchantUnlockData.extraTablePower());
     }
 
     /**
@@ -216,7 +220,17 @@ public enum VanillaEnchantHooks implements WarlockEnchantHooks {
 
     @Override
     public int maxLevel(EnchantContext ctx, Enchantment enchantment, int baselineMaxLevel) {
-        return Mth.clamp(baselineMaxLevel, 1, EnchantBaseline.LEVEL_HARD_CAP);
+        int baseline = Mth.clamp(baselineMaxLevel, 1, EnchantBaseline.LEVEL_HARD_CAP);
+        // 基准最大等级为 1 的附魔不受「额外附魔等级上限」影响。
+        if (baseline <= 1 || ctx.player() == null) {
+            return baseline;
+        }
+
+        int extra = Mth.floor(ModAttributes.getValue(ctx.player(), ModAttributes.EXTRA_ENCHANT_MAX_LEVEL));
+        if (extra == 0) {
+            return baseline;
+        }
+        return Mth.clamp(baseline + extra, 1, EnchantBaseline.LEVEL_HARD_CAP);
     }
 
     @Override

@@ -18,9 +18,11 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
  * <ul>
  *     <li>strength → {@link Attributes#ATTACK_DAMAGE}</li>
  *     <li>toughness → {@link Attributes#MAX_HEALTH}</li>
- *     <li>dexterity → {@link Attributes#MOVEMENT_SPEED}</li>
+ *     <li>dexterity → {@link Attributes#MOVEMENT_SPEED} 与 {@link Attributes#FLYING_SPEED}</li>
  *     <li>spirituality → 暂无目标属性</li>
  * </ul>
+ * <p>灵巧对地面移速与飞行速度使用同一套换算：高于基准每点 +2.5%，低于基准每点 -10%。
+ * 飞行速度只对持有该属性的生物（鹦鹉、恶魂等飞行生物）生效，其余生物自动跳过。</p>
  * <p>修饰方式为 {@link AttributeModifier.Operation#ADD_MULTIPLIED_TOTAL}：四维的增减按比例作用于最终值，
  * 会同时放大装备与药水等其它来源。修饰符为永久修饰符，随实体属性 NBT 持久化，区块重载、跨维度、
  * 重启后由原版自动恢复，不需要额外的加载钩子。</p>
@@ -33,18 +35,20 @@ public final class MobDerivedAttributes {
     private static final double BASELINE = 10.0D;
     /** 低于基准时，每点减少 10%。 */
     private static final double PENALTY_PER_POINT = 0.10D;
-    /** 高于基准时，每点增加 5%。 */
-    private static final double BONUS_PER_POINT = 0.05D;
+    /** 高于基准时，每点增加 2.5%。 */
+    private static final double BONUS_PER_POINT = 0.025D;
 
     private static final Identifier ATTACK_DAMAGE_ID = id("rebuild/attack_damage");
     private static final Identifier MAX_HEALTH_ID = id("rebuild/max_health");
     private static final Identifier MOVEMENT_SPEED_ID = id("rebuild/movement_speed");
+    private static final Identifier FLYING_SPEED_ID = id("rebuild/flying_speed");
 
     /** 按当前四维重算并替换全部派生修饰符。 */
     public static void sync(LivingEntity entity) {
         apply(entity, Attributes.ATTACK_DAMAGE, ATTACK_DAMAGE_ID, ModAttributes.NEWNEW_STRENGTH);
         apply(entity, Attributes.MAX_HEALTH, MAX_HEALTH_ID, ModAttributes.NEWNEW_TOUGHNESS);
         apply(entity, Attributes.MOVEMENT_SPEED, MOVEMENT_SPEED_ID, ModAttributes.NEWNEW_DEXTERITY);
+        apply(entity, Attributes.FLYING_SPEED, FLYING_SPEED_ID, ModAttributes.NEWNEW_DEXTERITY);
     }
 
     /**
@@ -72,7 +76,7 @@ public final class MobDerivedAttributes {
             new AttributeModifier(modifierId, amount, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
     }
 
-    /** 四维值到乘算比例的换算：低于基准按 10% 递减，高于基准按 5% 递增。 */
+    /** 四维值到乘算比例的换算：低于基准按 10% 递减，高于基准按 2.5% 递增。 */
     private static double scaleFor(double stat) {
         double delta = stat - BASELINE;
         return delta >= 0.0D ? delta * BONUS_PER_POINT : delta * PENALTY_PER_POINT;

@@ -132,16 +132,27 @@ public final class EnchantBaseline {
         return snapshot.byId().get(id);
     }
 
-    /** 基准最大等级（无条目时回退原版值），结果 clamp 到 1~255。 */
+    /**
+     * 基准最大等级（无条目时回退原版值），叠加当前存档的世界解锁加成（首次击杀末影龙 +1），
+     * 最后 clamp 到 1~255。
+     * <p>加成只作用于基准表条目：调用方传入的 {@code vanillaMaxLevel} 可能已经被全局
+     * {@code getMaxLevel} 注入加过一次，不能再重复叠加。</p>
+     */
     public static int maxLevel(Holder<Enchantment> holder, int vanillaMaxLevel) {
         Entry entry = get(holder);
-        return Mth.clamp(entry == null ? vanillaMaxLevel : entry.maxLevel(), 1, LEVEL_HARD_CAP);
+        return Mth.clamp(
+            entry == null ? vanillaMaxLevel : entry.maxLevel() + EnchantUnlockData.maxLevelBonus(),
+            1,
+            LEVEL_HARD_CAP);
     }
 
-    /** 基准最大等级（无条目时回退原版值），结果 clamp 到 1~255。 */
+    /** 基准最大等级（无条目时回退原版值），加成规则同 {@link #maxLevel(Holder, int)}。 */
     public static int maxLevel(Enchantment enchantment, int vanillaMaxLevel) {
         Entry entry = get(enchantment);
-        return Mth.clamp(entry == null ? vanillaMaxLevel : entry.maxLevel(), 1, LEVEL_HARD_CAP);
+        return Mth.clamp(
+            entry == null ? vanillaMaxLevel : entry.maxLevel() + EnchantUnlockData.maxLevelBonus(),
+            1,
+            LEVEL_HARD_CAP);
     }
 
     /** 当前基准表快照（只读）。 */

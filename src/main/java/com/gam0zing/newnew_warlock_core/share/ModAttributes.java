@@ -115,9 +115,19 @@ public final class ModAttributes {
     public static final DeferredHolder<Attribute, Attribute> CONCEALMENT =
         registerRanged("concealment", 0.0D, -1024.0D, 1.0D);
 
+    /** 额外铁砧消耗上限：加在配置的铁砧最高经验消耗之后，结果不小于 0 */
+    public static final DeferredHolder<Attribute, Attribute> EXTRA_ANVIL_MAX_COST =
+        registerRanged("extra_anvil_max_cost", 0.0D, -40.0D, 65535.0D);
+
+    /** 额外附魔等级上限：基准最大等级加上该值，基准最大等级为 1 的附魔不受影响，结果不小于 1 */
+    public static final DeferredHolder<Attribute, Attribute> EXTRA_ENCHANT_MAX_LEVEL =
+        registerRanged("extra_enchant_max_level", 0.0D, -1024.0D, 1024.0D);
+
     /** 只挂载到玩家身上的属性（供 {@code AttributeEvt} 遍历） */
     public static final List<DeferredHolder<Attribute, Attribute>> PLAYER_ATTRIBUTES = List.of(
-        CONCEALMENT);
+        CONCEALMENT,
+        EXTRA_ANVIL_MAX_COST,
+        EXTRA_ENCHANT_MAX_LEVEL);
 
     /** 需要挂载到所有生物身上的属性（供 {@code AttributeEvt} 遍历） */
     public static final List<DeferredHolder<Attribute, Attribute>> ALL = List.of(

@@ -6,6 +6,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
 import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.AnvilMenu;
@@ -14,8 +15,10 @@ import net.minecraft.world.item.enchantment.Enchantment;
 
 import com.gam0zing.newnew_warlock_core.enchant.EnchantBaseline;
 import com.gam0zing.newnew_warlock_core.enchant.EnchantContext;
+import com.gam0zing.newnew_warlock_core.enchant.EnchantUnlockData;
 import com.gam0zing.newnew_warlock_core.enchant.WarlockEnchanting;
 import com.gam0zing.newnew_warlock_core.enchant.config.EnchantBaselineConfig;
+import com.gam0zing.newnew_warlock_core.share.ModAttributes;
 
 /**
  * 铁砧的最大等级接管。
@@ -33,22 +36,33 @@ import com.gam0zing.newnew_warlock_core.enchant.config.EnchantBaselineConfig;
 @Mixin(AnvilMenu.class)
 public abstract class AnvilMenuMixin {
 
+    /**
+     * 当前玩家的铁砧费用上限：配置值 + 玩家属性 {@link ModAttributes#EXTRA_ANVIL_MAX_COST}，结果不小于 0。
+     * <p>属性缺失（非玩家或未挂载）时只看配置值。</p>
+     */
+    private int warlock$anvilMaxCost() {
+        ItemCombinerMenu menu = (ItemCombinerMenu) (Object) this;
+        int configured = EnchantBaselineConfig.settings().anvilMaxCost();
+        int extra = Mth.floor(ModAttributes.getValue(menu.player, ModAttributes.EXTRA_ANVIL_MAX_COST));
+        return Math.max(0, configured + extra);
+    }
+
     /** {@code this.cost.set(39)}：超过上限时显示的费用。 */
     @ModifyConstant(method = "createResultInternal", constant = @Constant(intValue = 39))
     private int warlock$clampAnvilDisplayCost(int original) {
-        return Math.max(0, EnchantBaselineConfig.settings().anvilMaxCost() - 1);
+        return Math.max(0, this.warlock$anvilMaxCost() - 1);
     }
 
     /** {@code this.cost.get() >= 40}：把费用截断到上限。 */
     @ModifyConstant(method = "createResultInternal", constant = @Constant(intValue = 40, ordinal = 1))
     private int warlock$anvilCostThreshold(int original) {
-        return Math.max(1, EnchantBaselineConfig.settings().anvilMaxCost());
+        return this.warlock$anvilMaxCost();
     }
 
     /** {@code this.cost.get() >= 40 && !instabuild}：超过上限视为「过于昂贵」。 */
     @ModifyConstant(method = "createResultInternal", constant = @Constant(intValue = 40, ordinal = 2))
     private int warlock$anvilTooExpensiveThreshold(int original) {
-        return Math.max(1, EnchantBaselineConfig.settings().anvilMaxCost());
+        return this.warlock$anvilMaxCost();
     }
 
     @WrapOperation(
@@ -60,5 +74,18 @@ public abstract class AnvilMenuMixin {
         int resolved = WarlockEnchanting.hooks().maxLevel(
             EnchantContext.anvil(menu.player, menu.inputSlots.getItem(0)), enchantment, baseline);
         return Mth.clamp(resolved, 1, EnchantBaseline.LEVEL_HARD_CAP);
+    }
+
+    /**
+     * 首次打赢袭击后，本次结算的累计工作惩罚减半。
+     * <p>{@code createResultInternal} 里 {@code long tax} 只有两次 {@code LSTORE}：方法开头的 {@code 0L} 初始化，
+     * 以及累加完两个输入的 {@code REPAIR_COST} 之后的赋值，{@code ordinal = 1} 即后者。
+     * 物品自身存储的 {@code REPAIR_COST} 仍按原版 {@code calculateIncreasedRepairCost} 增长，只影响本次费用。</p>
+     * <p><b>版本约束</b>：ordinal 依赖字节码顺序，已针对 26.3 核对（{@code lstore_3} 位于偏移 27 与 117）。
+     * 升级 Minecraft 后必须用 {@code javap} 复核，否则会静默失效或注入失败。</p>
+     */
+    @ModifyVariable(method = "createResultInternal", at = @At("STORE"), ordinal = 1)
+    private long warlock$halveWorkPenalty(long tax) {
+        return EnchantUnlockData.raidDefeated() ? tax / 2L : tax;
     }
 }

@@ -276,7 +276,10 @@ public class SkillTreeScreen extends Screen {
         List<Component> lines = new ArrayList<>();
         lines.add(Component.literal(node.name()).withStyle(ChatFormatting.WHITE));
         if (!node.description().isBlank()) {
-            lines.add(Component.literal(node.description()).withStyle(ChatFormatting.GRAY));
+            // tooltip 每个 Component 只占一行，换行符必须自己拆成多行才会生效
+            for (String text : node.description().split("\\R")) {
+                lines.add(Component.literal(text).withStyle(ChatFormatting.GRAY));
+            }
         }
         // 默认折叠属性明细，按住 Shift 才展开，避免长 tooltip 遮挡画布
         if (!node.commands().isEmpty()) {

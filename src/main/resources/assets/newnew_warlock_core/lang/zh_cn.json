@@ -35,6 +35,8 @@
   "attribute.newnew_warlock_core.move_healing": "移动治疗",
   "attribute.newnew_warlock_core.life_stealing": "生命偷取",
   "attribute.newnew_warlock_core.concealment": "隐蔽",
+  "attribute.newnew_warlock_core.extra_anvil_max_cost": "额外铁砧消耗上限",
+  "attribute.newnew_warlock_core.extra_enchant_max_level": "额外附魔等级上限",
   "attribute.newnew_warlock_core.dodge": "闪避",
   "attribute.newnew_warlock_core.newnew_points": "属性点",
   "attribute.newnew_warlock_core.newnew_strength": "力量",

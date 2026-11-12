@@ -2,8 +2,9 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>NewNew 技能树编辑器</title>
+<link rel="icon" href="favicon.ico" type="image/x-icon">
 <style>
   :root {
     --bg: #0b0e13;
@@ -30,13 +31,13 @@
     color: var(--text);
     font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
     font-size: 13px;
+    -webkit-tap-highlight-color: transparent;
   }
 
   button, input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
   .hidden { display: none !important; }
 
   /* ---------------------------------- 顶栏 ---------------------------------- */
-
   #topbar {
     display: flex;
     align-items: center;
@@ -46,6 +47,8 @@
     padding: 0 14px;
     border-bottom: 1px solid var(--line);
     background: linear-gradient(180deg, #171d27, #121722);
+    z-index: 50;
+    position: relative;
   }
 
   .brand { display: flex; align-items: baseline; gap: 10px; white-space: nowrap; }
@@ -53,6 +56,7 @@
   .brand span { color: var(--muted); font-size: 11px; }
 
   .actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .mobile-only { display: none !important; }
 
   button {
     padding: 6px 11px;
@@ -81,11 +85,11 @@
   select.status { background: var(--panel-2); font: inherit; font-size: 11px; color: var(--muted); padding: 4px 6px; border-radius: 6px; cursor: pointer; }
 
   /* ---------------------------------- 布局 ---------------------------------- */
-
   main {
     display: grid;
     grid-template-columns: 280px minmax(0, 1fr) 352px;
     height: calc(100% - 52px);
+    position: relative;
   }
 
   aside {
@@ -94,30 +98,20 @@
     min-height: 0;
     background: var(--panel);
     overflow: hidden;
+    z-index: 40;
+    transition: transform 0.3s ease;
   }
   #left { border-right: 1px solid var(--line); }
   #right { border-left: 1px solid var(--line); }
 
   .panel { border-bottom: 1px solid var(--line); padding: 12px; }
   .panel.grow { flex: 1; min-height: 0; display: flex; flex-direction: column; border-bottom: 0; }
-  .panel h2 {
-    margin: 0 0 10px;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
+  .panel h2 { margin: 0 0 10px; font-size: 11px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); }
 
   .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 9px; }
   .field label { font-size: 11px; color: var(--muted); }
   .field input[type="text"], .field input[type="number"], .field select, .field textarea {
-    padding: 6px 8px;
-    border: 1px solid var(--line);
-    border-radius: 5px;
-    background: #0f141c;
-    outline: none;
-    resize: vertical;
+    padding: 6px 8px; border: 1px solid var(--line); border-radius: 5px; background: #0f141c; outline: none; resize: vertical;
   }
   .field input:focus, .field select:focus { border-color: #3d5170; }
   .field .hint { font-size: 10px; color: #6a7280; word-break: break-all; }
@@ -125,27 +119,12 @@
   .check input { width: 14px; height: 14px; accent-color: var(--gold); }
 
   /* -------------------------------- 命令库 -------------------------------- */
-
-  #lib-search {
-    width: 100%;
-    padding: 6px 9px;
-    margin-bottom: 8px;
-    border: 1px solid var(--line);
-    border-radius: 5px;
-    background: #0f141c;
-    outline: none;
-  }
-
+  #lib-search { width: 100%; padding: 6px 9px; margin-bottom: 8px; border: 1px solid var(--line); border-radius: 5px; background: #0f141c; outline: none; }
   #lib-list { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 7px; padding-right: 2px; }
 
   .card {
-    padding: 9px 10px;
-    border: 1px solid var(--line);
-    border-left: 3px solid var(--gold);
-    border-radius: 6px;
-    background: var(--panel-2);
-    cursor: grab;
-    transition: background .12s, transform .12s;
+    padding: 9px 10px; border: 1px solid var(--line); border-left: 3px solid var(--gold); border-radius: 6px; background: var(--panel-2);
+    cursor: grab; transition: background .12s, transform .12s;
   }
   .card:hover { background: var(--panel-3); transform: translateX(1px); }
   .card:active { cursor: grabbing; }
@@ -153,11 +132,9 @@
   .card-name { font-weight: 600; margin-bottom: 2px; }
   .card-id { font-size: 10px; color: var(--muted); word-break: break-all; }
   .card-params { margin-top: 4px; font-size: 10px; color: #7d8ba0; }
-
   .empty { color: #6a7280; font-size: 12px; line-height: 1.6; padding: 6px 2px; }
 
   /* -------------------------------- 画布 -------------------------------- */
-
   #canvas {
     position: relative;
     overflow: hidden;
@@ -165,38 +142,20 @@
     cursor: grab;
     touch-action: none;
     user-select: none;
+    z-index: 10;
   }
   #canvas.grabbing { cursor: grabbing; }
-
   #world { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
-
   #edges { position: absolute; left: 0; top: 0; width: 1px; height: 1px; overflow: visible; pointer-events: none; }
-
   #nodes { position: absolute; left: 0; top: 0; }
 
-  /* 游戏内窗口打开时的大致显示范围（红色空心矩形） */
-  #game-view {
-    position: absolute;
-    display: none;
-    box-sizing: border-box;
-    border: 2px solid #e05252;
-    pointer-events: none;
-    opacity: .85;
-  }
+  #game-view { position: absolute; display: none; box-sizing: border-box; border: 2px solid #e05252; pointer-events: none; opacity: .85; }
 
   .node-wrap { position: absolute; width: 0; height: 0; cursor: pointer; }
   .node-box {
-    position: absolute;
-    width: 40px;
-    height: 40px;
-    transform: translate(-50%, -50%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid #4a515c;
-    border-radius: 6px;
-    background: #2a2f38;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, .5);
+    position: absolute; width: 40px; height: 40px; transform: translate(-50%, -50%);
+    display: flex; align-items: center; justify-content: center; border: 1px solid #4a515c; border-radius: 6px;
+    background: #2a2f38; box-shadow: 0 2px 6px rgba(0, 0, 0, .5);
   }
   .node-box.root { border-color: var(--gold); background: #3e4a5c; }
   .node-box.selected { border-color: #fff; box-shadow: 0 0 0 2px rgba(255, 255, 255, .35); }
@@ -205,85 +164,53 @@
 
   .node-icon { font-size: 14px; font-weight: 700; color: #c9d4e4; letter-spacing: .5px; }
   .node-img { width: 24px; height: 24px; image-rendering: pixelated; object-fit: contain; }
-
   .node-label {
-    position: absolute;
-    top: 23px;
-    left: 0;
-    transform: translateX(-50%);
-    max-width: 140px;
-    font-size: 9px;
-    line-height: 1.25;
-    color: #b7c3d4;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    text-align: center;
-    text-shadow: 0 1px 3px #000;
+    position: absolute; top: 23px; left: 0; transform: translateX(-50%); max-width: 140px; font-size: 9px; line-height: 1.25;
+    color: #b7c3d4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; text-shadow: 0 1px 3px #000;
   }
   .node-wrap.selected .node-label { color: #fff; }
 
   #banner {
-    position: absolute;
-    left: 50%;
-    top: 14px;
-    transform: translateX(-50%);
-    padding: 7px 14px;
-    border: 1px solid #3a5a45;
-    border-radius: 999px;
-    background: rgba(22, 40, 30, .94);
-    color: #b6f0c9;
-    font-size: 12px;
-    white-space: nowrap;
-    pointer-events: none;
-    box-shadow: var(--shadow);
+    position: absolute; left: 50%; top: 14px; transform: translateX(-50%); padding: 7px 14px;
+    border: 1px solid #3a5a45; border-radius: 999px; background: rgba(22, 40, 30, .94); color: #b6f0c9;
+    font-size: 12px; white-space: nowrap; pointer-events: none; box-shadow: var(--shadow); z-index: 20;
+  }
+  #hint {
+    position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); padding: 5px 12px;
+    border-radius: 999px; background: rgba(15, 19, 26, .8); color: #6f7c8f; font-size: 11px;
+    white-space: nowrap; pointer-events: none; z-index: 20;
   }
 
-  #hint {
+  /* 🎯 自动定位悬浮按钮 */
+  #btn-autofit {
     position: absolute;
-    left: 50%;
-    bottom: 12px;
-    transform: translateX(-50%);
-    padding: 5px 12px;
-    border-radius: 999px;
-    background: rgba(15, 19, 26, .8);
-    color: #6f7c8f;
-    font-size: 11px;
-    white-space: nowrap;
-    pointer-events: none;
+    right: 20px;
+    bottom: 30px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(20, 25, 34, 0.85);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+    color: var(--muted);
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 25;
+    transition: all 0.2s;
+    backdrop-filter: blur(4px);
   }
+  #btn-autofit:hover { color: var(--gold); border-color: var(--gold); background: var(--panel); }
+  #btn-autofit:active { transform: scale(0.95); }
 
   /* -------------------------------- 检查器 -------------------------------- */
-
   #right .panel { overflow-y: auto; flex: 1; border-bottom: 0; }
-
-  .section-title {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin: 14px 0 8px;
-    font-size: 11px;
-    letter-spacing: 1px;
-    color: var(--muted);
-    text-transform: uppercase;
-  }
+  .section-title { display: flex; align-items: center; justify-content: space-between; margin: 14px 0 8px; font-size: 11px; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; }
   .section-title:first-child { margin-top: 0; }
 
-  .cmd-card {
-    margin-bottom: 10px;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    background: var(--panel-2);
-    overflow: hidden;
-  }
-  .cmd-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 7px 9px;
-    background: var(--panel-3);
-  }
+  .cmd-card { margin-bottom: 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel-2); overflow: hidden; }
+  .cmd-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 9px; background: var(--panel-3); }
   .cmd-head .name { font-weight: 600; }
   .cmd-head .id { font-size: 10px; color: var(--muted); word-break: break-all; }
   .cmd-body { padding: 9px; display: flex; flex-direction: column; gap: 7px; }
@@ -293,13 +220,7 @@
   .param-row { display: flex; align-items: center; gap: 8px; }
   .param-row > .param-name { flex: 0 0 92px; font-size: 11px; color: var(--muted); word-break: break-all; }
   .param-row input[type="text"], .param-row input[type="number"] {
-    flex: 1;
-    min-width: 0;
-    padding: 5px 7px;
-    border: 1px solid var(--line);
-    border-radius: 5px;
-    background: #0f141c;
-    outline: none;
+    flex: 1; min-width: 0; padding: 5px 7px; border: 1px solid var(--line); border-radius: 5px; background: #0f141c; outline: none;
   }
   .param-row input:focus { border-color: #3d5170; }
   .param-row input.invalid { border-color: var(--red); }
@@ -307,196 +228,70 @@
 
   .combo { position: relative; flex: 1; display: flex; min-width: 0; }
   .combo input { flex: 1; }
-  .combo-btn {
-    flex: 0 0 auto;
-    padding: 0 8px;
-    border-left: 0;
-    border-radius: 0 5px 5px 0;
-    background: var(--panel-3);
-    color: var(--muted);
-  }
-  /* 固定定位：避免被检查器滚动容器或命令卡片的 overflow 裁切 */
-  .combo-list {
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 240px;
-    z-index: 200;
-    border: 1px solid #33415a;
-    border-radius: 6px;
-    background: #121821;
-    box-shadow: var(--shadow);
-    overflow: hidden;
-  }
-  .combo-search {
-    width: 100%;
-    padding: 6px 8px;
-    border: 0;
-    border-bottom: 1px solid var(--line);
-    background: #0d1219;
-    outline: none;
-  }
+  .combo-btn { flex: 0 0 auto; padding: 0 8px; border-left: 0; border-radius: 0 5px 5px 0; background: var(--panel-3); color: var(--muted); }
+  .combo-list { position: fixed; left: 0; top: 0; width: 240px; z-index: 200; border: 1px solid #33415a; border-radius: 6px; background: #121821; box-shadow: var(--shadow); overflow: hidden; }
+  .combo-search { width: 100%; padding: 6px 8px; border: 0; border-bottom: 1px solid var(--line); background: #0d1219; outline: none; }
   .combo-items { max-height: 190px; overflow-y: auto; }
   .combo-item { padding: 5px 9px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
   .combo-item:hover { background: #1d2735; }
   .combo-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
   .combo-item .v { font-size: 10px; color: var(--muted); word-break: break-all; }
   .combo-icon { width: 18px; height: 18px; flex: 0 0 18px; image-rendering: pixelated; object-fit: contain; }
-  .icon-preview {
-    flex: 0 0 22px;
-    width: 22px;
-    height: 22px;
-    margin-left: 4px;
-    image-rendering: pixelated;
-    object-fit: contain;
-  }
+  .icon-preview { flex: 0 0 22px; width: 22px; height: 22px; margin-left: 4px; image-rendering: pixelated; object-fit: contain; }
   .combo-empty { padding: 8px 9px; color: #6a7280; font-size: 11px; }
 
-  .edge-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 5px 8px;
-    margin-bottom: 5px;
-    border: 1px solid var(--line);
-    border-radius: 5px;
-    background: var(--panel-2);
-  }
+  .edge-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 8px; margin-bottom: 5px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel-2); }
   .edge-row .edge-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .edge-row button { padding: 2px 7px; font-size: 11px; }
-
   .row { display: flex; gap: 6px; align-items: center; }
   .row select { flex: 1; min-width: 0; padding: 5px 7px; border: 1px solid var(--line); border-radius: 5px; background: #0f141c; }
   .row .field { flex: 1; min-width: 0; margin-bottom: 0; }
   .row .field input { width: 100%; box-sizing: border-box; }
 
-  /* --------------------------------- 菜单 --------------------------------- */
-
-  #menu {
-    position: fixed;
-    z-index: 60;
-    min-width: 188px;
-    padding: 4px;
-    border: 1px solid #33415a;
-    border-radius: 7px;
-    background: #121821;
-    box-shadow: var(--shadow);
-  }
-  .menu-item {
-    display: block;
-    width: 100%;
-    padding: 7px 10px;
-    border: 0;
-    border-radius: 5px;
-    background: transparent;
-    text-align: left;
-  }
+  /* --------------------------------- 菜单与弹窗 --------------------------------- */
+  #menu { position: fixed; z-index: 60; min-width: 188px; padding: 4px; border: 1px solid #33415a; border-radius: 7px; background: #121821; box-shadow: var(--shadow); }
+  .menu-item { display: block; width: 100%; padding: 7px 10px; border: 0; border-radius: 5px; background: transparent; text-align: left; }
   .menu-item:hover { background: #1d2735; }
   .menu-item.danger { color: #ffb4b4; }
   .menu-item.danger:hover { background: #33201f; }
 
-  /* --------------------------------- 弹窗 --------------------------------- */
-
   #modal { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; background: rgba(4, 6, 10, .7); }
-  .modal-box {
-    width: min(560px, 90vw);
-    max-height: 80vh;
-    display: flex;
-    flex-direction: column;
-    border: 1px solid #33415a;
-    border-radius: 10px;
-    background: var(--panel);
-    box-shadow: var(--shadow);
-  }
-  .modal-head { padding: 14px 16px; border-bottom: 1px solid var(--line); font-size: 14px; font-weight: 600; }
-  .modal-body { padding: 14px 16px; overflow-y: auto; line-height: 1.65; font-size: 12px; }
-  .modal-body ul { margin: 6px 0; padding-left: 20px; }
-  .modal-body code { padding: 1px 5px; border-radius: 4px; background: #0d1219; color: #c8d6ea; font-size: 11px; }
-  .modal-body pre {
-    margin: 8px 0;
-    padding: 10px;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    background: #0d1219;
-    font-size: 11px;
-    overflow-x: auto;
-  }
-  .modal-body ol { margin: 6px 0; padding-left: 20px; }
-  .modal-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--line); }
+  .modal-box { width: min(680px, 92vw); max-height: 85vh; display: flex; flex-direction: column; border: 1px solid #33415a; border-radius: 10px; background: var(--panel); box-shadow: var(--shadow); }
+  .modal-head { padding: 16px 20px; border-bottom: 1px solid var(--line); font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; color: var(--gold); }
+  .modal-body { padding: 20px; overflow-y: auto; line-height: 1.65; font-size: 13px; }
+  
+  /* 精美卡片式帮助说明样式 */
+  .help-card { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+  .help-card:last-child { margin-bottom: 0; }
+  .help-card h3 { margin: 0 0 12px 0; font-size: 15px; color: var(--gold); display: flex; align-items: center; gap: 8px; border-bottom: 1px dashed var(--line); padding-bottom: 8px; }
+  .help-card p { margin: 0 0 10px 0; color: #dbe3ee; }
+  .help-card ol, .help-card ul { margin: 0; padding-left: 22px; color: #dbe3ee; }
+  .help-card li { margin-bottom: 10px; }
+  .help-card li:last-child { margin-bottom: 0; }
+  .help-card code { background: #0d1219; border: 1px solid #33415a; padding: 2px 6px; border-radius: 4px; color: var(--blue); font-family: Consolas, monospace; font-size: 12px; word-break: break-all; }
+  .help-card pre { background: #0d1219; border: 1px solid #33415a; padding: 12px; border-radius: 6px; overflow-x: auto; font-family: Consolas, monospace; font-size: 12px; color: #c8d6ea; margin-top: 10px; }
 
+  .modal-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 20px; border-top: 1px solid var(--line); }
   .error-list li { color: #ffb4b4; }
   .warn-list li { color: #e8cf8a; }
 
-  #toast {
-    position: fixed;
-    left: 50%;
-    bottom: 34px;
-    z-index: 90;
-    transform: translateX(-50%) translateY(20px);
-    padding: 9px 16px;
-    border: 1px solid #33415a;
-    border-radius: 8px;
-    background: #121821;
-    box-shadow: var(--shadow);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity .18s, transform .18s;
-    max-width: 70vw;
-  }
+  #toast { position: fixed; left: 50%; bottom: 34px; z-index: 90; transform: translateX(-50%) translateY(20px); padding: 9px 16px; border: 1px solid #33415a; border-radius: 8px; background: #121821; box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s; max-width: 70vw; }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   #toast.error { border-color: #5a2b2b; color: #ffb4b4; }
   #toast.ok { border-color: #2c4a38; color: #b6f0c9; }
 
   /* --------------------------------- 远程仓库 -------------------------------- */
-
   button:disabled { opacity: .45; cursor: not-allowed; }
   button:disabled:hover { background: var(--panel-2); border-color: var(--line); }
-
-  #repo-modal {
-    position: fixed;
-    inset: 0;
-    z-index: 75;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(4, 6, 10, .7);
-  }
+  #repo-modal { position: fixed; inset: 0; z-index: 75; display: flex; align-items: center; justify-content: center; background: rgba(4, 6, 10, .7); }
   .repo-box { width: min(1080px, 95vw); height: min(760px, 90vh); max-height: 90vh; }
-  .repo-body {
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 12px 16px;
-    overflow: hidden;
-  }
+  .repo-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; padding: 12px 16px; overflow: hidden; }
   .repo-settings { display: grid; grid-template-columns: 1fr 1.4fr 1.2fr auto auto; gap: 8px; align-items: end; }
   .repo-settings .field { margin-bottom: 0; }
   .repo-settings input { width: 100%; }
   .repo-main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(260px, .9fr) minmax(0, 1.4fr); gap: 10px; }
-  .repo-pane {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: var(--panel-2);
-    overflow: hidden;
-  }
-  .repo-pane-title {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--line);
-    color: var(--muted);
-    font-size: 11px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-  }
+  .repo-pane { display: flex; flex-direction: column; min-height: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); overflow: hidden; }
+  .repo-pane-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
   .repo-list { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 7px; }
   .repo-tree { padding: 8px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); cursor: pointer; }
   .repo-tree:hover { border-color: #3d5170; }
@@ -510,23 +305,93 @@
   .repo-version .msg { margin: 4px 0; font-size: 11px; color: #c9d4e4; white-space: pre-wrap; word-break: break-word; }
   .repo-version .btns { display: flex; gap: 6px; margin-top: 6px; }
   .repo-version .btns button { padding: 3px 8px; font-size: 11px; }
-  .repo-ops {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-    padding-top: 10px;
-    border-top: 1px solid var(--line);
-  }
+  .repo-ops { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-top: 10px; border-top: 1px solid var(--line); }
   .repo-workspace { font-size: 11px; color: var(--muted); line-height: 1.7; }
   .repo-workspace b { color: var(--text); font-weight: 600; }
   .repo-buttons { display: flex; gap: 8px; }
   .muted-text { color: var(--muted); font-weight: 400; letter-spacing: 0; text-transform: none; }
 
+  #repo-close-top { display: none; padding: 4px 12px; font-size: 20px; line-height: 1; background: transparent; border: 1px solid var(--line); color: var(--muted); border-radius: 6px; }
+  #repo-close-top:active { background: var(--panel-3); }
+
   ::-webkit-scrollbar { width: 9px; height: 9px; }
   ::-webkit-scrollbar-thumb { background: #26303d; border-radius: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
+
+  /* ==========================================================================
+     移动端专属适配样式
+     ========================================================================== */
+  #drawer-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 30;
+  }
+
+  @media (max-width: 768px) {
+    #topbar { height: auto; padding: 8px; flex-wrap: wrap; justify-content: center; }
+    .brand { width: 100%; justify-content: center; margin-bottom: 5px; }
+    .actions { gap: 8px; justify-content: center; width: 100%; }
+    .actions button { padding: 6px 10px; font-size: 13px; }
+    
+    .mobile-only { display: block !important; }
+    .hidden-mobile { display: none !important; }
+    
+    main { grid-template-columns: 1fr; height: calc(100% - 100px); }
+    
+    aside {
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 80%; max-width: 320px;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+    }
+    #left { left: 0; transform: translateX(-100%); }
+    #right { right: 0; transform: translateX(100%); }
+    
+    #left.drawer-open { transform: translateX(0); }
+    #right.drawer-open { transform: translateX(0); }
+    #drawer-overlay.active { display: block; }
+
+    #hint { display: none; }
+    .modal-box { width: 95vw; max-height: 90vh; }
+    .modal-body { padding: 16px; }
+    .help-card { padding: 12px; }
+    
+    /* 👇 手机端仓库弹窗全屏及优化 👇 */
+    #repo-modal { align-items: flex-start; padding: 0; }
+    .repo-box { 
+      width: 100vw; 
+      height: 100dvh; /* 动态视口高度，防止被手机浏览器导航栏遮挡 */
+      max-height: 100dvh; 
+      border-radius: 0; 
+      border: none; 
+      display: flex; 
+      flex-direction: column;
+    }
+    #repo-close-top { display: block; }
+    .modal-foot.hidden-mobile { display: none !important; }
+    
+    .repo-body { 
+      padding: 8px; 
+      gap: 8px; 
+      padding-bottom: max(env(safe-area-inset-bottom), 8px);
+    }
+    .repo-settings { grid-template-columns: 1fr 1fr; gap: 6px; }
+    .repo-settings .field:nth-child(1) { grid-column: 1 / -1; }
+    .repo-settings button { width: 100%; padding: 5px; font-size: 12px; margin-top: 4px; }
+    .repo-main { display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; }
+    .repo-pane { flex: 1; min-height: 0; }
+    .repo-pane-title { padding: 5px 8px; font-size: 10px; }
+    .repo-list { padding: 5px; gap: 4px; }
+    .repo-tree, .repo-version { padding: 6px; }
+    .repo-workspace { display: none; }
+    .repo-ops { padding-top: 8px; gap: 6px; justify-content: center; }
+    .repo-buttons { width: 100%; display: flex; gap: 6px; }
+    .repo-buttons button { flex: 1; font-size: 12px; padding: 8px 0; }
+    
+    #btn-autofit { bottom: 20px; right: 15px; width: 44px; height: 44px; }
+  }
 </style>
 </head>
 <body>
@@ -537,25 +402,47 @@
     <span>NewNew Warlock Core</span>
   </div>
   <div class="actions">
-    <span id="defs-status" class="status">命令定义：未导入</span>
-    <span id="enums-status" class="status">enum：0</span>
-    <button id="btn-defs">导入命令定义</button>
-    <button id="btn-enums">导入 enum 表</button>
-    <button id="btn-new">新建</button>
-    <button id="btn-import-tree">导入技能树</button>
-    <button id="btn-export" class="primary">导出技能树</button>
-    <select id="pack-version" class="status" title="数据包格式对应的游戏版本">
+    <!-- 手机端专属按钮 -->
+    <button id="btn-toggle-left" class="mobile-only">☰ 菜单/命令</button>
+    
+    <!-- 电脑端按钮，手机端隐藏 -->
+    <span id="defs-status" class="status hidden-mobile">命令定义：未导入</span>
+    <span id="enums-status" class="status hidden-mobile">enum：0</span>
+    
+    <button id="btn-defs" class="hidden-mobile">导入定义</button>
+    <button id="btn-enums" class="hidden-mobile">导入枚举</button>
+    <button id="btn-new" class="hidden-mobile">新建</button>
+    <button id="btn-import-tree" class="hidden-mobile">导入</button>
+    <button id="btn-export" class="primary hidden-mobile">导出</button>
+    <select id="pack-version" class="status hidden-mobile" title="数据包格式">
       <option value="26.3">MC 26.3</option>
     </select>
-    <button id="btn-export-pack">导出为数据包</button>
-    <button id="btn-upload">上传</button>
+    <button id="btn-export-pack" class="hidden-mobile">打包</button>
+    <button id="btn-upload" class="hidden-mobile">上传</button>
+    
+    <!-- 双方都保留的按钮 -->
     <button id="btn-repo">仓库</button>
     <button id="btn-help">帮助</button>
+    
+    <!-- 手机端专属按钮 -->
+    <button id="btn-toggle-right" class="mobile-only primary">属性</button>
   </div>
 </header>
 
 <main>
+  <div id="drawer-overlay"></div>
+
   <aside id="left">
+    <!-- 手机端专属的快捷操作面板 -->
+    <section class="panel mobile-only">
+      <h2>快捷操作</h2>
+      <div class="row" style="gap: 8px;">
+        <button id="m-btn-new" style="flex: 1;">新建</button>
+        <button id="m-btn-import" style="flex: 1;">导入</button>
+        <button id="m-btn-export" style="flex: 1;" class="primary">导出</button>
+      </div>
+    </section>
+
     <section class="panel">
       <h2>技能树设置</h2>
       <div class="field">
@@ -572,7 +459,7 @@
         <input id="tree-order" type="number" step="1">
       </div>
       <div class="field">
-        <label for="tree-reset-xp">每重置 1 点消耗经验点</label>
+        <label for="tree-reset-xp">重置 1 点消耗经验</label>
         <input id="tree-reset-xp" type="number" step="any" min="0">
       </div>
       <label class="check"><input id="tree-default-unlocked" type="checkbox"> 默认解锁本树</label>
@@ -589,23 +476,22 @@
     <div id="world">
       <svg id="edges" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
-                  markerWidth="7" markerHeight="7" orient="auto-start-reverse"
-                  markerUnits="userSpaceOnUse">
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
             <path d="M 0 0 L 10 5 L 0 10 z" fill="#5b6b82"></path>
           </marker>
-          <marker id="arrow-hi" viewBox="0 0 10 10" refX="9" refY="5"
-                  markerWidth="7" markerHeight="7" orient="auto-start-reverse"
-                  markerUnits="userSpaceOnUse">
+          <marker id="arrow-hi" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
             <path d="M 0 0 L 10 5 L 0 10 z" fill="#d7b45a"></path>
           </marker>
         </defs>
       </svg>
-      <div id="game-view" title="游戏内窗口打开时的大致显示范围"></div>
+      <div id="game-view" title="游戏内窗口大致显示范围"></div>
       <div id="nodes"></div>
     </div>
     <div id="banner" class="hidden"></div>
-    <div id="hint">拖拽命令到画布创建节点 · 长按节点拖动 · Ctrl+拖拽吸附到父节点 · 点击节点打开菜单 · Ctrl+C / Ctrl+V 复制粘贴节点 · 滚轮缩放 · 拖动空白平移</div>
+    <div id="hint">拖拽命令到画布创建节点 · 长按节点拖动 · Ctrl+拖拽吸附 · 点击节点打开菜单 · 滚轮缩放 · 拖动空白平移</div>
+    
+    <!-- 自动定位悬浮按钮 -->
+    <button id="btn-autofit" title="自动定位到所有节点">🎯</button>
   </div>
 
   <aside id="right">
@@ -614,6 +500,7 @@
 </main>
 
 <div id="menu" class="hidden"></div>
+
 <div id="modal" class="hidden">
   <div class="modal-box">
     <div class="modal-head" id="modal-title"></div>
@@ -624,9 +511,12 @@
 
 <div id="repo-modal" class="hidden">
   <div class="modal-box repo-box">
-    <div class="modal-head" style="display:flex;align-items:center;justify-content:space-between;">
-      <span>远程仓库</span>
-      <span id="repo-status" class="status">未连接</span>
+    <div class="modal-head">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span>远程仓库</span>
+        <span id="repo-status" class="status">未连接</span>
+      </div>
+      <button id="repo-close-top">×</button>
     </div>
     <div class="repo-body">
       <div class="repo-settings">
@@ -640,7 +530,7 @@
         </div>
         <div class="field">
           <label for="repo-token">访问令牌</label>
-          <input id="repo-token" type="password" placeholder="与服务端 EDITOR_TOKEN 一致">
+          <input id="repo-token" type="password" placeholder="服务端 EDITOR_TOKEN">
         </div>
         <button id="repo-save-config">保存设置</button>
         <button id="repo-refresh">刷新列表</button>
@@ -658,12 +548,12 @@
       <div class="repo-ops">
         <div id="repo-workspace" class="repo-workspace"></div>
         <div class="repo-buttons">
-          <button id="repo-push-new">推送当前工作区作为新树</button>
-          <button id="repo-push-version" class="primary">推送当前工作区作为新版本</button>
+          <button id="repo-push-new">推送当前为新树</button>
+          <button id="repo-push-version" class="primary">推送当前为新版本</button>
         </div>
       </div>
     </div>
-    <div class="modal-foot">
+    <div class="modal-foot hidden-mobile">
       <button id="repo-close">关闭</button>
     </div>
   </div>
@@ -674,7 +564,6 @@
 <input type="file" id="file-enums" accept=".json,application/json" multiple hidden>
 <input type="file" id="file-tree" accept=".json,application/json" hidden>
 
-<!-- 内置 enum 数据（原版 + 本模组的物品/属性/药水效果），由 tools/builtin_enums.js 提供 -->
 <script src="builtin_enums.js"></script>
 <script>
 (() => {
@@ -683,18 +572,17 @@
   // ==========================================================================================
   // 常量与状态
   // ==========================================================================================
-
   const STORAGE_KEY = 'newnew_skill_tree_editor_v1';
   const AUTHOR_KEY = 'newnew_skill_tree_editor_author_v1';
   const TOKEN_KEY = 'newnew_skill_tree_editor_token_v1';
   const SERVER_KEY = 'newnew_skill_tree_editor_server_v1';
   const SCHEMA_VERSION = 1;
   const DEFAULT_NAMESPACE = 'newnew_warlock_core';
-  const BOX = 40;                 // 节点在世界坐标里的边长（与游戏内一致）
-  const GAME_VIEW_WIDTH = 960;    // 游戏内窗口大致显示宽度（1920×1080 / GUI 缩放 4 / 画布缩放 0.5）
-  const GAME_VIEW_HEIGHT = 540;   // 游戏内窗口大致显示高度
-  const LONG_PRESS_MS = 200;      // 长按开始拖拽
-  const MOVE_TOLERANCE = 4;       // 长按前的抖动容差
+  const BOX = 40;
+  const GAME_VIEW_WIDTH = 960;
+  const GAME_VIEW_HEIGHT = 540;
+  const LONG_PRESS_MS = 300; 
+  const MOVE_TOLERANCE = 6;  
 
   const state = {
     treeId: DEFAULT_NAMESPACE + ':skill_tree',
@@ -702,18 +590,10 @@
     order: 0,
     defaultUnlocked: false,
     resetXpPerPoint: 0,
-    nodes: [],          // { id, x, y, name, description, icon, commands: [{ command, params }] }
-    edges: [],          // { from, to }  from 为前置
-    commands: new Map(),// 命令 id -> 定义
-    enums: [],          // 导入的 enum 表：{ type, targets: [{ command, param }], values: [{ name, value, icon }] }
-    builtinEnums: [],   // 内置 enum 表（物品/属性/药水效果），来自 builtin_enums.js
-    selection: null,
-    connect: null,      // { mode: 'out' | 'in', id }
-    view: { x: 80, y: 80, scale: 2 },
-    seq: 1,
-    // 版本信息（写进 tree.json 的根级 meta，游戏解析器会忽略）
+    nodes: [], edges: [], commands: new Map(), enums: [], builtinEnums: [],
+    selection: null, connect: null,
+    view: { x: 80, y: 80, scale: 2 }, seq: 1,
     meta: { originalAuthor: '', version: 0, editors: [], editedAt: '', message: '' },
-    // 远程仓库关联：baseVersion 为 0 表示尚未关联远程树
     remote: { treeId: '', baseVersion: 0, lastSyncedHash: '' }
   };
 
@@ -756,22 +636,59 @@
     repoPushVersion: document.getElementById('repo-push-version'),
     fileDefs: document.getElementById('file-defs'),
     fileEnums: document.getElementById('file-enums'),
-    fileTree: document.getElementById('file-tree')
+    fileTree: document.getElementById('file-tree'),
+    leftPanel: document.getElementById('left'),
+    rightPanel: document.getElementById('right'),
+    btnToggleLeft: document.getElementById('btn-toggle-left'),
+    btnToggleRight: document.getElementById('btn-toggle-right'),
+    drawerOverlay: document.getElementById('drawer-overlay'),
+    btnAutofit: document.getElementById('btn-autofit')
   };
 
-  let press = null;   // 节点按下状态
-  let pan = null;     // 画布平移状态
+  let press = null;
+  let pan = null;
   let toastTimer = 0;
-  let lastNodePointerUp = 0; // 防止 pointerup 与 click 重复处理同一次点击
-  let nodeClipboard = null;  // 复制的节点：{ source: 节点快照, offset: 连续粘贴的错位量 }
-
-  // 枚举值 -> 图标（data URI），用于节点图标与下拉渲染
+  let lastNodePointerUp = 0;
+  let nodeClipboard = null;
   const iconLookup = new Map();
+  
+  // 触屏手势状态
+  let touchState = { isMultiTouch: false, startDist: 0, startScale: 1, startX: 0, startY: 0, startViewX: 0, startViewY: 0 };
+
+  // ==========================================================================================
+  // 移动端 UI 逻辑
+  // ==========================================================================================
+  function openLeftDrawer() {
+    dom.leftPanel.classList.add('drawer-open');
+    dom.drawerOverlay.classList.add('active');
+    dom.rightPanel.classList.remove('drawer-open');
+  }
+  function openRightDrawer() {
+    dom.rightPanel.classList.add('drawer-open');
+    dom.drawerOverlay.classList.add('active');
+    dom.leftPanel.classList.remove('drawer-open');
+  }
+  function closeDrawers() {
+    dom.leftPanel.classList.remove('drawer-open');
+    dom.rightPanel.classList.remove('drawer-open');
+    dom.drawerOverlay.classList.remove('active');
+  }
+
+  dom.btnToggleLeft.addEventListener('click', openLeftDrawer);
+  dom.btnToggleRight.addEventListener('click', openRightDrawer);
+  dom.drawerOverlay.addEventListener('click', closeDrawers);
+  
+  // 自动定位按钮
+  dom.btnAutofit.addEventListener('click', fitView);
+
+  // 移动端快捷操作按钮映射
+  document.getElementById('m-btn-new')?.addEventListener('click', () => { closeDrawers(); document.getElementById('btn-new').click(); });
+  document.getElementById('m-btn-import')?.addEventListener('click', () => { closeDrawers(); document.getElementById('btn-import-tree').click(); });
+  document.getElementById('m-btn-export')?.addEventListener('click', () => { closeDrawers(); document.getElementById('btn-export').click(); });
 
   // ==========================================================================================
   // 小工具
   // ==========================================================================================
-
   function el(tag, attrs, ...children) {
     const node = document.createElement(tag);
     if (attrs) {
@@ -792,33 +709,17 @@
     return node;
   }
 
-  function clamp(value, min, max) {
-    return Math.min(max, Math.max(min, value));
-  }
-
-  function round1(value) {
-    return Math.round(value * 10) / 10;
-  }
-
+  function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
+  function round1(value) { return Math.round(value * 10) / 10; }
   function toast(message, kind) {
     dom.toast.textContent = message;
     dom.toast.className = 'show' + (kind ? ' ' + kind : '');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => { dom.toast.className = ''; }, 3200);
   }
-
-  function nodeById(id) {
-    return state.nodes.find(node => node.id === id) || null;
-  }
-
-  function commandDef(id) {
-    return state.commands.get(id) || null;
-  }
-
-  function nodeLabel(node) {
-    return node.name.trim() || node.id;
-  }
-
+  function nodeById(id) { return state.nodes.find(node => node.id === id) || null; }
+  function commandDef(id) { return state.commands.get(id) || null; }
+  function nodeLabel(node) { return node.name.trim() || node.id; }
   function summaryOf(commandEntry) {
     const def = commandDef(commandEntry.command);
     if (!def) return '未知命令类型：' + commandEntry.command;
@@ -827,22 +728,18 @@
       return value === undefined || value === null ? '' : String(value);
     });
   }
-
   function costOf(node) {
-    let total = 0;
-    let found = false;
+    let total = 0; let found = false;
     for (const command of node.commands) {
       const value = Number(command.params.cost);
       if (Number.isFinite(value)) { total += value; found = true; }
     }
     return found ? total : null;
   }
-
   function formatNumber(value) {
     if (!Number.isFinite(value)) return '0';
     return Number.isInteger(value) ? String(value) : String(Math.round(value * 100) / 100);
   }
-
   function iconGlyph(icon) {
     const path = icon.split(':').pop() || '';
     return path.replace(/[^a-z0-9]/gi, '').slice(0, 2).toUpperCase();
@@ -851,7 +748,6 @@
   // ==========================================================================================
   // 视图（平移 / 缩放）
   // ==========================================================================================
-
   function applyView() {
     const view = state.view;
     dom.world.style.transform = 'translate(' + view.x + 'px, ' + view.y + 'px) scale(' + view.scale + ')';
@@ -873,15 +769,12 @@
     const rect = dom.canvas.getBoundingClientRect();
     if (!state.nodes.length) {
       state.view = { x: rect.width / 2, y: rect.height / 2, scale: 2 };
-      applyView();
-      return;
+      applyView(); return;
     }
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     for (const node of state.nodes) {
-      minX = Math.min(minX, node.x);
-      maxX = Math.max(maxX, node.x);
-      minY = Math.min(minY, node.y);
-      maxY = Math.max(maxY, node.y);
+      minX = Math.min(minX, node.x); maxX = Math.max(maxX, node.x);
+      minY = Math.min(minY, node.y); maxY = Math.max(maxY, node.y);
     }
     const padding = 140;
     const width = Math.max(1, maxX - minX) + padding * 2;
@@ -894,9 +787,8 @@
   }
 
   // ==========================================================================================
-  // 渲染：节点与连线
+  // 渲染
   // ==========================================================================================
-
   function renderNodes() {
     dom.nodes.innerHTML = '';
     for (const node of state.nodes) {
@@ -904,19 +796,16 @@
       wrap.dataset.id = node.id;
       wrap.style.left = node.x + 'px';
       wrap.style.top = node.y + 'px';
-
       const isRoot = !state.edges.some(edge => edge.to === node.id);
       const box = el('div', { class: 'node-box' + (isRoot ? ' root' : '') + (node.id === state.selection ? ' selected' : '') });
       if (state.connect) box.classList.add('connect-target');
       const iconSource = node.icon ? iconLookup.get(node.icon) : null;
       if (iconSource) box.append(el('img', { class: 'node-img', src: iconSource, alt: '' }));
       else if (node.icon) box.append(el('div', { class: 'node-icon', text: iconGlyph(node.icon) }));
-
       const label = el('div', { class: 'node-label', text: nodeLabel(node) });
       wrap.append(box, label);
       wrap.title = tooltipOf(node);
       wrap.addEventListener('pointerdown', event => onNodePointerDown(event, node, wrap));
-      // 兜底：某些输入方式只派发 click 而不派发 pointer 事件，这里补一次点击处理。
       wrap.addEventListener('click', event => {
         if (performance.now() - lastNodePointerUp < 500) return;
         if (state.connect) return;
@@ -929,22 +818,12 @@
     updateGameViewRect();
   }
 
-  /**
-   * 红色空心矩形：表示游戏内窗口打开时的大致显示范围。
-   * 游戏内会以整棵树的外接框为中心，所以这里也把矩形放在树的中心。
-   */
   function updateGameViewRect() {
-    if (!state.nodes.length) {
-      dom.gameView.style.display = 'none';
-      return;
-    }
-    let minX = Infinity, maxX = -Infinity;
-    let minY = Infinity, maxY = -Infinity;
+    if (!state.nodes.length) { dom.gameView.style.display = 'none'; return; }
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     for (const node of state.nodes) {
-      minX = Math.min(minX, node.x);
-      maxX = Math.max(maxX, node.x);
-      minY = Math.min(minY, node.y);
-      maxY = Math.max(maxY, node.y);
+      minX = Math.min(minX, node.x); maxX = Math.max(maxX, node.x);
+      minY = Math.min(minY, node.y); maxY = Math.max(maxY, node.y);
     }
     dom.gameView.style.display = 'block';
     dom.gameView.style.left = ((minX + maxX) / 2 - GAME_VIEW_WIDTH / 2) + 'px';
@@ -970,22 +849,16 @@
       const from = nodeById(edge.from);
       const to = nodeById(edge.to);
       if (!from || !to) continue;
-      const dx = to.x - from.x;
-      const dy = to.y - from.y;
+      const dx = to.x - from.x; const dy = to.y - from.y;
       const length = Math.hypot(dx, dy);
       if (length < 0.001) continue;
-      const nx = dx / length;
-      const ny = dy / length;
-      const x1 = from.x + nx * (BOX / 2);
-      const y1 = from.y + ny * (BOX / 2);
-      const x2 = to.x - nx * (BOX / 2 + 3);
-      const y2 = to.y - ny * (BOX / 2 + 3);
+      const nx = dx / length; const ny = dy / length;
+      const x1 = from.x + nx * (BOX / 2); const y1 = from.y + ny * (BOX / 2);
+      const x2 = to.x - nx * (BOX / 2 + 3); const y2 = to.y - ny * (BOX / 2 + 3);
       const highlighted = edge.to === state.selection || edge.from === state.selection;
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line.setAttribute('x1', x1);
-      line.setAttribute('y1', y1);
-      line.setAttribute('x2', x2);
-      line.setAttribute('y2', y2);
+      line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+      line.setAttribute('x2', x2); line.setAttribute('y2', y2);
       line.setAttribute('stroke', highlighted ? '#d7b45a' : '#3a4250');
       line.setAttribute('stroke-width', highlighted ? '2' : '1.5');
       line.setAttribute('marker-end', highlighted ? 'url(#arrow-hi)' : 'url(#arrow)');
@@ -1000,19 +873,12 @@
     syncSettings();
   }
 
-  // ==========================================================================================
-  // 渲染：命令库与状态
-  // ==========================================================================================
-
   function renderLibrary() {
     const query = dom.libSearch.value.trim().toLowerCase();
     dom.libList.innerHTML = '';
     updateStatuses();
     if (state.commands.size === 0) {
-      dom.libList.append(el('div', {
-        class: 'empty',
-        text: '尚未导入命令定义。点击顶栏「导入命令定义」，选择游戏目录下的 newnew_warlock_core/command_definitions.json。'
-      }));
+      dom.libList.append(el('div', { class: 'empty', text: '尚未导入命令定义。点击顶栏「导入定义」，选择游戏目录下的 newnew_warlock_core/command_definitions.json。' }));
       return;
     }
     let shown = 0;
@@ -1023,23 +889,16 @@
       const card = el('div', { class: 'card', draggable: 'true', tabindex: '0', title: def.doc || '' },
         el('div', { class: 'card-name', text: def.name }),
         el('div', { class: 'card-id', text: def.id }),
-        el('div', {
-          class: 'card-params',
-          text: def.params.length
-            ? def.params.map(param => param.name + ':' + param.type).join(' · ')
-            : '无参数'
-        })
+        el('div', { class: 'card-params', text: def.params.length ? def.params.map(param => param.name + ':' + param.type).join(' · ') : '无参数' })
       );
       card.addEventListener('dragstart', event => {
         event.dataTransfer.setData('text/plain', def.id);
         event.dataTransfer.effectAllowed = 'copy';
       });
       card.addEventListener('dblclick', () => addNodeAtCenter(def.id));
+      card.addEventListener('click', () => { if(window.innerWidth <= 768) addNodeAtCenter(def.id); });
       card.addEventListener('keydown', event => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          addNodeAtCenter(def.id);
-        }
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); addNodeAtCenter(def.id); }
       });
       dom.libList.append(card);
     }
@@ -1060,7 +919,6 @@
   // ==========================================================================================
   // 节点操作
   // ==========================================================================================
-
   function defaultsFor(def) {
     const params = {};
     for (const spec of def.params) {
@@ -1071,60 +929,41 @@
     }
     return params;
   }
-
   function nextNodeId() {
     const used = new Set(state.nodes.map(node => node.id));
     let candidate;
     do { candidate = 'n' + state.seq++; } while (used.has(candidate));
     return candidate;
   }
-
   function addNode(commandId, x, y) {
     const def = commandDef(commandId);
     if (!def) { toast('命令类型未导入：' + commandId, 'error'); return; }
-    const node = {
-      id: nextNodeId(),
-      x: round1(x),
-      y: round1(y),
-      name: def.name,
-      description: '',
-      icon: '',
-      commands: [{ command: def.id, params: defaultsFor(def) }]
-    };
+    const node = { id: nextNodeId(), x: round1(x), y: round1(y), name: def.name, description: '', icon: '', commands: [{ command: def.id, params: defaultsFor(def) }] };
     state.nodes.push(node);
     state.selection = node.id;
     renderAll();
     save();
+    if (window.innerWidth <= 768) openRightDrawer();
   }
-
   function addNodeAtCenter(commandId) {
     const rect = dom.canvas.getBoundingClientRect();
     const point = screenToWorld(rect.left + rect.width / 2, rect.top + rect.height / 2);
     addNode(commandId, point.x, point.y);
   }
-
   function deleteNode(id) {
     state.nodes = state.nodes.filter(node => node.id !== id);
     state.edges = state.edges.filter(edge => edge.from !== id && edge.to !== id);
     if (state.selection === id) state.selection = null;
-    renderAll();
-    save();
+    renderAll(); save();
   }
-
-  /** 复制当前节点（不含连接），供粘贴使用 */
   function copyNode(id) {
     const node = nodeById(id);
     if (!node) return;
     nodeClipboard = { source: JSON.parse(JSON.stringify(node)), offset: 0 };
     toast('已复制节点「' + nodeLabel(node) + '」');
   }
-
-  /** 粘贴节点：生成新 id、略微错位，不复制任何连接 */
   function pasteNode() {
-    if (!nodeClipboard) {
-      toast('剪贴板为空，先按 Ctrl+C 复制节点', 'error');
-      return;
-    }
+    if (!nodeClipboard) { toast('剪贴板为空，先按 Ctrl+C 复制节点', 'error'); return; }
     nodeClipboard.offset += 24;
     const node = JSON.parse(JSON.stringify(nodeClipboard.source));
     node.id = nextNodeId();
@@ -1132,75 +971,44 @@
     node.y = round1(node.y + nodeClipboard.offset);
     state.nodes.push(node);
     state.selection = node.id;
-    renderAll();
-    save();
+    renderAll(); save();
     toast('已粘贴节点「' + nodeLabel(node) + '」');
   }
-
   function isTypingTarget(target) {
     if (!(target instanceof HTMLElement)) return false;
     if (target.isContentEditable) return true;
     return target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT';
   }
-
   function addEdge(from, to) {
     if (from === to) { toast('不能连接到节点自身', 'error'); return false; }
     if (!nodeById(from) || !nodeById(to)) return false;
-    if (state.edges.some(edge => edge.from === from && edge.to === to)) {
-      toast('该连接已存在', 'error');
-      return false;
-    }
+    if (state.edges.some(edge => edge.from === from && edge.to === to)) { toast('该连接已存在', 'error'); return false; }
     state.edges.push({ from, to });
-    renderAll();
-    save();
+    renderAll(); save();
     return true;
   }
 
-  // ==========================================================================================
-  // 指针交互：点击菜单 / 长按拖拽 / 画布平移 / 滚轮缩放
-  // ==========================================================================================
-
-  /**
-   * 按相对位移移动节点及其所有后继节点（父节点拖动时子节点跟随）。
-   * 用 visited 记录已移动的节点：同一节点只移动一次且不再向下传递，
-   * 因此即使连接成环（A → B → A）也不会无限递归。
-   */
   function moveNodeSubtree(rootId, dx, dy) {
-    const visited = new Set();
-    const queue = [rootId];
+    const visited = new Set(); const queue = [rootId];
     while (queue.length) {
       const id = queue.shift();
       if (visited.has(id)) continue;
       visited.add(id);
       const node = nodeById(id);
-      if (node) {
-        node.x = round1(node.x + dx);
-        node.y = round1(node.y + dy);
-      }
-      for (const edge of state.edges) {
-        if (edge.from === id) queue.push(edge.to);
-      }
+      if (node) { node.x = round1(node.x + dx); node.y = round1(node.y + dy); }
+      for (const edge of state.edges) { if (edge.from === id) queue.push(edge.to); }
     }
   }
-
-  /** 把 state 中的节点坐标同步到画布上的 DOM 节点（拖拽子树后使用）。 */
   function syncNodePositions() {
     for (const wrap of dom.nodes.children) {
       const node = nodeById(wrap.dataset.id);
       if (!node) continue;
-      wrap.style.left = node.x + 'px';
-      wrap.style.top = node.y + 'px';
+      wrap.style.left = node.x + 'px'; wrap.style.top = node.y + 'px';
     }
     updateGameViewRect();
   }
-
-  /**
-   * Ctrl 拖拽吸附：以「离鼠标最近的父节点」为原点，
-   * 方向吸附到 30 度的整数倍（0/30/60/…/330 度），距离吸附到 2 个节点边长的整数倍。
-   */
   function snapToParent(nodeId, x, y) {
-    let parent = null;
-    let nearest = Infinity;
+    let parent = null; let nearest = Infinity;
     for (const edge of state.edges) {
       if (edge.to !== nodeId) continue;
       const candidate = nodeById(edge.from);
@@ -1209,40 +1017,30 @@
       if (distance < nearest) { nearest = distance; parent = candidate; }
     }
     if (!parent) return null;
-
-    const dx = x - parent.x;
-    const dy = y - parent.y;
+    const dx = x - parent.x; const dy = y - parent.y;
     const distance = Math.hypot(dx, dy);
     if (distance < 0.001) return null;
-
     const step = Math.PI / 6;
     const angle = Math.round(Math.atan2(dy, dx) / step) * step;
     const radius = Math.max(1, Math.round(distance / (BOX * 2))) * BOX * 2;
-    return {
-      x: round1(parent.x + Math.cos(angle) * radius),
-      y: round1(parent.y + Math.sin(angle) * radius)
-    };
+    return { x: round1(parent.x + Math.cos(angle) * radius), y: round1(parent.y + Math.sin(angle) * radius) };
   }
 
+  // ==========================================================================================
+  // 交互（指针/触控）
+  // ==========================================================================================
   function onNodePointerDown(event, node, wrap) {
-    if (event.button !== 0) return;
+    if (event.button !== 0 && event.pointerType !== 'touch') return;
     event.stopPropagation();
-    event.preventDefault();
+    if (event.target.tagName !== 'INPUT') event.preventDefault(); 
     closeMenu();
     press = {
-      id: node.id,
-      wrap,
-      startX: event.clientX,
-      startY: event.clientY,
-      originX: node.x,
-      originY: node.y,
-      originClientX: event.clientX,
-      originClientY: event.clientY,
+      id: node.id, wrap, startX: event.clientX, startY: event.clientY,
+      originX: node.x, originY: node.y, originClientX: event.clientX, originClientY: event.clientY,
       dragging: false,
       timer: setTimeout(() => {
         if (!press) return;
-        press.dragging = true;
-        press.wrap.classList.add('dragging');
+        press.dragging = true; press.wrap.classList.add('dragging');
       }, LONG_PRESS_MS)
     };
   }
@@ -1255,28 +1053,23 @@
   }
 
   window.addEventListener('pointermove', event => {
+    if (touchState.isMultiTouch) return; 
+    
     if (pan) {
       const dx = event.clientX - pan.x;
       const dy = event.clientY - pan.y;
       if (Math.abs(dx) + Math.abs(dy) > 2) pan.moved = true;
-      pan.x = event.clientX;
-      pan.y = event.clientY;
-      state.view.x += dx;
-      state.view.y += dy;
-      applyView();
-      return;
+      pan.x = event.clientX; pan.y = event.clientY;
+      state.view.x += dx; state.view.y += dy;
+      applyView(); return;
     }
     if (!press) return;
-
     const dx = event.clientX - press.startX;
     const dy = event.clientY - press.startY;
-
     if (!press.dragging) {
-      // 长按前移动：视为误触，取消这次按下
       if (Math.hypot(dx, dy) > MOVE_TOLERANCE) clearPress();
       return;
     }
-
     const node = nodeById(press.id);
     if (!node) { clearPress(); return; }
     const scale = state.view.scale;
@@ -1287,57 +1080,49 @@
       if (snapped) { targetX = snapped.x; targetY = snapped.y; }
     }
     moveNodeSubtree(press.id, targetX - node.x, targetY - node.y);
-    press.startX = event.clientX;
-    press.startY = event.clientY;
-    syncNodePositions();
-    renderEdges();
+    press.startX = event.clientX; press.startY = event.clientY;
+    syncNodePositions(); renderEdges();
   });
 
   window.addEventListener('pointerup', event => {
+    if (touchState.isMultiTouch) return;
     if (pan) {
       const wasClick = !pan.moved;
       pan = null;
       dom.canvas.classList.remove('grabbing');
       if (wasClick) {
-        state.selection = null;
-        state.connect = null;
-        updateBanner();
-        renderAll();
+        state.selection = null; state.connect = null;
+        updateBanner(); renderAll();
       }
       return;
     }
     if (!press) return;
-
     const current = press;
     const dragged = current.dragging;
     lastNodePointerUp = performance.now();
     clearPress();
-
     if (dragged) { renderInspector(); save(); return; }
-
     if (state.connect) {
-      const mode = state.connect.mode;
-      const anchor = state.connect.id;
-      state.connect = null;
-      updateBanner();
+      const mode = state.connect.mode; const anchor = state.connect.id;
+      state.connect = null; updateBanner();
       if (mode === 'out') addEdge(anchor, current.id);
       else addEdge(current.id, anchor);
-      renderAll();
-      return;
+      renderAll(); return;
     }
-
     state.selection = current.id;
     renderAll();
     openNodeMenu(event.clientX, event.clientY, current.id);
   });
 
   dom.canvas.addEventListener('pointerdown', event => {
-    if (event.button !== 0) return;
+    if (event.button !== 0 && event.pointerType !== 'touch') return;
+    if (touchState.isMultiTouch) return;
     closeMenu();
     pan = { x: event.clientX, y: event.clientY, moved: false };
     dom.canvas.classList.add('grabbing');
   });
 
+  // 桌面端滚轮缩放
   dom.canvas.addEventListener('wheel', event => {
     event.preventDefault();
     const rect = dom.canvas.getBoundingClientRect();
@@ -1351,13 +1136,66 @@
     applyView();
   }, { passive: false });
 
-  dom.canvas.addEventListener('dragover', event => {
-    if (event.dataTransfer && Array.from(event.dataTransfer.types).includes('text/plain')) {
-      event.preventDefault();
-      event.dataTransfer.dropEffect = 'copy';
+  // 移动端双指平滑缩放与平移
+  dom.canvas.addEventListener('touchstart', event => {
+    if (event.touches.length === 2) {
+      touchState.isMultiTouch = true;
+      clearPress(); 
+      pan = null;   
+      dom.canvas.classList.remove('grabbing');
+
+      const t1 = event.touches[0]; const t2 = event.touches[1];
+      touchState.startDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      touchState.startScale = state.view.scale;
+      touchState.startX = (t1.clientX + t2.clientX) / 2;
+      touchState.startY = (t1.clientY + t2.clientY) / 2;
+      touchState.startViewX = state.view.x;
+      touchState.startViewY = state.view.y;
+    }
+  }, { passive: false });
+
+  dom.canvas.addEventListener('touchmove', event => {
+    if (touchState.isMultiTouch && event.touches.length === 2) {
+      event.preventDefault(); 
+      const t1 = event.touches[0]; const t2 = event.touches[1];
+      const currentDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      const currentX = (t1.clientX + t2.clientX) / 2;
+      const currentY = (t1.clientY + t2.clientY) / 2;
+
+      const distRatio = currentDist / touchState.startDist;
+      const dampedRatio = 1 + (distRatio - 1) * 0.6; 
+      const newScale = clamp(touchState.startScale * dampedRatio, 0.2, 4);
+
+      const dx = currentX - touchState.startX;
+      const dy = currentY - touchState.startY;
+
+      const rect = dom.canvas.getBoundingClientRect();
+      const canvasCenterX = touchState.startX - rect.left;
+      const canvasCenterY = touchState.startY - rect.top;
+
+      const worldCenterX = (canvasCenterX - touchState.startViewX) / touchState.startScale;
+      const worldCenterY = (canvasCenterY - touchState.startViewY) / touchState.startScale;
+
+      state.view.scale = newScale;
+      state.view.x = (canvasCenterX + dx) - worldCenterX * newScale;
+      state.view.y = (canvasCenterY + dy) - worldCenterY * newScale;
+
+      applyView();
+    }
+  }, { passive: false });
+
+  dom.canvas.addEventListener('touchend', event => {
+    if (event.touches.length < 2) {
+      setTimeout(() => { touchState.isMultiTouch = false; }, 100);
     }
   });
 
+  // 拖拽命令卡片
+  dom.canvas.addEventListener('dragover', event => {
+    if (event.dataTransfer && Array.from(event.dataTransfer.types).includes('text/plain')) {
+      event.preventDefault(); event.dataTransfer.dropEffect = 'copy';
+    }
+  });
   dom.canvas.addEventListener('drop', event => {
     const commandId = event.dataTransfer ? event.dataTransfer.getData('text/plain') : '';
     if (!commandId || !commandDef(commandId)) return;
@@ -1369,17 +1207,10 @@
   // ==========================================================================================
   // 右键菜单
   // ==========================================================================================
-
   function openNodeMenu(x, y, nodeId) {
     const items = [
-      {
-        label: '建立连接：此节点 → 目标（此节点是前置）',
-        action: () => startConnect('out', nodeId)
-      },
-      {
-        label: '建立连接：目标 → 此节点（目标作为前置）',
-        action: () => startConnect('in', nodeId)
-      },
+      { label: '建立连接：此节点 → 目标（此节点是前置）', action: () => startConnect('out', nodeId) },
+      { label: '建立连接：目标 → 此节点（目标作为前置）', action: () => startConnect('in', nodeId) },
       { label: '复制节点', action: () => copyNode(nodeId) },
       ...(nodeClipboard ? [{ label: '粘贴节点', action: () => pasteNode() }] : []),
       { label: '删除节点', danger: true, action: () => deleteNode(nodeId) }
@@ -1390,89 +1221,55 @@
   function openMenu(x, y, items) {
     dom.menu.innerHTML = '';
     for (const item of items) {
-      const button = el('button', {
-        class: 'menu-item' + (item.danger ? ' danger' : ''),
-        text: item.label
-      });
+      const button = el('button', { class: 'menu-item' + (item.danger ? ' danger' : ''), text: item.label });
       button.addEventListener('click', () => { closeMenu(); item.action(); });
       dom.menu.append(button);
     }
     dom.menu.classList.remove('hidden');
-    const width = 220;
-    const height = items.length * 32 + 10;
+    const width = 220; const height = items.length * 40 + 10;
     dom.menu.style.left = Math.max(8, Math.min(x, window.innerWidth - width - 8)) + 'px';
     dom.menu.style.top = Math.max(8, Math.min(y, window.innerHeight - height - 8)) + 'px';
   }
 
-  function closeMenu() {
-    dom.menu.classList.add('hidden');
-    dom.menu.innerHTML = '';
-  }
-
+  function closeMenu() { dom.menu.classList.add('hidden'); dom.menu.innerHTML = ''; }
   document.addEventListener('pointerdown', event => {
     if (!dom.menu.classList.contains('hidden') && !dom.menu.contains(event.target)) closeMenu();
   }, true);
 
   function startConnect(mode, nodeId) {
     state.connect = { mode, id: nodeId };
-    updateBanner();
-    renderAll();
+    updateBanner(); renderAll();
   }
-
   function updateBanner() {
-    if (!state.connect) {
-      dom.banner.classList.add('hidden');
-      return;
-    }
+    if (!state.connect) { dom.banner.classList.add('hidden'); return; }
     const node = nodeById(state.connect.id);
     const name = node ? nodeLabel(node) : state.connect.id;
     dom.banner.textContent = state.connect.mode === 'out'
-      ? '已选择「' + name + '」：点击目标节点，把它设为后继（Esc 取消）'
-      : '已选择「' + name + '」：点击目标节点，把它设为前置（Esc 取消）';
+      ? '已选择「' + name + '」：点击目标节点设为后继（Esc 取消）'
+      : '已选择「' + name + '」：点击目标节点设为前置（Esc 取消）';
     dom.banner.classList.remove('hidden');
   }
 
   window.addEventListener('keydown', event => {
     if (event.key === 'Escape') {
-      if (!dom.modal.classList.contains('hidden')) {
-        dom.modal.classList.add('hidden');
-        return;
-      }
-      if (!dom.repoModal.classList.contains('hidden')) {
-        closeRepo();
-        return;
-      }
-      if (state.connect) {
-        state.connect = null;
-        updateBanner();
-        renderAll();
-        return;
-      }
+      if (!dom.modal.classList.contains('hidden')) { dom.modal.classList.add('hidden'); return; }
+      if (!dom.repoModal.classList.contains('hidden')) { closeRepo(); return; }
+      if (state.connect) { state.connect = null; updateBanner(); renderAll(); return; }
       closeMenu();
     }
     if ((event.ctrlKey || event.metaKey) && !event.altKey && !isTypingTarget(event.target)) {
       const key = event.key.toLowerCase();
-      if (key === 'c' && state.selection) {
-        event.preventDefault();
-        copyNode(state.selection);
-        return;
-      }
-      if (key === 'v') {
-        event.preventDefault();
-        pasteNode();
-        return;
-      }
+      if (key === 'c' && state.selection) { event.preventDefault(); copyNode(state.selection); return; }
+      if (key === 'v') { event.preventDefault(); pasteNode(); return; }
     }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
-      event.preventDefault();
-      exportTree();
+      event.preventDefault(); exportTree();
     }
   });
 
   // ==========================================================================================
   // 检查器
   // ==========================================================================================
-
   function renderInspector() {
     dom.inspector.innerHTML = '';
     const node = nodeById(state.selection);
@@ -1486,39 +1283,26 @@
 
     dom.inspector.append(el('div', { class: 'section-title' },
       el('span', {}, '节点检查器'),
-      el('button', { class: 'danger', text: '删除', onclick: () => deleteNode(node.id) })
+      el('button', { class: 'danger', text: '删除', onclick: () => { deleteNode(node.id); if(window.innerWidth <= 768) closeDrawers(); } })
     ));
 
-    // 图标：文本输入 + 内置物品下拉（带图标）+ 预览
-    const iconInput = el('input', {
-      type: 'text', value: node.icon, placeholder: 'minecraft:stone', spellcheck: 'false'
-    });
+    const iconInput = el('input', { type: 'text', value: node.icon, placeholder: 'minecraft:stone', spellcheck: 'false' });
     const iconPreview = el('img', { class: 'icon-preview', alt: '' });
     const refreshIconPreview = () => {
       const source = iconLookup.get(node.icon);
-      if (source) {
-        iconPreview.src = source;
-        iconPreview.classList.remove('hidden');
-      } else {
-        iconPreview.removeAttribute('src');
-        iconPreview.classList.add('hidden');
-      }
+      if (source) { iconPreview.src = source; iconPreview.classList.remove('hidden'); }
+      else { iconPreview.removeAttribute('src'); iconPreview.classList.add('hidden'); }
     };
     iconInput.addEventListener('input', () => {
       node.icon = iconInput.value.trim();
-      refreshIconPreview();
-      renderNodes();
-      save();
+      refreshIconPreview(); renderNodes(); save();
     });
     const iconValues = findEnum('*', 'icon', 'string');
     const iconField = el('div', { class: 'combo' }, iconPreview, iconInput,
       iconValues ? buildComboButton() : null,
       iconValues ? buildComboList(iconValues, value => {
-        node.icon = String(value);
-        iconInput.value = node.icon;
-        refreshIconPreview();
-        renderNodes();
-        save();
+        node.icon = String(value); iconInput.value = node.icon;
+        refreshIconPreview(); renderNodes(); save();
       }) : null);
     refreshIconPreview();
 
@@ -1529,15 +1313,10 @@
           const next = event.target.value.trim();
           if (!/^[a-z0-9_./-]+$/.test(next)) { toast('节点 ID 只能包含小写字母、数字、_、-、.、/', 'error'); renderInspector(); return; }
           if (state.nodes.some(other => other !== node && other.id === next)) { toast('节点 ID 已存在', 'error'); renderInspector(); return; }
-          const oldId = node.id;
-          node.id = next;
-          for (const edge of state.edges) {
-            if (edge.from === oldId) edge.from = next;
-            if (edge.to === oldId) edge.to = next;
-          }
+          const oldId = node.id; node.id = next;
+          for (const edge of state.edges) { if (edge.from === oldId) edge.from = next; if (edge.to === oldId) edge.to = next; }
           if (state.selection === oldId) state.selection = next;
-          renderAll();
-          save();
+          renderAll(); save();
         }
       })),
       field('名称', el('input', {
@@ -1545,8 +1324,7 @@
         oninput: event => { node.name = event.target.value; renderNodes(); save(); }
       })),
       field('描述', el('textarea', {
-        rows: '3',
-        oninput: event => { node.description = event.target.value; renderNodes(); save(); }
+        rows: '3', oninput: event => { node.description = event.target.value; renderNodes(); save(); }
       }, node.description)),
       el('div', { class: 'row' },
         field('X 坐标', el('input', {
@@ -1555,9 +1333,7 @@
             const value = Number(event.target.value);
             if (!Number.isFinite(value)) { renderInspector(); return; }
             moveNodeSubtree(node.id, round1(value) - node.x, 0);
-            syncNodePositions();
-            renderEdges();
-            save();
+            syncNodePositions(); renderEdges(); save();
           }
         })),
         field('Y 坐标', el('input', {
@@ -1566,9 +1342,7 @@
             const value = Number(event.target.value);
             if (!Number.isFinite(value)) { renderInspector(); return; }
             moveNodeSubtree(node.id, 0, round1(value) - node.y);
-            syncNodePositions();
-            renderEdges();
-            save();
+            syncNodePositions(); renderEdges(); save();
           }
         }))
       ),
@@ -1576,7 +1350,6 @@
       el('div', { class: 'hint', text: '游戏内用该物品的图标显示节点，留空则显示空槽。可从内置物品枚举中选择。' })
     );
 
-    // 前置节点
     dom.inspector.append(el('div', { class: 'section-title' }, el('span', {}, '前置节点（至少一个已解锁才能解锁本节点）')));
     const prerequisites = state.edges.filter(edge => edge.to === node.id);
     if (!prerequisites.length) {
@@ -1586,19 +1359,11 @@
         const from = nodeById(edge.from);
         dom.inspector.append(el('div', { class: 'edge-row' },
           el('span', { class: 'edge-name', text: from ? nodeLabel(from) : edge.from, title: edge.from }),
-          el('button', {
-            text: '移除',
-            onclick: () => {
-              state.edges = state.edges.filter(candidate => candidate !== edge);
-              renderAll();
-              save();
-            }
-          })
+          el('button', { text: '移除', onclick: () => { state.edges = state.edges.filter(candidate => candidate !== edge); renderAll(); save(); } })
         ));
       }
     }
-    const candidates = state.nodes.filter(other => other.id !== node.id
-      && !state.edges.some(edge => edge.from === other.id && edge.to === node.id));
+    const candidates = state.nodes.filter(other => other.id !== node.id && !state.edges.some(edge => edge.from === other.id && edge.to === node.id));
     if (candidates.length) {
       const select = el('select', {},
         el('option', { value: '', text: '选择节点…' }),
@@ -1606,21 +1371,15 @@
       );
       dom.inspector.append(el('div', { class: 'row' },
         select,
-        el('button', {
-          text: '添加前置',
-          onclick: () => { if (select.value) addEdge(select.value, node.id); }
-        })
+        el('button', { text: '添加前置', onclick: () => { if (select.value) addEdge(select.value, node.id); } })
       ));
     }
 
-    // 命令
     dom.inspector.append(el('div', { class: 'section-title' }, el('span', {}, '命令（解锁时依次执行）')));
     if (!node.commands.length) {
       dom.inspector.append(el('div', { class: 'empty', text: '没有命令：解锁不消耗点数，也不产生效果。' }));
     }
-    node.commands.forEach((command, index) => {
-      dom.inspector.append(buildCommandCard(node, command, index));
-    });
+    node.commands.forEach((command, index) => { dom.inspector.append(buildCommandCard(node, command, index)); });
 
     if (state.commands.size) {
       const select = el('select', {},
@@ -1635,8 +1394,7 @@
             const def = commandDef(select.value);
             if (!def) return;
             node.commands.push({ command: def.id, params: defaultsFor(def) });
-            renderAll();
-            save();
+            renderAll(); save();
           }
         })
       ));
@@ -1648,39 +1406,18 @@
   function field(label, input) {
     return el('div', { class: 'field' }, el('label', { text: label }), input);
   }
-
   function buildCommandCard(node, command, index) {
     const def = commandDef(command.command);
     const summary = el('div', { class: 'cmd-summary' });
     const refreshSummary = () => {
-      if (!def) {
-        summary.textContent = '未知命令类型：' + command.command;
-        summary.classList.add('warn');
-        return;
-      }
-      summary.classList.remove('warn');
-      summary.textContent = summaryOf(command);
+      if (!def) { summary.textContent = '未知命令类型：' + command.command; summary.classList.add('warn'); return; }
+      summary.classList.remove('warn'); summary.textContent = summaryOf(command);
     };
-    const afterEdit = () => {
-      refreshSummary();
-      renderNodes();
-      renderEdges();
-      save();
-    };
+    const afterEdit = () => { refreshSummary(); renderNodes(); renderEdges(); save(); };
 
     const head = el('div', { class: 'cmd-head' },
-      el('div', {},
-        el('div', { class: 'name', text: def ? def.name : command.command }),
-        el('div', { class: 'id', text: command.command })
-      ),
-      el('button', {
-        class: 'danger', text: '移除',
-        onclick: () => {
-          node.commands.splice(index, 1);
-          renderAll();
-          save();
-        }
-      })
+      el('div', {}, el('div', { class: 'name', text: def ? def.name : command.command }), el('div', { class: 'id', text: command.command })),
+      el('button', { class: 'danger', text: '移除', onclick: () => { node.commands.splice(index, 1); renderAll(); save(); } })
     );
 
     const body = el('div', { class: 'cmd-body' }, summary);
@@ -1693,72 +1430,41 @@
   }
 
   function buildParamRow(command, spec, afterEdit) {
-    const row = el('div', { class: 'param-row' },
-      el('span', { class: 'param-name', text: spec.name, title: spec.name + ' · ' + spec.type })
-    );
-
+    const row = el('div', { class: 'param-row' }, el('span', { class: 'param-name', text: spec.name, title: spec.name + ' · ' + spec.type }));
     const current = command.params[spec.name];
-
     if (spec.type === 'bool') {
       const checkbox = el('input', { type: 'checkbox' });
       checkbox.checked = current === true;
-      checkbox.addEventListener('change', () => {
-        command.params[spec.name] = checkbox.checked;
-        afterEdit();
-      });
-      row.append(checkbox);
-      return row;
+      checkbox.addEventListener('change', () => { command.params[spec.name] = checkbox.checked; afterEdit(); });
+      row.append(checkbox); return row;
     }
-
-    const input = el('input', {
-      type: spec.type === 'string' ? 'text' : 'number',
-      step: spec.type === 'int' ? '1' : 'any',
-      spellcheck: 'false'
-    });
+    const input = el('input', { type: spec.type === 'string' ? 'text' : 'number', step: spec.type === 'int' ? '1' : 'any', spellcheck: 'false' });
     input.value = current === undefined || current === null ? '' : String(current);
     input.addEventListener('input', () => {
-      if (spec.type === 'string') {
-        command.params[spec.name] = input.value;
-        input.classList.remove('invalid');
-      } else {
+      if (spec.type === 'string') { command.params[spec.name] = input.value; input.classList.remove('invalid'); }
+      else {
         const parsed = Number(input.value);
-        if (input.value.trim() === '' || !Number.isFinite(parsed)) {
-          input.classList.add('invalid');
-        } else {
-          input.classList.remove('invalid');
-          command.params[spec.name] = spec.type === 'int' ? Math.trunc(parsed) : parsed;
-        }
+        if (input.value.trim() === '' || !Number.isFinite(parsed)) { input.classList.add('invalid'); }
+        else { input.classList.remove('invalid'); command.params[spec.name] = spec.type === 'int' ? Math.trunc(parsed) : parsed; }
       }
       afterEdit();
     });
-
     const enumValues = findEnum(command.command, spec.name, spec.type);
     if (enumValues && enumValues.length) {
       const combo = el('div', { class: 'combo' }, input, buildComboButton(), buildComboList(enumValues, value => {
-        input.value = String(value);
-        input.classList.remove('invalid');
-        command.params[spec.name] = spec.type === 'string'
-          ? String(value)
-          : (spec.type === 'int' ? Math.trunc(Number(value)) : Number(value));
+        input.value = String(value); input.classList.remove('invalid');
+        command.params[spec.name] = spec.type === 'string' ? String(value) : (spec.type === 'int' ? Math.trunc(Number(value)) : Number(value));
         afterEdit();
       }));
       row.append(combo);
-    } else {
-      row.append(input);
-    }
+    } else { row.append(input); }
     return row;
   }
 
-  /**
-   * 查找匹配某个命令参数的 enum 表。
-   * <p>targets 里的 command 支持 "*"，表示匹配任意命令里同名同类型的参数；
-   * 导入的 enum 表优先于内置表。</p>
-   */
   function findEnum(commandId, paramName, paramType) {
     for (const table of state.enums.concat(state.builtinEnums)) {
       if (table.type && paramType && table.type !== paramType) continue;
-      const matched = table.targets.some(target =>
-        (target.command === '*' || target.command === commandId) && target.param === paramName);
+      const matched = table.targets.some(target => (target.command === '*' || target.command === commandId) && target.param === paramName);
       if (matched) return table.values;
     }
     return null;
@@ -1776,23 +1482,18 @@
         placeComboList(list, combo);
         list.classList.remove('hidden');
         const search = list.querySelector('.combo-search');
-        search.value = '';
-        search.dispatchEvent(new Event('input'));
-        search.focus();
+        search.value = ''; search.dispatchEvent(new Event('input')); search.focus();
       }
     });
     return button;
   }
 
-  /** 把下拉框贴到输入框下方；下方空间不足时翻到上方，并限制在视口内 */
   function placeComboList(list, combo) {
     const rect = combo.getBoundingClientRect();
     const width = Math.max(240, rect.width);
     const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
     const gap = 4;
-    list.style.width = width + 'px';
-    list.style.left = left + 'px';
-    list.style.top = (rect.bottom + gap) + 'px';
+    list.style.width = width + 'px'; list.style.left = left + 'px'; list.style.top = (rect.bottom + gap) + 'px';
     list.classList.remove('hidden');
     const height = list.offsetHeight;
     const below = rect.bottom + gap;
@@ -1800,11 +1501,7 @@
     list.style.top = (below + height > window.innerHeight - 8 && above >= 8 ? above : below) + 'px';
   }
 
-  function hideAllCombos() {
-    document.querySelectorAll('.combo-list').forEach(list => list.classList.add('hidden'));
-  }
-
-  // 检查器滚动或窗口尺寸变化时收起下拉，避免固定定位的浮层飘在错误位置
+  function hideAllCombos() { document.querySelectorAll('.combo-list').forEach(list => list.classList.add('hidden')); }
   document.addEventListener('scroll', event => {
     if (event.target instanceof Element && event.target.closest('.combo-list')) return;
     hideAllCombos();
@@ -1815,109 +1512,66 @@
     const items = el('div', { class: 'combo-items' });
     const search = el('input', { class: 'combo-search', type: 'text', placeholder: '搜索…' });
     const list = el('div', { class: 'combo-list hidden' }, search, items);
-
     const fill = query => {
       const needle = query.trim().toLowerCase();
-      items.innerHTML = '';
-      let count = 0;
+      items.innerHTML = ''; let count = 0;
       for (const option of values) {
-        const name = String(option.name ?? '');
-        const value = String(option.value ?? '');
+        const name = String(option.name ?? ''); const value = String(option.value ?? '');
         if (needle && !(name + ' ' + value).toLowerCase().includes(needle)) continue;
         count++;
         const item = el('div', { class: 'combo-item' },
           option.icon ? el('img', { class: 'combo-icon', src: option.icon, alt: '' }) : null,
-          el('div', { class: 'combo-text' },
-            el('span', { text: name }),
-            el('span', { class: 'v', text: value })
-          )
+          el('div', { class: 'combo-text' }, el('span', { text: name }), el('span', { class: 'v', text: value }))
         );
-        item.addEventListener('click', () => {
-          onPick(option.value);
-          list.classList.add('hidden');
-        });
+        item.addEventListener('click', () => { onPick(option.value); list.classList.add('hidden'); });
         items.append(item);
       }
       if (!count) items.append(el('div', { class: 'combo-empty', text: '没有匹配项' }));
     };
-
     search.addEventListener('input', () => fill(search.value));
     search.addEventListener('keydown', event => {
-      if (event.key === 'Enter') {
-        const first = items.querySelector('.combo-item');
-        if (first) first.click();
-      }
+      if (event.key === 'Enter') { const first = items.querySelector('.combo-item'); if (first) first.click(); }
       if (event.key === 'Escape') list.classList.add('hidden');
     });
-    fill('');
-    return list;
+    fill(''); return list;
   }
 
   document.addEventListener('pointerdown', event => {
     document.querySelectorAll('.combo-list').forEach(list => {
-      if (!list.contains(event.target) && !event.target.classList.contains('combo-btn')) {
-        list.classList.add('hidden');
-      }
+      if (!list.contains(event.target) && !event.target.classList.contains('combo-btn')) list.classList.add('hidden');
     });
   });
 
   // ==========================================================================================
-  // 树设置
+  // 树设置与导入导出
   // ==========================================================================================
-
-  function setValue(input, value) {
-    if (input.value !== value) input.value = value;
-  }
-
+  function setValue(input, value) { if (input.value !== value) input.value = value; }
   function syncSettings() {
-    setValue(dom.treeId, state.treeId);
-    setValue(dom.treeName, state.displayName);
-    setValue(dom.treeOrder, String(state.order));
-    setValue(dom.treeResetXp, String(state.resetXpPerPoint));
+    setValue(dom.treeId, state.treeId); setValue(dom.treeName, state.displayName);
+    setValue(dom.treeOrder, String(state.order)); setValue(dom.treeResetXp, String(state.resetXpPerPoint));
     dom.treeDefaultUnlocked.checked = state.defaultUnlocked;
     const parts = splitTreeId(state.treeId);
-    dom.treePathHint.textContent = parts
-      ? '数据包路径：data/' + parts.namespace + '/skill_trees/' + parts.path + '.json'
-      : '树 ID 格式应为 namespace:path';
+    dom.treePathHint.textContent = parts ? '数据包路径：data/' + parts.namespace + '/skill_trees/' + parts.path + '.json' : '树 ID 格式应为 namespace:path';
   }
-
   function splitTreeId(treeId) {
     const index = treeId.indexOf(':');
     if (index <= 0 || index === treeId.length - 1) return null;
-    const namespace = treeId.slice(0, index);
-    const path = treeId.slice(index + 1);
+    const namespace = treeId.slice(0, index); const path = treeId.slice(index + 1);
     if (!/^[a-z0-9_.-]+$/.test(namespace) || !/^[a-z0-9_./-]+$/.test(path)) return null;
     return { namespace, path };
   }
 
   dom.treeId.addEventListener('input', () => { state.treeId = dom.treeId.value.trim(); syncSettings(); save(); });
   dom.treeName.addEventListener('input', () => { state.displayName = dom.treeName.value; save(); });
-  dom.treeOrder.addEventListener('input', () => {
-    const parsed = Number(dom.treeOrder.value);
-    if (Number.isInteger(parsed)) { state.order = parsed; save(); }
-  });
-  dom.treeResetXp.addEventListener('input', () => {
-    const parsed = Number(dom.treeResetXp.value);
-    if (Number.isFinite(parsed) && parsed >= 0) { state.resetXpPerPoint = parsed; save(); }
-  });
-  dom.treeDefaultUnlocked.addEventListener('change', () => {
-    state.defaultUnlocked = dom.treeDefaultUnlocked.checked;
-    save();
-  });
-
+  dom.treeOrder.addEventListener('input', () => { const parsed = Number(dom.treeOrder.value); if (Number.isInteger(parsed)) { state.order = parsed; save(); } });
+  dom.treeResetXp.addEventListener('input', () => { const parsed = Number(dom.treeResetXp.value); if (Number.isFinite(parsed) && parsed >= 0) { state.resetXpPerPoint = parsed; save(); } });
+  dom.treeDefaultUnlocked.addEventListener('change', () => { state.defaultUnlocked = dom.treeDefaultUnlocked.checked; save(); });
   dom.libSearch.addEventListener('input', renderLibrary);
-
-  // ==========================================================================================
-  // 导入 / 导出
-  // ==========================================================================================
 
   function readJsonFile(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => {
-        try { resolve(JSON.parse(String(reader.result))); }
-        catch (error) { reject(new Error(file.name + '：不是合法的 JSON（' + error.message + '）')); }
-      };
+      reader.onload = () => { try { resolve(JSON.parse(String(reader.result))); } catch (error) { reject(new Error(file.name + '：不是合法的 JSON（' + error.message + '）')); } };
       reader.onerror = () => reject(new Error(file.name + '：读取失败'));
       reader.readAsText(file);
     });
@@ -1929,29 +1583,14 @@
     for (const entry of json.commands) {
       if (!entry || typeof entry.id !== 'string') continue;
       map.set(entry.id, {
-        id: entry.id,
-        name: String(entry.name ?? entry.id),
-        doc: String(entry.doc ?? ''),
-        summary: String(entry.summary ?? ''),
-        params: Array.isArray(entry.params) ? entry.params.map(param => ({
-          name: String(param.name),
-          type: String(param.type ?? 'string'),
-          default: param.default
-        })) : []
+        id: entry.id, name: String(entry.name ?? entry.id), doc: String(entry.doc ?? ''), summary: String(entry.summary ?? ''),
+        params: Array.isArray(entry.params) ? entry.params.map(param => ({ name: String(param.name), type: String(param.type ?? 'string'), default: param.default })) : []
       });
     }
-    state.commands = map;
-    renderLibrary();
-    renderInspector();
-    save();
+    state.commands = map; renderLibrary(); renderInspector(); save();
     if (!silent) toast('已导入 ' + map.size + ' 个命令类型', 'ok');
   }
 
-  /**
-   * 把 enum 条目规范化为 { type, targets, values }。
-   * <p>新格式用 targets 数组声明“命令 id + 参数名”，command 为 "*" 时匹配任意命令的同名同类型参数；
-   * 同时兼容旧的单目标写法 { command, param, type, values }。</p>
-   */
   function normalizeEnum(entry) {
     if (!entry || !Array.isArray(entry.values)) return null;
     const targets = [];
@@ -1965,53 +1604,32 @@
     }
     if (!targets.length) return null;
     return {
-      id: typeof entry.id === 'string' ? entry.id : '',
-      type: typeof entry.type === 'string' ? entry.type : '',
-      targets,
-      values: entry.values.map(option => ({
-        name: String(option.name ?? option.value ?? ''),
-        value: option.value,
-        icon: typeof option.icon === 'string' ? option.icon : ''
-      }))
+      id: typeof entry.id === 'string' ? entry.id : '', type: typeof entry.type === 'string' ? entry.type : '', targets,
+      values: entry.values.map(option => ({ name: String(option.name ?? option.value ?? ''), value: option.value, icon: typeof option.icon === 'string' ? option.icon : '' }))
     };
   }
 
-  function enumSignature(table) {
-    return table.targets.map(target => target.command + '\u0000' + target.param).sort().join('\u0001');
-  }
-
+  function enumSignature(table) { return table.targets.map(target => target.command + '\u0000' + target.param).sort().join('\u0001'); }
+  
   function loadEnums(json, silent) {
     let entries = [];
     if (Array.isArray(json)) entries = json;
     else if (json && Array.isArray(json.enums)) entries = json.enums;
     else if (json && Array.isArray(json.values)) entries = [json];
     else throw new Error('不是 enum 表（需要 enums 数组，或 { targets, values } / { command, param, values }）');
-
     const normalized = entries.map(normalizeEnum).filter(Boolean);
-    if (!normalized.length) throw new Error('enum 表格式不正确：缺少 targets（命令 id + 参数名）或 values');
-
+    if (!normalized.length) throw new Error('enum 表格式不正确：缺少 targets 或 values');
     for (const table of normalized) {
       const signature = enumSignature(table);
       const index = state.enums.findIndex(existing => enumSignature(existing) === signature);
-      if (index >= 0) state.enums[index] = table;
-      else state.enums.push(table);
+      if (index >= 0) state.enums[index] = table; else state.enums.push(table);
       registerEnumIcons(table);
     }
-    updateStatuses();
-    renderInspector();
-    renderNodes();
-    save();
+    updateStatuses(); renderInspector(); renderNodes(); save();
     if (!silent) toast('已加载 ' + normalized.length + ' 组 enum（导入共 ' + state.enums.length + ' 组）', 'ok');
   }
 
-  /** 把 enum 值上带的图标登记到 iconLookup，供节点图标渲染 */
-  function registerEnumIcons(table) {
-    for (const option of table.values) {
-      if (option.icon) iconLookup.set(String(option.value), option.icon);
-    }
-  }
-
-  /** 载入页面自带的 enum 表（物品/属性/药水效果） */
+  function registerEnumIcons(table) { for (const option of table.values) { if (option.icon) iconLookup.set(String(option.value), option.icon); } }
   function loadBuiltins() {
     const tables = Array.isArray(window.NEWNEW_BUILTIN_ENUMS) ? window.NEWNEW_BUILTIN_ENUMS : [];
     state.builtinEnums = tables.map(normalizeEnum).filter(Boolean);
@@ -2025,75 +1643,34 @@
     state.defaultUnlocked = json.default_unlocked === true;
     state.resetXpPerPoint = Number.isFinite(json.reset_xp_per_point) ? json.reset_xp_per_point : 0;
     state.nodes = json.nodes.map(node => ({
-      id: String(node.id ?? ''),
-      x: Number(node.x) || 0,
-      y: Number(node.y) || 0,
-      name: String(node.name ?? ''),
-      description: String(node.description ?? ''),
-      icon: String(node.icon ?? ''),
-      commands: Array.isArray(node.commands) ? node.commands.map(command => ({
-        command: String(command.command ?? ''),
-        params: Object.assign({}, command.params || {})
-      })) : []
+      id: String(node.id ?? ''), x: Number(node.x) || 0, y: Number(node.y) || 0, name: String(node.name ?? ''),
+      description: String(node.description ?? ''), icon: String(node.icon ?? ''),
+      commands: Array.isArray(node.commands) ? node.commands.map(command => ({ command: String(command.command ?? ''), params: Object.assign({}, command.params || {}) })) : []
     }));
-    state.edges = Array.isArray(json.edges) ? json.edges.map(edge => ({
-      from: String(edge.from ?? ''),
-      to: String(edge.to ?? '')
-    })) : [];
-    state.meta = normalizeMeta(json.meta);
-    state.remote = { treeId: '', baseVersion: 0, lastSyncedHash: '' };
-
-    if (filename) {
-      const base = filename.replace(/\.json$/i, '');
-      state.treeId = base.includes(':') ? base : DEFAULT_NAMESPACE + ':' + base;
-    }
-
+    state.edges = Array.isArray(json.edges) ? json.edges.map(edge => ({ from: String(edge.from ?? ''), to: String(edge.to ?? '') })) : [];
+    state.meta = normalizeMeta(json.meta); state.remote = { treeId: '', baseVersion: 0, lastSyncedHash: '' };
+    if (filename) { const base = filename.replace(/\.json$/i, ''); state.treeId = base.includes(':') ? base : DEFAULT_NAMESPACE + ':' + base; }
     let maxSeq = 0;
-    for (const node of state.nodes) {
-      const match = /^n(\d+)$/.exec(node.id);
-      if (match) maxSeq = Math.max(maxSeq, Number(match[1]));
-    }
-    state.seq = maxSeq + 1;
-    state.selection = null;
-    state.connect = null;
-    updateBanner();
-    renderAll();
-    fitView();
-    save();
+    for (const node of state.nodes) { const match = /^n(\d+)$/.exec(node.id); if (match) maxSeq = Math.max(maxSeq, Number(match[1])); }
+    state.seq = maxSeq + 1; state.selection = null; state.connect = null;
+    updateBanner(); renderAll(); fitView(); save();
   }
 
-  /** 把 JSON 根级的 meta 规范化为编辑器内部结构 */
   function normalizeMeta(raw) {
-    if (!raw || typeof raw !== 'object') {
-      return { originalAuthor: '', version: 0, editors: [], editedAt: '', message: '' };
-    }
+    if (!raw || typeof raw !== 'object') return { originalAuthor: '', version: 0, editors: [], editedAt: '', message: '' };
     return {
-      originalAuthor: typeof raw.original_author === 'string' ? raw.original_author : '',
-      version: Number.isInteger(raw.version) ? raw.version : 0,
-      editors: Array.isArray(raw.editors) ? raw.editors.filter(item => typeof item === 'string') : [],
-      editedAt: typeof raw.edited_at === 'string' ? raw.edited_at : '',
-      message: typeof raw.message === 'string' ? raw.message : ''
+      originalAuthor: typeof raw.original_author === 'string' ? raw.original_author : '', version: Number.isInteger(raw.version) ? raw.version : 0,
+      editors: Array.isArray(raw.editors) ? raw.editors.filter(item => typeof item === 'string') : [], editedAt: typeof raw.edited_at === 'string' ? raw.edited_at : '', message: typeof raw.message === 'string' ? raw.message : ''
     };
   }
 
-  /** 仅包含技能树本体（不含版本 meta），用于计算内容哈希 */
   function buildCoreTree() {
     return {
-      schema: SCHEMA_VERSION,
-      display_name: state.displayName,
-      order: state.order,
-      default_unlocked: state.defaultUnlocked,
-      reset_xp_per_point: state.resetXpPerPoint,
+      schema: SCHEMA_VERSION, display_name: state.displayName, order: state.order, default_unlocked: state.defaultUnlocked, reset_xp_per_point: state.resetXpPerPoint,
       nodes: state.nodes.map(node => {
         const entry = { id: node.id, x: round1(node.x), y: round1(node.y), name: node.name };
-        if (node.description) entry.description = node.description;
-        if (node.icon) entry.icon = node.icon;
-        if (node.commands.length) {
-          entry.commands = node.commands.map(command => ({
-            command: command.command,
-            params: Object.assign({}, command.params)
-          }));
-        }
+        if (node.description) entry.description = node.description; if (node.icon) entry.icon = node.icon;
+        if (node.commands.length) entry.commands = node.commands.map(command => ({ command: command.command, params: Object.assign({}, command.params) }));
         return entry;
       }),
       edges: state.edges.map(edge => ({ from: edge.from, to: edge.to }))
@@ -2102,73 +1679,40 @@
 
   function buildTreeJson() {
     const json = buildCoreTree();
-    json.meta = {
-      original_author: state.meta.originalAuthor,
-      version: state.meta.version,
-      editors: state.meta.editors.slice(),
-      edited_at: state.meta.editedAt || new Date().toISOString(),
-      message: state.meta.message
-    };
+    json.meta = { original_author: state.meta.originalAuthor, version: state.meta.version, editors: state.meta.editors.slice(), edited_at: state.meta.editedAt || new Date().toISOString(), message: state.meta.message };
     return json;
   }
 
   function validateTree() {
-    const errors = [];
-    const warnings = [];
-
-    if (!splitTreeId(state.treeId)) {
-      errors.push('树 ID 必须形如 namespace:path（小写字母、数字、_、-、.、/）');
-    }
+    const errors = []; const warnings = [];
+    if (!splitTreeId(state.treeId)) errors.push('树 ID 必须形如 namespace:path（小写字母、数字、_、-、.、/）');
     if (!state.displayName.trim()) errors.push('显示名称不能为空');
-
     const ids = new Set();
     for (const node of state.nodes) {
       if (!/^[a-z0-9_./-]+$/.test(node.id)) errors.push('节点 ID 非法："' + node.id + '"');
       if (ids.has(node.id)) errors.push('节点 ID 重复："' + node.id + '"');
-      ids.add(node.id);
-      if (!node.name.trim()) warnings.push('节点 "' + node.id + '" 没有名称');
-      if (node.icon && !/^[a-z0-9_.-]+:[a-z0-9_./-]+$/.test(node.icon)) {
-        errors.push('节点 "' + node.id + '" 的图标物品 ID 非法："' + node.icon + '"');
-      }
+      ids.add(node.id); if (!node.name.trim()) warnings.push('节点 "' + node.id + '" 没有名称');
+      if (node.icon && !/^[a-z0-9_.-]+:[a-z0-9_./-]+$/.test(node.icon)) errors.push('节点 "' + node.id + '" 的图标物品 ID 非法："' + node.icon + '"');
       if (!node.commands.length) warnings.push('节点 "' + node.id + '" 没有命令（解锁不消耗点数）');
       for (const command of node.commands) {
         const def = commandDef(command.command);
-        if (!def) {
-          errors.push('节点 "' + node.id + '" 使用了未导入的命令类型："' + command.command + '"');
-          continue;
-        }
+        if (!def) { errors.push('节点 "' + node.id + '" 使用了未导入的命令类型："' + command.command + '"'); continue; }
         for (const spec of def.params) {
           const value = command.params[spec.name];
-          if (value === undefined || value === null) {
-            errors.push('节点 "' + node.id + '" 的命令 ' + def.id + ' 缺少参数 ' + spec.name);
-            continue;
-          }
-          if (spec.type === 'string') {
-            if (typeof value !== 'string') errors.push('节点 "' + node.id + '" 的参数 ' + spec.name + ' 必须是字符串');
-            else if (!value.trim()) errors.push('节点 "' + node.id + '" 的参数 ' + spec.name + ' 为空，游戏内加载会失败');
-          } else if (spec.type === 'int') {
-            if (!Number.isInteger(value)) errors.push('节点 "' + node.id + '" 的参数 ' + spec.name + ' 必须是整数');
-          } else if (spec.type === 'float') {
-            if (!Number.isFinite(value)) errors.push('节点 "' + node.id + '" 的参数 ' + spec.name + ' 必须是有限数值');
-          } else if (spec.type === 'bool') {
-            if (typeof value !== 'boolean') errors.push('节点 "' + node.id + '" 的参数 ' + spec.name + ' 必须是布尔值');
-          }
+          if (value === undefined || value === null) { errors.push('节点 "' + node.id + '" 的命令 ' + def.id + ' 缺少参数 ' + spec.name); continue; }
+          if (spec.type === 'string') { if (typeof value !== 'string') errors.push('节点 "' + node.id + '" 的参数 ' + spec.name + ' 必须是字符串'); else if (!value.trim()) errors.push('节点 "' + node.id + '" 的参数 ' + spec.name + ' 为空，游戏内加载会失败'); }
+          else if (spec.type === 'int') { if (!Number.isInteger(value)) errors.push('节点 "' + node.id + '" 的参数 ' + spec.name + ' 必须是整数'); }
+          else if (spec.type === 'float') { if (!Number.isFinite(value)) errors.push('节点 "' + node.id + '" 的参数 ' + spec.name + ' 必须是有限数值'); }
+          else if (spec.type === 'bool') { if (typeof value !== 'boolean') errors.push('节点 "' + node.id + '" 的参数 ' + spec.name + ' 必须是布尔值'); }
         }
       }
     }
-
     const edgeKeys = new Set();
     for (const edge of state.edges) {
-      if (!ids.has(edge.from) || !ids.has(edge.to)) {
-        errors.push('连接 ' + edge.from + ' → ' + edge.to + ' 引用了不存在的节点');
-      } else if (edge.from === edge.to) {
-        errors.push('连接 ' + edge.from + ' → ' + edge.to + ' 是自环');
-      }
-      const key = edge.from + '\u0000' + edge.to;
-      if (edgeKeys.has(key)) errors.push('重复连接 ' + edge.from + ' → ' + edge.to);
-      edgeKeys.add(key);
+      if (!ids.has(edge.from) || !ids.has(edge.to)) errors.push('连接 ' + edge.from + ' → ' + edge.to + ' 引用了不存在的节点');
+      else if (edge.from === edge.to) errors.push('连接 ' + edge.from + ' → ' + edge.to + ' 是自环');
+      const key = edge.from + '\u0000' + edge.to; if (edgeKeys.has(key)) errors.push('重复连接 ' + edge.from + ' → ' + edge.to); edgeKeys.add(key);
     }
-
     if (!state.nodes.length) warnings.push('技能树没有任何节点');
     return { errors, warnings };
   }
@@ -2176,49 +1720,26 @@
   function exportTree() {
     const result = validateTree();
     const parts = splitTreeId(state.treeId);
-    const targetPath = parts
-      ? 'data/' + parts.namespace + '/skill_trees/' + parts.path + '.json'
-      : '（树 ID 非法）';
-
-    if (result.errors.length) {
-      showReport('无法导出：发现 ' + result.errors.length + ' 个问题', result.errors, result.warnings, null);
-      return;
-    }
-
+    const targetPath = parts ? 'data/' + parts.namespace + '/skill_trees/' + parts.path + '.json' : '（树 ID 非法）';
+    if (result.errors.length) { showReport('无法导出：发现 ' + result.errors.length + ' 个问题', result.errors, result.warnings, null); return; }
     const perform = () => {
-      const json = buildTreeJson();
-      const name = parts ? parts.path.replace(/\//g, '_') + '.json' : 'skill_tree.json';
-      downloadText(JSON.stringify(json, null, 2), name);
-      toast('已导出，目标路径：' + targetPath, 'ok');
+      const json = buildTreeJson(); const name = parts ? parts.path.replace(/\//g, '_') + '.json' : 'skill_tree.json';
+      downloadText(JSON.stringify(json, null, 2), name); toast('已导出，目标路径：' + targetPath, 'ok');
     };
-
-    if (result.warnings.length) {
-      showReport('导出前检查：' + result.warnings.length + ' 个提醒', [], result.warnings, perform);
-    } else {
-      perform();
-    }
+    if (result.warnings.length) showReport('导出前检查：' + result.warnings.length + ' 个提醒', [], result.warnings, perform); else perform();
   }
 
   // ==========================================================================================
-  // 弹窗
+  // 弹窗 & 远程仓库 & 其余底层代码
   // ==========================================================================================
-
   function showModal(title, bodyNodes, actions) {
-    dom.modalTitle.textContent = title;
-    dom.modalBody.innerHTML = '';
-    for (const child of bodyNodes) {
-      if (child !== null && child !== undefined && child !== false) dom.modalBody.append(child);
-    }
+    dom.modalTitle.textContent = title; dom.modalBody.innerHTML = '';
+    for (const child of bodyNodes) { if (child !== null && child !== undefined && child !== false) dom.modalBody.append(child); }
     dom.modalFoot.innerHTML = '';
     for (const action of actions) {
       dom.modalFoot.append(el('button', {
-        class: action.primary ? 'primary' : (action.danger ? 'danger' : ''),
-        text: action.label,
-        onclick: () => {
-          // action 返回 false 表示校验未通过，保持弹窗打开
-          const result = action.action ? action.action() : undefined;
-          if (!action.keepOpen && result !== false) dom.modal.classList.add('hidden');
-        }
+        class: action.primary ? 'primary' : (action.danger ? 'danger' : ''), text: action.label,
+        onclick: () => { const result = action.action ? action.action() : undefined; if (!action.keepOpen && result !== false) dom.modal.classList.add('hidden'); }
       }));
     }
     dom.modal.classList.remove('hidden');
@@ -2226,552 +1747,217 @@
 
   function showReport(title, errors, warnings, onConfirm) {
     const body = [];
-    if (errors.length) {
-      body.push(el('div', { text: '错误' }));
-      body.push(el('ul', { class: 'error-list' }, errors.map(text => el('li', { text }))));
-    }
-    if (warnings.length) {
-      body.push(el('div', { text: errors.length ? '提醒' : '以下内容不会阻止导出：' }));
-      body.push(el('ul', { class: 'warn-list' }, warnings.map(text => el('li', { text }))));
-    }
-    const actions = [{
-      label: errors.length ? '关闭' : '取消'
-    }];
-    if (!errors.length && onConfirm) {
-      actions.push({ label: '仍然导出', primary: true, action: onConfirm });
-    }
+    if (errors.length) { body.push(el('div', { text: '错误' })); body.push(el('ul', { class: 'error-list' }, errors.map(text => el('li', { text })))); }
+    if (warnings.length) { body.push(el('div', { text: errors.length ? '提醒' : '以下内容不会阻止导出：' })); body.push(el('ul', { class: 'warn-list' }, warnings.map(text => el('li', { text })))); }
+    const actions = [{ label: errors.length ? '关闭' : '取消' }];
+    if (!errors.length && onConfirm) actions.push({ label: '仍然导出', primary: true, action: onConfirm });
     showModal(title, body, actions);
   }
 
-  function builtinLabel(table) {
-    if (table.id === 'builtin_items') return '物品';
-    if (table.id === 'builtin_attributes') return '属性';
-    if (table.id === 'builtin_effects') return '药水效果';
-    if (table.id === 'builtin_operations') return '属性修饰方式';
-    return table.id || 'enum';
-  }
+  function builtinLabel(table) { if (table.id === 'builtin_items') return '物品'; if (table.id === 'builtin_attributes') return '属性'; if (table.id === 'builtin_effects') return '药水效果'; if (table.id === 'builtin_operations') return '属性修饰方式'; return table.id || 'enum'; }
 
   function showHelp() {
     const body = [
-      el('div', { text: '基本流程' }),
-      el('ol', {},
-        el('li', {}, '启动游戏（或 GameTest 服务端）后，模组会把命令定义表写到游戏目录下的 ', el('code', { text: 'newnew_warlock_core/command_definitions.json' }), '。'),
-        el('li', {}, '点击「导入命令定义」，选择该文件。左侧命令库出现命令卡片。'),
-        el('li', {}, '把命令卡片拖到画布上创建节点；也可以选中卡片后按 Enter（或双击卡片）在画布中心创建。'),
-        el('li', {}, '长按节点约 0.1 秒后拖动；单击节点选中并弹出菜单（建立连接 / 删除）。'),
-        el('li', {}, '单击节点选中后可按 Ctrl+C 复制、Ctrl+V 粘贴（只复制节点本身，不复制连接）。'),
-        el('li', {}, '右侧检查器修改节点名称、描述、图标物品与命令参数。'),
-        el('li', {}, '点击「导出技能树」，把文件放到 ', el('code', { text: 'data/<命名空间>/skill_trees/<名称>.json' }), '，执行 /reload。')
+      el('div', { class: 'help-card' },
+        el('h3', {}, '一、远程仓库：拉取与上传'),
+        el('p', {}, '点击顶部「仓库」打开远程仓库。这里用于下载别人分享的技能树，或把自己的技能树上传给其他人使用。'),
+        el('ol', { class: 'help-list' },
+          el('li', {}, el('b', { text: '首次连接：' }), '填写作者 ID、服务器地址和访问令牌，然后点击「保存设置」。这些信息由仓库服务提供。'),
+          el('li', {}, el('b', { text: '查看仓库：' }), '点击「刷新列表」，选择左侧的一棵技能树，右侧就会显示它的版本。'),
+          el('li', {}, el('b', { text: '拉取（下载）：' }), '选择需要的版本，点击「拉取到工作区」。拉取会替换当前编辑内容，不会自动合并。重要：先导出备份，确认后再覆盖。'),
+          el('li', {}, el('b', { text: '下载 ZIP：' }), '点击版本旁边的「下载 zip」，将该版本保存为压缩包。'),
+          el('li', {}, el('b', { text: '上传为新树：' }), '想把当前技能树作为一个新项目分享，点击「推送当前为新树」，填写版本说明后上传。'),
+          el('li', {}, el('b', { text: '上传为新版本：' }), '当前技能树已关联仓库时，点击「推送当前为新版本」，填写说明即可上传更新。'),
+          el('li', {}, el('b', { text: '顶部「上传」：' }), '快捷上传会根据当前关联状态选择上传方式。如果仓库已有更新版本，请先拉取最新版本，再继续编辑和上传。')
+        ),
+        el('p', {}, '上传前会检查技能树。出现错误时，需要先修复；出现警告时，可以确认后继续。')
       ),
-      el('div', { class: 'section-title' }, el('span', {}, '远程仓库（可选）')),
-      el('div', { text: '在「仓库」里填写作者 ID、服务器地址与访问令牌。上传时会把当前工作区连同版本信息（原作者、版本号、编辑者、编辑时间、版本说明）推到服务端；拉取可把任意历史版本取回画布，下载可得到含 tree.json 与 meta.json 的 zip。' }),
-      el('div', { text: '已经关联远程树时，顶部「上传」会作为新版本推送；如果远端已有更新版本，需要先拉取。未关联时，则作为一棵新树上传。' }),
-      el('div', { class: 'section-title' }, el('span', {}, '前置规则')),
-      el('div', { text: '连线方向为「前置 → 后继」。一个节点有多个前置时，只要其中任意一个已解锁即可解锁；没有前置的节点是根节点，可直接解锁。' }),
-      el('div', { class: 'section-title' }, el('span', {}, 'enum 表（编辑期辅助）')),
-      el('div', {
-        text: state.builtinEnums.length
-          ? '页面内置：' + state.builtinEnums.map(table => builtinLabel(table) + ' ' + table.values.length).join('、')
-            + '（物品与药水效果带图标）。参数名匹配时，输入框右侧出现可搜索下拉。'
-          : '未找到 builtin_enums.js，内置 enum 不可用；仍可手动导入 enum 表。'
-      }),
-      el('div', { text: 'enum 只影响编辑器的输入提示，导出 JSON 仍然只写基本类型。导入格式（targets 为“命令 id + 参数名”数组，command 写 * 表示匹配任意命令的同名同类型参数）：' }),
-      el('pre', { class: 'code-block' }, JSON.stringify({
-        enums: [{
-          type: 'string',
-          targets: [
-            { command: 'newnew_warlock_core:attribute', param: 'attribute' },
-            { command: '*', param: 'effect' }
-          ],
-          values: [
-            { name: '力量', value: 'newnew_warlock_core:newnew_strength' },
-            { name: '坚韧', value: 'newnew_warlock_core:newnew_toughness' }
-          ]
-        }]
-      }, null, 2)),
-      el('div', { class: 'section-title' }, el('span', {}, '其它')),
-      el('div', { text: '快捷保存：Ctrl+S 导出。导出文件名会使用树 ID 的路径部分（子目录用下划线代替），请按提示的路径放到数据包中。' }),
-      el('div', { text: '使用 http 打开本页面时，会自动尝试加载同目录下的 command_definitions.json。' })
+      el('div', { class: 'help-card' },
+        el('h3', {}, '二、编辑技能树'),
+        el('ol', { class: 'help-list' },
+          el('li', {}, el('b', { text: '创建节点：' }), '从左侧命令库拖动一个命令到画布，即可创建技能节点。也可以双击命令，或选中命令后按 Enter 创建。'),
+          el('li', {}, el('b', { text: '查看和修改属性：' }), '点击画布中的节点，在右侧「节点检查器」查看或修改节点名称、描述、ID、坐标、图标、前置节点和命令参数。'),
+          el('li', {}, el('b', { text: '设置技能树：' }), '在左侧「技能树设置」中修改整棵树的 ID、名称、排序、经验消耗和默认解锁状态。'),
+          el('li', {}, el('b', { text: '移动画布：' }), '拖动画布空白处可以移动视图；滚动鼠标滚轮可以缩放。拖动节点可以改变节点位置。点击右下角「🎯」可显示整棵技能树。'),
+          el('li', {}, el('b', { text: '连接节点：' }), '在节点菜单中选择建立连接，再点击目标节点。连线表示前置关系；也可以在右侧「前置节点」中添加或删除前置节点。'),
+          el('li', {}, el('b', { text: '编辑命令：' }), '在节点检查器中添加或删除命令，并修改命令参数。节点解锁时，会按列表顺序执行命令。'),
+          el('li', {}, el('b', { text: '复制和删除：' }), '选中节点后，可使用 Ctrl + C 复制、Ctrl + V 粘贴；删除节点时，与它相连的连线也会删除。')
+        )
+      ),
+      el('div', { class: 'help-card' },
+        el('h3', {}, '三、游戏内如何使用'),
+        el('ol', { class: 'help-list' },
+          el('li', {}, '进入游戏后，按 ', el('code', { text: 'K' }), ' 键打开技能树。'),
+          el('li', {}, '点击技能节点可以查看技能及其解锁条件。'),
+          el('li', {}, '没有前置节点的技能可以直接解锁；有多个前置节点时，任意一个前置节点解锁即可满足条件。'),
+          el('li', {}, '解锁技能后，会执行该节点配置的命令。')
+        )
+      ),
+      el('div', { class: 'help-card' },
+        el('h3', {}, '四、导入、导出与打包'),
+        el('ul', { class: 'help-list' },
+          el('li', {}, '「导入」：打开已有的技能树 JSON 文件。也可以把 JSON 文件拖到页面中导入。'),
+          el('li', {}, '「导出」：将当前技能树保存为 JSON 文件，适合备份或继续编辑。'),
+          el('li', {}, '「打包」：生成游戏可用的数据包 ZIP。放入游戏的 datapacks 目录后，在游戏中执行 ', el('code', { text: '/reload' }), '。'),
+          el('li', {}, '「导入定义」：加载命令定义文件，让编辑器知道各个命令支持哪些参数。')
+        )
+      ),
+      el('div', { class: 'help-card' },
+        el('h3', {}, '五、手机端操作'),
+        el('ul', { class: 'help-list' },
+          el('li', {}, '点击「☰ 菜单/命令」打开命令库。'),
+          el('li', {}, '点击命令即可创建节点；长按节点后拖动可以移动节点。'),
+          el('li', {}, '单指拖动画布，双指捏合缩放；点击「属性」查看和编辑节点。')
+        )
+      ),
+      el('div', { class: 'help-card' },
+        el('h3', {}, '六、常用快捷键'),
+        el('ul', { class: 'help-list' },
+          el('li', {}, el('code', { text: 'K' }), '：游戏内打开技能树。'),
+          el('li', {}, el('code', { text: 'Ctrl + C / Ctrl + V' }), '：复制 / 粘贴节点。'),
+          el('li', {}, el('code', { text: 'Ctrl + S' }), '：导出当前技能树 JSON。'),
+          el('li', {}, el('code', { text: 'Esc' }), '：取消连接操作，或关闭菜单和弹窗。')
+        )
+      ),
+      el('div', { class: 'help-card' },
+        el('h3', {}, '七、Enum 参数表'),
+        el('p', {}, 'Enum 用于给指定命令参数提供可选值，方便选择，不会改变导出数据的类型。参数匹配后，输入框会显示可搜索的下拉列表。'),
+        el('p', {}, '内置类型包括：物品、属性、药水效果和属性修饰方式。点击顶部「导入枚举」可以导入自定义 enum JSON。')
+      )
     ];
-    showModal('使用说明', body, [{ label: '知道了', primary: true }]);
+    showModal('使用说明', body, [{ label: '我知道了', primary: true }]);
   }
+  const repoState = { trees: [], selectedId: '', detail: null, versions: [], dirty: null };
+  function readLocal(key) { try { return localStorage.getItem(key) || ''; } catch (error) { return ''; } }
+  function writeLocal(key, value) { try { localStorage.setItem(key, value); } catch (error) {} }
+  function repoAuthor() { return readLocal(AUTHOR_KEY).trim(); }
+  function repoToken() { return readLocal(TOKEN_KEY).trim(); }
+  function serverBase() { const saved = readLocal(SERVER_KEY).trim(); const base = saved || (/^https?:$/.test(location.protocol) ? '' : 'http://127.0.0.1:8787'); return base.replace(/\/+$/, ''); }
 
-  // ==========================================================================================
-  // 远程仓库
-  // ==========================================================================================
-
-  const repoState = {
-    trees: [],
-    selectedId: '',
-    detail: null,
-    versions: [],
-    dirty: null
-  };
-
-  // ---------------------------------------------------------------- 本地配置
-
-  function readLocal(key) {
-    try { return localStorage.getItem(key) || ''; } catch (error) { return ''; }
-  }
-
-  function writeLocal(key, value) {
-    try { localStorage.setItem(key, value); } catch (error) { /* 忽略隐私模式下的写入失败 */ }
-  }
-
-  function repoAuthor() {
-    return readLocal(AUTHOR_KEY).trim();
-  }
-
-  function repoToken() {
-    return readLocal(TOKEN_KEY).trim();
-  }
-
-  function serverBase() {
-    const saved = readLocal(SERVER_KEY).trim();
-    const base = saved || (/^https?:$/.test(location.protocol) ? '' : 'http://127.0.0.1:8787');
-    return base.replace(/\/+$/, '');
-  }
-
-  // ---------------------------------------------------------------- 内容哈希
-
-  const SHA256_K = [
-    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
-  ];
-
-  function rotr(value, bits) {
-    return (value >>> bits) | (value << (32 - bits));
-  }
-
-  /** 纯 JS SHA-256，用于 file:// 等没有 crypto.subtle 的场景 */
+  const SHA256_K = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];
+  function rotr(value, bits) { return (value >>> bits) | (value << (32 - bits)); }
   function sha256Fallback(text) {
-    const bytes = new TextEncoder().encode(text);
-    const bitLength = bytes.length * 8;
-    const padded = new Uint8Array((((bytes.length + 8) >> 6) + 1) << 6);
-    padded.set(bytes);
-    padded[bytes.length] = 0x80;
-    const view = new DataView(padded.buffer);
-    view.setUint32(padded.length - 8, Math.floor(bitLength / 0x100000000));
-    view.setUint32(padded.length - 4, bitLength >>> 0);
-
-    const hash = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
-    const w = new Uint32Array(64);
-
+    const bytes = new TextEncoder().encode(text); const bitLength = bytes.length * 8;
+    const padded = new Uint8Array((((bytes.length + 8) >> 6) + 1) << 6); padded.set(bytes); padded[bytes.length] = 0x80;
+    const view = new DataView(padded.buffer); view.setUint32(padded.length - 8, Math.floor(bitLength / 0x100000000)); view.setUint32(padded.length - 4, bitLength >>> 0);
+    const hash = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]; const w = new Uint32Array(64);
     for (let offset = 0; offset < padded.length; offset += 64) {
       for (let i = 0; i < 16; i += 1) w[i] = view.getUint32(offset + i * 4);
-      for (let i = 16; i < 64; i += 1) {
-        const s0 = rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >>> 3);
-        const s1 = rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >>> 10);
-        w[i] = (w[i - 16] + s0 + w[i - 7] + s1) >>> 0;
-      }
-
-      let a = hash[0];
-      let b = hash[1];
-      let c = hash[2];
-      let d = hash[3];
-      let e = hash[4];
-      let f = hash[5];
-      let g = hash[6];
-      let h = hash[7];
-
+      for (let i = 16; i < 64; i += 1) { const s0 = rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >>> 3); const s1 = rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >>> 10); w[i] = (w[i - 16] + s0 + w[i - 7] + s1) >>> 0; }
+      let a = hash[0], b = hash[1], c = hash[2], d = hash[3], e = hash[4], f = hash[5], g = hash[6], h = hash[7];
       for (let i = 0; i < 64; i += 1) {
-        const s1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
-        const ch = (e & f) ^ (~e & g);
-        const temp1 = (h + s1 + ch + SHA256_K[i] + w[i]) >>> 0;
-        const s0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
-        const maj = (a & b) ^ (a & c) ^ (b & c);
-        const temp2 = (s0 + maj) >>> 0;
-        h = g; g = f; f = e; e = (d + temp1) >>> 0;
-        d = c; c = b; b = a; a = (temp1 + temp2) >>> 0;
+        const s1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25); const ch = (e & f) ^ (~e & g); const temp1 = (h + s1 + ch + SHA256_K[i] + w[i]) >>> 0;
+        const s0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22); const maj = (a & b) ^ (a & c) ^ (b & c); const temp2 = (s0 + maj) >>> 0;
+        h = g; g = f; f = e; e = (d + temp1) >>> 0; d = c; c = b; b = a; a = (temp1 + temp2) >>> 0;
       }
-
-      hash[0] = (hash[0] + a) >>> 0;
-      hash[1] = (hash[1] + b) >>> 0;
-      hash[2] = (hash[2] + c) >>> 0;
-      hash[3] = (hash[3] + d) >>> 0;
-      hash[4] = (hash[4] + e) >>> 0;
-      hash[5] = (hash[5] + f) >>> 0;
-      hash[6] = (hash[6] + g) >>> 0;
-      hash[7] = (hash[7] + h) >>> 0;
+      hash[0] = (hash[0] + a) >>> 0; hash[1] = (hash[1] + b) >>> 0; hash[2] = (hash[2] + c) >>> 0; hash[3] = (hash[3] + d) >>> 0;
+      hash[4] = (hash[4] + e) >>> 0; hash[5] = (hash[5] + f) >>> 0; hash[6] = (hash[6] + g) >>> 0; hash[7] = (hash[7] + h) >>> 0;
     }
-
     return hash.map(value => value.toString(16).padStart(8, '0')).join('');
   }
 
   async function hashCurrentTree() {
     const text = canonicalJson(buildCoreTree());
     if (window.crypto && window.crypto.subtle) {
-      try {
-        const digest = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-        return Array.from(new Uint8Array(digest)).map(byte => byte.toString(16).padStart(2, '0')).join('');
-      } catch (error) { /* 回退 */ }
+      try { const digest = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)); return Array.from(new Uint8Array(digest)).map(byte => byte.toString(16).padStart(2, '0')).join(''); } catch (error) {}
     }
     return sha256Fallback(text);
   }
-
-  /** 与服务端一致的键排序 JSON */
   function canonicalJson(value) {
     if (Array.isArray(value)) return '[' + value.map(canonicalJson).join(',') + ']';
-    if (value && typeof value === 'object') {
-      return '{' + Object.keys(value).sort()
-        .map(key => JSON.stringify(key) + ':' + canonicalJson(value[key]))
-        .join(',') + '}';
-    }
+    if (value && typeof value === 'object') return '{' + Object.keys(value).sort().map(key => JSON.stringify(key) + ':' + canonicalJson(value[key])).join(',') + '}';
     return JSON.stringify(value) ?? 'null';
   }
-
-  // ---------------------------------------------------------------- HTTP
-
   async function repoRequest(pathname, options) {
-    const token = repoToken();
-    if (!token) throw new Error('还没有设置访问令牌，请先在上方填写服务端的 EDITOR_TOKEN');
-    const url = serverBase() + pathname;
-    let response;
-    try {
-      response = await fetch(url, {
-        method: (options && options.method) || 'GET',
-        headers: Object.assign(
-          { Authorization: 'Bearer ' + token, 'ngrok-skip-browser-warning': 'true' },
-          options && options.body ? { 'Content-Type': 'application/json' } : {}
-        ),
-        body: options && options.body ? JSON.stringify(options.body) : undefined
-      });
-    } catch (error) {
-      throw new Error('连接服务器失败：' + url + '（' + error.message + '）');
-    }
-
-    const text = await response.text();
-    let data = null;
-    try { data = text ? JSON.parse(text) : null; } catch (error) { data = null; }
-
-    if (!response.ok) {
-      const requestError = new Error((data && (data.error || data.message)) || ('HTTP ' + response.status));
-      requestError.status = response.status;
-      requestError.data = data;
-      throw requestError;
-    }
+    const token = repoToken(); if (!token) throw new Error('还没有设置访问令牌，请先在上方填写服务端的 EDITOR_TOKEN');
+    const url = serverBase() + pathname; let response;
+    try { response = await fetch(url, { method: (options && options.method) || 'GET', headers: Object.assign({ Authorization: 'Bearer ' + token, 'ngrok-skip-browser-warning': 'true' }, options && options.body ? { 'Content-Type': 'application/json' } : {}), body: options && options.body ? JSON.stringify(options.body) : undefined }); }
+    catch (error) { throw new Error('连接服务器失败：' + url + '（' + error.message + '）'); }
+    const text = await response.text(); let data = null; try { data = text ? JSON.parse(text) : null; } catch (error) { data = null; }
+    if (!response.ok) { const requestError = new Error((data && (data.error || data.message)) || ('HTTP ' + response.status)); requestError.status = response.status; requestError.data = data; throw requestError; }
     return data;
   }
-
   function downloadText(text, name) {
-    const blob = new Blob([text], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const anchor = el('a', { href: url, download: name });
-    document.body.append(anchor);
-    anchor.click();
-    anchor.remove();
+    const blob = new Blob([text], { type: 'application/json' }); const url = URL.createObjectURL(blob);
+    const anchor = el('a', { href: url, download: name }); document.body.append(anchor); anchor.click(); anchor.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1500);
   }
-
   function downloadBlob(blob, name) {
-    const url = URL.createObjectURL(blob);
-    const anchor = el('a', { href: url, download: name });
-    document.body.append(anchor);
-    anchor.click();
-    anchor.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1500);
+    const url = URL.createObjectURL(blob); const anchor = el('a', { href: url, download: name });
+    document.body.append(anchor); anchor.click(); anchor.remove(); setTimeout(() => URL.revokeObjectURL(url), 1500);
   }
-
-  // ---------------------------------------------------------------- 数据包导出
-
-  // 各版本的数据包格式号（来自该版本 version.json 的 pack_version.data_major/data_minor）
-  const PACK_FORMATS = {
-    '26.3': [121, 0]
-  };
-
-  const CRC_TABLE = (() => {
-    const table = new Uint32Array(256);
-    for (let i = 0; i < 256; i++) {
-      let value = i;
-      for (let bit = 0; bit < 8; bit++) {
-        value = (value & 1) ? (0xEDB88320 ^ (value >>> 1)) : (value >>> 1);
-      }
-      table[i] = value >>> 0;
-    }
-    return table;
-  })();
-
-  function crc32(bytes) {
-    let crc = 0xFFFFFFFF;
-    for (let i = 0; i < bytes.length; i++) {
-      crc = CRC_TABLE[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
-    }
-    return (crc ^ 0xFFFFFFFF) >>> 0;
-  }
-
-  /**
-   * 生成不压缩（store）的 zip。只依赖浏览器自身，不需要任何第三方库。
-   * files: [{ name, text }]
-   */
+  const PACK_FORMATS = { '26.3': [121, 0] };
+  const CRC_TABLE = (() => { const table = new Uint32Array(256); for (let i = 0; i < 256; i++) { let value = i; for (let bit = 0; bit < 8; bit++) { value = (value & 1) ? (0xEDB88320 ^ (value >>> 1)) : (value >>> 1); } table[i] = value >>> 0; } return table; })();
+  function crc32(bytes) { let crc = 0xFFFFFFFF; for (let i = 0; i < bytes.length; i++) { crc = CRC_TABLE[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8); } return (crc ^ 0xFFFFFFFF) >>> 0; }
   function buildZip(files) {
-    const encoder = new TextEncoder();
-    const now = new Date();
+    const encoder = new TextEncoder(); const now = new Date();
     const dosTime = ((now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1)) & 0xFFFF;
     const dosDate = (((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate()) & 0xFFFF;
-
-    const parts = [];
-    const central = [];
-    let offset = 0;
-
+    const parts = []; const central = []; let offset = 0;
     for (const file of files) {
-      const nameBytes = encoder.encode(file.name);
-      const data = encoder.encode(file.text);
-      const checksum = crc32(data);
-
-      const local = new Uint8Array(30 + nameBytes.length);
-      const localView = new DataView(local.buffer);
-      localView.setUint32(0, 0x04034b50, true);
-      localView.setUint16(4, 20, true);
-      localView.setUint16(6, 0x0800, true); // 文件名按 UTF-8 解释
-      localView.setUint16(8, 0, true);      // 0 = store
-      localView.setUint16(10, dosTime, true);
-      localView.setUint16(12, dosDate, true);
-      localView.setUint32(14, checksum, true);
-      localView.setUint32(18, data.length, true);
-      localView.setUint32(22, data.length, true);
-      localView.setUint16(26, nameBytes.length, true);
-      localView.setUint16(28, 0, true);
-      local.set(nameBytes, 30);
-
-      const record = new Uint8Array(46 + nameBytes.length);
-      const recordView = new DataView(record.buffer);
-      recordView.setUint32(0, 0x02014b50, true);
-      recordView.setUint16(4, 20, true);
-      recordView.setUint16(6, 20, true);
-      recordView.setUint16(8, 0x0800, true);
-      recordView.setUint16(10, 0, true);
-      recordView.setUint16(12, dosTime, true);
-      recordView.setUint16(14, dosDate, true);
-      recordView.setUint32(16, checksum, true);
-      recordView.setUint32(20, data.length, true);
-      recordView.setUint32(24, data.length, true);
-      recordView.setUint16(28, nameBytes.length, true);
-      recordView.setUint32(42, offset, true);
-      record.set(nameBytes, 46);
-
-      parts.push(local, data);
-      central.push(record);
-      offset += local.length + data.length;
+      const nameBytes = encoder.encode(file.name); const data = encoder.encode(file.text); const checksum = crc32(data);
+      const local = new Uint8Array(30 + nameBytes.length); const localView = new DataView(local.buffer);
+      localView.setUint32(0, 0x04034b50, true); localView.setUint16(4, 20, true); localView.setUint16(6, 0x0800, true); localView.setUint16(8, 0, true);
+      localView.setUint16(10, dosTime, true); localView.setUint16(12, dosDate, true); localView.setUint32(14, checksum, true);
+      localView.setUint32(18, data.length, true); localView.setUint32(22, data.length, true); localView.setUint16(26, nameBytes.length, true); localView.setUint16(28, 0, true); local.set(nameBytes, 30);
+      const record = new Uint8Array(46 + nameBytes.length); const recordView = new DataView(record.buffer);
+      recordView.setUint32(0, 0x02014b50, true); recordView.setUint16(4, 20, true); recordView.setUint16(6, 20, true); recordView.setUint16(8, 0x0800, true); recordView.setUint16(10, 0, true);
+      recordView.setUint16(12, dosTime, true); recordView.setUint16(14, dosDate, true); recordView.setUint32(16, checksum, true); recordView.setUint32(20, data.length, true); recordView.setUint32(24, data.length, true); recordView.setUint16(28, nameBytes.length, true); recordView.setUint32(42, offset, true); record.set(nameBytes, 46);
+      parts.push(local, data); central.push(record); offset += local.length + data.length;
     }
-
-    const centralSize = central.reduce((sum, item) => sum + item.length, 0);
-    const end = new Uint8Array(22);
-    const endView = new DataView(end.buffer);
-    endView.setUint32(0, 0x06054b50, true);
-    endView.setUint16(8, files.length, true);
-    endView.setUint16(10, files.length, true);
-    endView.setUint32(12, centralSize, true);
-    endView.setUint32(16, offset, true);
-
+    const centralSize = central.reduce((sum, item) => sum + item.length, 0); const end = new Uint8Array(22); const endView = new DataView(end.buffer);
+    endView.setUint32(0, 0x06054b50, true); endView.setUint16(8, files.length, true); endView.setUint16(10, files.length, true); endView.setUint32(12, centralSize, true); endView.setUint32(16, offset, true);
     return new Blob([...parts, ...central, end], { type: 'application/zip' });
   }
-
   function exportDataPack() {
-    const parts = splitTreeId(state.treeId);
-    if (!parts) {
-      toast('树 ID 非法，格式应为 namespace:path', 'error');
-      return;
-    }
-
-    const version = dom.packVersion.value;
-    const format = PACK_FORMATS[version];
-    if (!format) {
-      toast('不支持的数据包版本：' + version, 'error');
-      return;
-    }
-
-    const result = validateTree();
-    if (result.errors.length) {
-      showReport('无法打包：发现 ' + result.errors.length + ' 个问题', result.errors, result.warnings, null);
-      return;
-    }
-
+    const parts = splitTreeId(state.treeId); if (!parts) { toast('树 ID 非法，格式应为 namespace:path', 'error'); return; }
+    const version = dom.packVersion.value; const format = PACK_FORMATS[version]; if (!format) { toast('不支持的数据包版本：' + version, 'error'); return; }
+    const result = validateTree(); if (result.errors.length) { showReport('无法打包：发现 ' + result.errors.length + ' 个问题', result.errors, result.warnings, null); return; }
     const perform = () => {
-      const treeFile = 'data/' + parts.namespace + '/skill_trees/' + parts.path + '.json';
-      const described = state.displayName.trim() || parts.path;
-      const mcmeta = {
-        pack: {
-          description: described + ' · NewNew Warlock Core',
-          min_format: format,
-          max_format: format
-        }
-      };
-      const blob = buildZip([
-        { name: 'pack.mcmeta', text: JSON.stringify(mcmeta, null, 2) + '\n' },
-        { name: treeFile, text: JSON.stringify(buildTreeJson(), null, 2) + '\n' }
-      ]);
-      const fileName = parts.path.replace(/\//g, '_') + '.zip';
-      downloadBlob(blob, fileName);
-      toast('已打包 ' + fileName + '（MC ' + version + '），放入 datapacks 后执行 /reload', 'ok');
+      const treeFile = 'data/' + parts.namespace + '/skill_trees/' + parts.path + '.json'; const described = state.displayName.trim() || parts.path;
+      const mcmeta = { pack: { description: described + ' · NewNew Warlock Core', min_format: format, max_format: format } };
+      const blob = buildZip([{ name: 'pack.mcmeta', text: JSON.stringify(mcmeta, null, 2) + '\n' }, { name: treeFile, text: JSON.stringify(buildTreeJson(), null, 2) + '\n' }]);
+      const fileName = parts.path.replace(/\//g, '_') + '.zip'; downloadBlob(blob, fileName); toast('已打包 ' + fileName + '（MC ' + version + '），放入 datapacks 后执行 /reload', 'ok');
     };
-
-    if (result.warnings.length) {
-      showReport('打包前检查：' + result.warnings.length + ' 个提醒', [], result.warnings, perform);
-    } else {
-      perform();
-    }
+    if (result.warnings.length) showReport('打包前检查：' + result.warnings.length + ' 个提醒', [], result.warnings, perform); else perform();
   }
 
-  async function repoDownload(pathname) {
-    const token = repoToken();
-    if (!token) throw new Error('还没有设置访问令牌');
-    const response = await fetch(serverBase() + pathname, {
-      headers: { Authorization: 'Bearer ' + token, 'ngrok-skip-browser-warning': 'true' }
-    });
-    if (!response.ok) {
-      let message = 'HTTP ' + response.status;
-      try {
-        const data = await response.json();
-        if (data && (data.error || data.message)) message = data.error || data.message;
-      } catch (error) { /* 忽略 */ }
-      throw new Error(message);
-    }
-    const blob = await response.blob();
-    const disposition = response.headers.get('Content-Disposition') || '';
-    const match = /filename\*=UTF-8''([^;]+)/i.exec(disposition);
-    const name = match ? decodeURIComponent(match[1]) : 'skill_tree.zip';
-    const url = URL.createObjectURL(blob);
-    const anchor = el('a', { href: url, download: name });
-    document.body.append(anchor);
-    anchor.click();
-    anchor.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1500);
-  }
-
-  // ---------------------------------------------------------------- 仓库界面
-
-  function isRepoOpen() {
-    return !dom.repoModal.classList.contains('hidden');
-  }
-
-  function setRepoStatus(text, kind) {
-    dom.repoStatus.textContent = text;
-    dom.repoStatus.className = 'status' + (kind ? ' ' + kind : '');
-  }
-
-  function formatTime(value) {
-    if (!value) return '未知时间';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
-    return date.toLocaleString('zh-CN', { hour12: false });
-  }
-
+  function isRepoOpen() { return !dom.repoModal.classList.contains('hidden'); }
+  function setRepoStatus(text, kind) { dom.repoStatus.textContent = text; dom.repoStatus.className = 'status' + (kind ? ' ' + kind : ''); }
+  function formatTime(value) { if (!value) return '未知时间'; const date = new Date(value); if (Number.isNaN(date.getTime())) return value; return date.toLocaleString('zh-CN', { hour12: false }); }
   function openRepo() {
-    dom.repoAuthor.value = repoAuthor();
-    dom.repoServer.value = readLocal(SERVER_KEY);
-    dom.repoToken.value = repoToken();
-    dom.repoModal.classList.remove('hidden');
-
-    repoState.selectedId = state.remote.treeId || repoState.selectedId;
-    updateRepoWorkspace();
-
-    if (!repoToken()) {
-      dom.repoTrees.innerHTML = '';
-      dom.repoTrees.append(el('div', { class: 'empty', text: '先填写访问令牌并点「保存设置」，再刷新列表。' }));
-      dom.repoVersions.innerHTML = '';
-      setRepoStatus('未设置令牌', '');
-      return;
-    }
-
-    refreshTrees().catch(showRepoError);
-    computeDirty().catch(() => undefined);
+    dom.repoAuthor.value = repoAuthor(); dom.repoServer.value = readLocal(SERVER_KEY); dom.repoToken.value = repoToken(); dom.repoModal.classList.remove('hidden');
+    repoState.selectedId = state.remote.treeId || repoState.selectedId; updateRepoWorkspace();
+    if (!repoToken()) { dom.repoTrees.innerHTML = ''; dom.repoTrees.append(el('div', { class: 'empty', text: '先填写访问令牌并点「保存设置」，再刷新列表。' })); dom.repoVersions.innerHTML = ''; setRepoStatus('未设置令牌', ''); return; }
+    refreshTrees().catch(showRepoError); computeDirty().catch(() => undefined);
   }
-
-  function closeRepo() {
-    dom.repoModal.classList.add('hidden');
-  }
-
-  async function computeDirty() {
-    if (!state.remote.treeId || !state.remote.lastSyncedHash) {
-      repoState.dirty = null;
-      updateRepoWorkspace();
-      return;
-    }
-    repoState.dirty = (await hashCurrentTree()) !== state.remote.lastSyncedHash;
-    updateRepoWorkspace();
-  }
-
+  function closeRepo() { dom.repoModal.classList.add('hidden'); }
+  async function computeDirty() { if (!state.remote.treeId || !state.remote.lastSyncedHash) { repoState.dirty = null; updateRepoWorkspace(); return; } repoState.dirty = (await hashCurrentTree()) !== state.remote.lastSyncedHash; updateRepoWorkspace(); }
   function saveRepoConfig(silent) {
-    const author = dom.repoAuthor.value.trim();
-    const server = dom.repoServer.value.trim();
-    const token = dom.repoToken.value.trim();
-
-    if (server) {
-      try {
-        const url = new URL(server);
-        if (!/^https?:$/.test(url.protocol)) throw new Error('protocol');
-      } catch (error) {
-        toast('服务器地址需要以 http:// 或 https:// 开头', 'error');
-        return false;
-      }
-    }
-
-    writeLocal(AUTHOR_KEY, author);
-    writeLocal(SERVER_KEY, server.replace(/\/+$/, ''));
-    writeLocal(TOKEN_KEY, token);
-    if (!silent) toast('仓库设置已保存在本机', 'ok');
-    updateRepoWorkspace();
-    return true;
+    const author = dom.repoAuthor.value.trim(); const server = dom.repoServer.value.trim(); const token = dom.repoToken.value.trim();
+    if (server) { try { const url = new URL(server); if (!/^https?:$/.test(url.protocol)) throw new Error('protocol'); } catch (error) { toast('服务器地址需要以 http:// 或 https:// 开头', 'error'); return false; } }
+    writeLocal(AUTHOR_KEY, author); writeLocal(SERVER_KEY, server.replace(/\/+$/, '')); writeLocal(TOKEN_KEY, token);
+    if (!silent) toast('仓库设置已保存在本机', 'ok'); updateRepoWorkspace(); return true;
   }
-
   async function refreshTrees() {
-    setRepoStatus('连接中…', '');
-    const trees = await repoRequest('/api/trees');
-    repoState.trees = Array.isArray(trees) ? trees : [];
-
+    setRepoStatus('连接中…', ''); const trees = await repoRequest('/api/trees'); repoState.trees = Array.isArray(trees) ? trees : [];
     if (!repoState.selectedId && state.remote.treeId) repoState.selectedId = state.remote.treeId;
-    if (repoState.selectedId && !repoState.trees.some(tree => tree.tree_id === repoState.selectedId)) {
-      repoState.selectedId = '';
-    }
-
+    if (repoState.selectedId && !repoState.trees.some(tree => tree.tree_id === repoState.selectedId)) repoState.selectedId = '';
     renderRepoTrees();
-
-    if (!repoState.trees.length) {
-      repoState.detail = null;
-      repoState.versions = [];
-      renderRepoVersions();
-      updateRepoWorkspace();
-      setRepoStatus('已连接', 'ok');
-      return;
-    }
-
-    await selectRepoTree(repoState.selectedId || repoState.trees[0].tree_id);
-    await computeDirty();
-    setRepoStatus('已连接', 'ok');
+    if (!repoState.trees.length) { repoState.detail = null; repoState.versions = []; renderRepoVersions(); updateRepoWorkspace(); setRepoStatus('已连接', 'ok'); return; }
+    await selectRepoTree(repoState.selectedId || repoState.trees[0].tree_id); await computeDirty(); setRepoStatus('已连接', 'ok');
   }
-
   async function selectRepoTree(treeId) {
-    repoState.selectedId = treeId;
-    renderRepoTrees();
-    setRepoStatus('加载版本…', '');
+    repoState.selectedId = treeId; renderRepoTrees(); setRepoStatus('加载版本…', '');
     const detail = await repoRequest('/api/trees/' + encodeURIComponent(treeId) + '/versions');
-    repoState.detail = detail;
-    repoState.versions = Array.isArray(detail.versions) ? detail.versions : [];
-    renderRepoVersions();
-    updateRepoWorkspace();
-    setRepoStatus('已连接', 'ok');
+    repoState.detail = detail; repoState.versions = Array.isArray(detail.versions) ? detail.versions : [];
+    renderRepoVersions(); updateRepoWorkspace(); setRepoStatus('已连接', 'ok');
   }
-
   function renderRepoTrees() {
-    dom.repoTreeCount.textContent = repoState.trees.length + ' 棵';
-    dom.repoTrees.innerHTML = '';
-
-    if (!repoState.trees.length) {
-      dom.repoTrees.append(el('div', { class: 'empty', text: '仓库里还没有技能树。可以用下方按钮把当前工作区推送为新树。' }));
-      return;
-    }
-
+    dom.repoTreeCount.textContent = repoState.trees.length + ' 棵'; dom.repoTrees.innerHTML = '';
+    if (!repoState.trees.length) { dom.repoTrees.append(el('div', { class: 'empty', text: '仓库里还没有技能树。可以用下方按钮把当前工作区推送为新树。' })); return; }
     for (const tree of repoState.trees) {
-      dom.repoTrees.append(el('div', {
-        class: 'repo-tree' + (tree.tree_id === repoState.selectedId ? ' active' : ''),
-        onclick: () => selectRepoTree(tree.tree_id).catch(showRepoError)
-      },
+      dom.repoTrees.append(el('div', { class: 'repo-tree' + (tree.tree_id === repoState.selectedId ? ' active' : ''), onclick: () => selectRepoTree(tree.tree_id).catch(showRepoError) },
         el('div', { class: 'name', text: tree.tree_name + ' · v' + tree.latest_version }),
         el('div', { class: 'line', text: '原作者：' + (tree.original_author || '未知') }),
         el('div', { class: 'line', text: '上传 ' + tree.upload_count + ' 次 · 最后 ' + formatTime(tree.last_uploaded_at) }),
@@ -2779,390 +1965,150 @@
       ));
     }
   }
-
   function renderRepoVersions() {
     dom.repoVersions.innerHTML = '';
-    if (!repoState.detail) {
-      dom.repoSelectedName.textContent = '';
-      dom.repoVersions.append(el('div', { class: 'empty', text: '在左侧选择一棵技能树，这里会列出它的所有版本。' }));
-      return;
-    }
-
-    const detail = repoState.detail;
-    dom.repoSelectedName.textContent = detail.tree_name + '（' + repoState.versions.length + ' 个版本）';
-
+    if (!repoState.detail) { dom.repoSelectedName.textContent = ''; dom.repoVersions.append(el('div', { class: 'empty', text: '在左侧选择一棵技能树，这里会列出它的所有版本。' })); return; }
+    const detail = repoState.detail; dom.repoSelectedName.textContent = detail.tree_name + '（' + repoState.versions.length + ' 个版本）';
     for (const version of repoState.versions) {
       const isCurrent = state.remote.treeId === detail.tree_id && state.remote.baseVersion === version.version;
       dom.repoVersions.append(el('div', { class: 'repo-version' + (isCurrent ? ' current' : '') },
-        el('div', { class: 'head' },
-          el('span', { class: 'tag', text: 'v' + version.version + (version.version === detail.latest_version ? ' · 最新' : '') + (isCurrent ? ' · 工作区' : '') }),
-          el('span', { class: 'muted-text', text: formatTime(version.edited_at) })
-        ),
+        el('div', { class: 'head' }, el('span', { class: 'tag', text: 'v' + version.version + (version.version === detail.latest_version ? ' · 最新' : '') + (isCurrent ? ' · 工作区' : '') }), el('span', { class: 'muted-text', text: formatTime(version.edited_at) })),
         version.message ? el('div', { class: 'msg', text: version.message }) : null,
         el('div', { class: 'line', text: '编辑者：' + (version.uploader || '未知') + ' · 上传于 ' + formatTime(version.uploaded_at) }),
         el('div', { class: 'line', text: '参与编辑：' + ((version.editors || []).join('、') || '未知') }),
-        el('div', { class: 'btns' },
-          el('button', {
-            text: '拉取到工作区',
-            onclick: () => pullVersion(detail.tree_id, version.version)
-          }),
-          el('button', {
-            text: '下载 zip',
-            onclick: () => downloadVersion(detail.tree_id, version.version, detail.tree_name)
-          })
-        )
+        el('div', { class: 'btns' }, el('button', { text: '拉取到工作区', onclick: () => pullVersion(detail.tree_id, version.version) }), el('button', { text: '下载 zip', onclick: () => downloadVersion(detail.tree_id, version.version, detail.tree_name) }))
       ));
     }
   }
-
   function updateRepoWorkspace() {
     const dirtyText = repoState.dirty === null ? '未计算' : (repoState.dirty ? '有未同步修改' : '与最近同步一致');
-    const remoteText = state.remote.treeId
-      ? '已关联 ' + state.remote.treeId + ' · 基于 v' + state.remote.baseVersion
-      : '未关联远程树';
-
-    dom.repoWorkspace.innerHTML = '';
-    dom.repoWorkspace.append(
+    const remoteText = state.remote.treeId ? '已关联 ' + state.remote.treeId + ' · 基于 v' + state.remote.baseVersion : '未关联远程树';
+    dom.repoWorkspace.innerHTML = ''; dom.repoWorkspace.append(
       el('div', {}, '当前工作区：', el('b', { text: state.displayName || '未命名' }), ' · ', el('b', { text: state.treeId }), ' · ', remoteText),
-      el('div', {}, '作者：', el('b', { text: state.meta.originalAuthor || repoAuthor() || '未设置' }),
-        ' · 工作区版本：', el('b', { text: state.meta.version ? 'v' + state.meta.version : '未上传' }),
-        ' · ', dirtyText)
+      el('div', {}, '作者：', el('b', { text: state.meta.originalAuthor || repoAuthor() || '未设置' }), ' · 工作区版本：', el('b', { text: state.meta.version ? 'v' + state.meta.version : '未上传' }), ' · ', dirtyText)
     );
-
-    const latest = repoState.detail ? repoState.detail.latest_version : 0;
-    const linked = !!repoState.detail && state.remote.treeId === repoState.detail.tree_id;
-    const canPushVersion = linked && state.remote.baseVersion === latest;
-    dom.repoPushVersion.disabled = !canPushVersion;
-    dom.repoPushVersion.textContent = '推送当前工作区作为新版本' + (canPushVersion ? '（v' + (latest + 1) + '）' : '');
-    dom.repoPushVersion.title = canPushVersion
-      ? ''
-      : (!linked ? '先在左侧选中当前工作区关联的那棵树' : '远端已有更新版本，请先拉取最新版本');
+    const latest = repoState.detail ? repoState.detail.latest_version : 0; const linked = !!repoState.detail && state.remote.treeId === repoState.detail.tree_id; const canPushVersion = linked && state.remote.baseVersion === latest;
+    dom.repoPushVersion.disabled = !canPushVersion; dom.repoPushVersion.textContent = '推送当前工作区作为新版本' + (canPushVersion ? '（v' + (latest + 1) + '）' : '');
+    dom.repoPushVersion.title = canPushVersion ? '' : (!linked ? '先在左侧选中当前工作区关联的那棵树' : '远端已有更新版本，请先拉取最新版本');
   }
-
   function showRepoError(error) {
-    const message = error && error.message ? error.message : String(error);
-    setRepoStatus('连接失败', '');
-    toast(message, 'error');
-    repoState.trees = [];
-    repoState.detail = null;
-    repoState.versions = [];
-    dom.repoTrees.innerHTML = '';
-    dom.repoTrees.append(el('div', { class: 'empty', text: '无法读取仓库：' + message }));
-    renderRepoVersions();
+    const message = error && error.message ? error.message : String(error); setRepoStatus('连接失败', ''); toast(message, 'error');
+    repoState.trees = []; repoState.detail = null; repoState.versions = []; dom.repoTrees.innerHTML = ''; dom.repoTrees.append(el('div', { class: 'empty', text: '无法读取仓库：' + message })); renderRepoVersions();
   }
-
-  // ---------------------------------------------------------------- 交互小工具
-
   function promptInput(title, label, defaultValue, multiline, allowEmpty) {
     return new Promise(resolve => {
-      const input = multiline
-        ? el('textarea', { rows: 4 })
-        : el('input', { type: 'text', spellcheck: 'false' });
-      input.value = defaultValue || '';
-      setTimeout(() => input.focus(), 0);
-
+      const input = multiline ? el('textarea', { rows: 4 }) : el('input', { type: 'text', spellcheck: 'false' });
+      input.value = defaultValue || ''; setTimeout(() => input.focus(), 0);
       showModal(title, [el('div', { text: label }), input], [
         { label: '取消', action: () => resolve(null) },
-        {
-          label: '确定',
-          primary: true,
-          action: () => {
-            const value = input.value.trim();
-            if (!value && !allowEmpty) {
-              toast('不能为空', 'error');
-              return false;
-            }
-            resolve(value);
-            return undefined;
-          }
-        }
+        { label: '确定', primary: true, action: () => { const value = input.value.trim(); if (!value && !allowEmpty) { toast('不能为空', 'error'); return false; } resolve(value); return undefined; } }
       ]);
     });
   }
-
   function confirmDialog(title, text, warnings) {
     return new Promise(resolve => {
       const body = [el('div', { text })];
-      if (warnings && warnings.length) {
-        body.push(el('ul', { class: 'warn-list' }, warnings.map(item => el('li', { text: item }))));
-      }
-      showModal(title, body, [
-        { label: '取消', action: () => resolve(false) },
-        { label: '继续', primary: true, action: () => resolve(true) }
-      ]);
+      if (warnings && warnings.length) body.push(el('ul', { class: 'warn-list' }, warnings.map(item => el('li', { text: item }))));
+      showModal(title, body, [{ label: '取消', action: () => resolve(false) }, { label: '继续', primary: true, action: () => resolve(true) }]);
     });
   }
-
   async function ensureAuthor() {
-    const cached = repoAuthor();
-    if (cached) return cached;
+    const cached = repoAuthor(); if (cached) return cached;
     const value = await promptInput('设置上传者 ID', '第一次上传需要填写你的名字，会记录在版本信息里。', '', false, false);
-    if (value) writeLocal(AUTHOR_KEY, value);
-    return value;
+    if (value) writeLocal(AUTHOR_KEY, value); return value;
   }
-
   async function ensureToken() {
-    const cached = repoToken();
-    if (cached) return cached;
+    const cached = repoToken(); if (cached) return cached;
     const value = await promptInput('设置访问令牌', '请输入服务端配置的 EDITOR_TOKEN（只保存在本机浏览器）。', '', false, false);
-    if (value) writeLocal(TOKEN_KEY, value);
-    return value;
+    if (value) writeLocal(TOKEN_KEY, value); return value;
   }
-
-  // ---------------------------------------------------------------- 上传
-
-  function deriveFileName() {
-    const parts = splitTreeId(state.treeId);
-    return (parts ? parts.path.replace(/\//g, '_') : 'skill_tree') + '.json';
-  }
-
-  function backupWorkspace() {
-    const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..+$/, '');
-    downloadText(JSON.stringify(buildTreeJson(), null, 2), deriveFileName().replace(/\.json$/i, '') + '_backup_' + stamp + '.json');
-  }
-
+  function deriveFileName() { const parts = splitTreeId(state.treeId); return (parts ? parts.path.replace(/\//g, '_') : 'skill_tree') + '.json'; }
+  function backupWorkspace() { const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..+$/, ''); downloadText(JSON.stringify(buildTreeJson(), null, 2), deriveFileName().replace(/\.json$/i, '') + '_backup_' + stamp + '.json'); }
   async function applyPushResult(response) {
     const meta = response.meta;
-    state.meta = {
-      originalAuthor: meta.original_author,
-      version: meta.version,
-      editors: Array.isArray(meta.editors) ? meta.editors.slice() : [],
-      editedAt: meta.edited_at,
-      message: meta.message
-    };
-    state.remote = {
-      treeId: meta.tree_id,
-      baseVersion: meta.version,
-      lastSyncedHash: await hashCurrentTree()
-    };
-    repoState.dirty = false;
-    save();
-    if (isRepoOpen()) updateRepoWorkspace();
+    state.meta = { originalAuthor: meta.original_author, version: meta.version, editors: Array.isArray(meta.editors) ? meta.editors.slice() : [], editedAt: meta.edited_at, message: meta.message };
+    state.remote = { treeId: meta.tree_id, baseVersion: meta.version, lastSyncedHash: await hashCurrentTree() };
+    repoState.dirty = false; save(); if (isRepoOpen()) updateRepoWorkspace();
   }
-
   async function uploadWorkspace(mode, authorOverride) {
-    const author = authorOverride || await ensureAuthor();
-    if (!author) return;
-    if (!await ensureToken()) return;
-
-    const check = validateTree();
-    if (check.errors.length) {
-      showReport('无法上传：发现 ' + check.errors.length + ' 个问题', check.errors, check.warnings, null);
-      return;
-    }
-    if (check.warnings.length && !await confirmDialog('上传前检查', '以下内容不会阻止上传：', check.warnings)) {
-      return;
-    }
-
-    const message = await promptInput('版本说明', '写一句这次改动的说明（可留空）。', '', true, true);
-    if (message === null) return;
-
-    const now = new Date().toISOString();
-    if (!state.meta.originalAuthor) state.meta.originalAuthor = author;
-    state.meta.editedAt = now;
-    state.meta.message = message;
-
-    const payload = {
-      tree: buildTreeJson(),
-      name: state.displayName.trim() || '未命名技能树',
-      original_author: state.meta.originalAuthor || author,
-      uploader: author,
-      message,
-      edited_at: now,
-      file_name: deriveFileName(),
-      game_tree_id: state.treeId
-    };
-
+    const author = authorOverride || await ensureAuthor(); if (!author) return; if (!await ensureToken()) return;
+    const check = validateTree(); if (check.errors.length) { showReport('无法上传：发现 ' + check.errors.length + ' 个问题', check.errors, check.warnings, null); return; }
+    if (check.warnings.length && !await confirmDialog('上传前检查', '以下内容不会阻止上传：', check.warnings)) { return; }
+    const message = await promptInput('版本说明', '写一句这次改动的说明（可留空）。', '', true, true); if (message === null) return;
+    const now = new Date().toISOString(); if (!state.meta.originalAuthor) state.meta.originalAuthor = author;
+    state.meta.editedAt = now; state.meta.message = message;
+    const payload = { tree: buildTreeJson(), name: state.displayName.trim() || '未命名技能树', original_author: state.meta.originalAuthor || author, uploader: author, message, edited_at: now, file_name: deriveFileName(), game_tree_id: state.treeId };
     try {
       let response;
-      if (mode === 'new') {
-        response = await repoRequest('/api/trees', { method: 'POST', body: payload });
-      } else {
-        if (!state.remote.treeId) throw new Error('当前工作区还没有关联远程树');
-        response = await repoRequest(
-          '/api/trees/' + encodeURIComponent(state.remote.treeId) + '/versions',
-          { method: 'POST', body: Object.assign({}, payload, { expected_latest: state.remote.baseVersion }) }
-        );
-      }
-
-      await applyPushResult(response);
-      toast(mode === 'new' ? '已推送为新树 v' + response.version : '已推送新版本 v' + response.version, 'ok');
-      repoState.selectedId = response.tree_id;
-      if (isRepoOpen()) await refreshTrees();
+      if (mode === 'new') response = await repoRequest('/api/trees', { method: 'POST', body: payload });
+      else { if (!state.remote.treeId) throw new Error('当前工作区还没有关联远程树'); response = await repoRequest('/api/trees/' + encodeURIComponent(state.remote.treeId) + '/versions', { method: 'POST', body: Object.assign({}, payload, { expected_latest: state.remote.baseVersion }) }); }
+      await applyPushResult(response); toast(mode === 'new' ? '已推送为新树 v' + response.version : '已推送新版本 v' + response.version, 'ok');
+      repoState.selectedId = response.tree_id; if (isRepoOpen()) await refreshTrees();
     } catch (error) {
-      if (error.status === 401) {
-        toast('访问令牌不正确，请在仓库设置里检查', 'error');
-        return;
-      }
-      if (error.status === 409) {
-        const latest = error.data && error.data.latest_version;
-        toast('远端已更新到 v' + (latest || '?') + '，请先拉取最新版本', 'error');
-        if (isRepoOpen()) refreshTrees().catch(() => undefined);
-        return;
-      }
+      if (error.status === 401) { toast('访问令牌不正确，请在仓库设置里检查', 'error'); return; }
+      if (error.status === 409) { const latest = error.data && error.data.latest_version; toast('远端已更新到 v' + (latest || '?') + '，请先拉取最新版本', 'error'); if (isRepoOpen()) refreshTrees().catch(() => undefined); return; }
       toast('上传失败：' + error.message, 'error');
     }
   }
-
-  /** 顶部「上传」：未关联远程则新建树，已关联则推送新版本 */
   async function quickUpload() {
-    const author = await ensureAuthor();
-    if (!author) return;
-    if (!await ensureToken()) return;
-
-    if (!state.remote.treeId) {
-      if (!await confirmDialog('推送为新树', '当前工作区还没有关联远程树，将作为一棵新树上传。继续吗？', [])) return;
-      await uploadWorkspace('new', author);
-      return;
-    }
-
+    const author = await ensureAuthor(); if (!author) return; if (!await ensureToken()) return;
+    if (!state.remote.treeId) { if (!await confirmDialog('推送为新树', '当前工作区还没有关联远程树，将作为一棵新树上传。继续吗？', [])) return; await uploadWorkspace('new', author); return; }
     try {
       const detail = await repoRequest('/api/trees/' + encodeURIComponent(state.remote.treeId) + '/versions');
       if (detail.latest_version !== state.remote.baseVersion) {
-        showModal('无法上传新版本', [
-          el('div', { text: '远端已经有更新的版本 v' + detail.latest_version + '，而当前工作区基于 v' + state.remote.baseVersion + '。' }),
-          el('div', { text: '请先在「仓库」里拉取最新版本再上传，或把当前工作区作为一棵新树推送。' })
-        ], [
-          { label: '取消' },
-          { label: '作为新树推送', action: () => { uploadWorkspace('new', author); } }
-        ]);
+        showModal('无法上传新版本', [el('div', { text: '远端已经有更新的版本 v' + detail.latest_version + '，而当前工作区基于 v' + state.remote.baseVersion + '。' }), el('div', { text: '请先在「仓库」里拉取最新版本再上传，或把当前工作区作为一棵新树推送。' })], [{ label: '取消' }, { label: '作为新树推送', action: () => { uploadWorkspace('new', author); } }]);
         return;
       }
-    } catch (error) {
-      toast('无法检查远端版本：' + error.message, 'error');
-      return;
-    }
-
+    } catch (error) { toast('无法检查远端版本：' + error.message, 'error'); return; }
     await uploadWorkspace('version', author);
   }
-
-  // ---------------------------------------------------------------- 拉取与下载
-
   async function pullVersion(treeId, version) {
     let detail;
-    try {
-      detail = await repoRequest('/api/trees/' + encodeURIComponent(treeId) + '/versions/' + version);
-    } catch (error) {
-      toast('拉取失败：' + error.message, 'error');
-      return;
-    }
-
-    showModal('拉取 v' + version + ' 到工作区', [
-      el('div', {}, '目标：', el('b', { text: (detail.meta.tree_name || '技能树') + ' v' + version }),
-        '（编辑者：' + (detail.meta.uploader || '未知') + '）'),
-      detail.meta.message ? el('div', { class: 'cmd-summary', text: detail.meta.message }) : null,
-      el('div', { class: 'section-title' }, el('span', {}, '如何处置当前工作区')),
-      el('div', { text: '拉取会替换画布上的全部节点与连线。可以先导出当前工作区作为备份，再执行覆盖。' })
-    ], [
-      { label: '取消' },
-      {
-        label: '先备份再覆盖',
-        action: () => {
-          backupWorkspace();
-          applyRemoteVersion(detail).catch(error => toast('拉取失败：' + error.message, 'error'));
-        }
-      },
-      {
-        label: '直接覆盖',
-        danger: true,
-        action: () => applyRemoteVersion(detail).catch(error => toast('拉取失败：' + error.message, 'error'))
-      }
+    try { detail = await repoRequest('/api/trees/' + encodeURIComponent(treeId) + '/versions/' + version); } catch (error) { toast('拉取失败：' + error.message, 'error'); return; }
+    showModal('拉取 v' + version + ' 到工作区', [el('div', {}, '目标：', el('b', { text: (detail.meta.tree_name || '技能树') + ' v' + version }), '（编辑者：' + (detail.meta.uploader || '未知') + '）'), detail.meta.message ? el('div', { class: 'cmd-summary', text: detail.meta.message }) : null, el('div', { class: 'section-title' }, el('span', {}, '如何处置当前工作区')), el('div', { text: '拉取会替换画布上的全部节点与连线。可以先导出当前工作区作为备份，再执行覆盖。' })], [
+      { label: '取消' }, { label: '先备份再覆盖', action: () => { backupWorkspace(); applyRemoteVersion(detail).catch(error => toast('拉取失败：' + error.message, 'error')); } }, { label: '直接覆盖', danger: true, action: () => applyRemoteVersion(detail).catch(error => toast('拉取失败：' + error.message, 'error')) }
     ]);
   }
-
   async function applyRemoteVersion(detail) {
-    applyTreeJson(detail.tree, detail.meta.file_name || null);
-    if (detail.meta.game_tree_id) state.treeId = detail.meta.game_tree_id;
-    state.meta = normalizeMeta(detail.tree.meta || {
-      original_author: detail.meta.original_author,
-      version: detail.meta.version,
-      editors: detail.meta.editors,
-      edited_at: detail.meta.edited_at,
-      message: detail.meta.message
-    });
-    state.remote = {
-      treeId: detail.meta.tree_id,
-      baseVersion: detail.meta.version,
-      lastSyncedHash: await hashCurrentTree()
-    };
-    repoState.dirty = false;
-    syncSettings();
-    save();
-    toast('已拉取 v' + detail.meta.version + ' 到工作区', 'ok');
-    if (isRepoOpen()) {
-      updateRepoWorkspace();
-      renderRepoVersions();
-    }
+    applyTreeJson(detail.tree, detail.meta.file_name || null); if (detail.meta.game_tree_id) state.treeId = detail.meta.game_tree_id;
+    state.meta = normalizeMeta(detail.tree.meta || { original_author: detail.meta.original_author, version: detail.meta.version, editors: detail.meta.editors, edited_at: detail.meta.edited_at, message: detail.meta.message });
+    state.remote = { treeId: detail.meta.tree_id, baseVersion: detail.meta.version, lastSyncedHash: await hashCurrentTree() };
+    repoState.dirty = false; syncSettings(); save(); toast('已拉取 v' + detail.meta.version + ' 到工作区', 'ok'); if (isRepoOpen()) { updateRepoWorkspace(); renderRepoVersions(); }
   }
-
   async function downloadVersion(treeId, version, treeName) {
-    try {
-      await repoDownload('/api/trees/' + encodeURIComponent(treeId) + '/versions/' + version + '/download');
-      toast('已开始下载 ' + treeName + ' v' + version + ' 的 zip', 'ok');
-    } catch (error) {
-      toast('下载失败：' + error.message, 'error');
-    }
+    try { await repoDownload('/api/trees/' + encodeURIComponent(treeId) + '/versions/' + version + '/download'); toast('已开始下载 ' + treeName + ' v' + version + ' 的 zip', 'ok'); } catch (error) { toast('下载失败：' + error.message, 'error'); }
   }
-
-  // ==========================================================================================
-  // 本地持久化
-  // ==========================================================================================
+  async function repoDownload(pathname) {
+    const token = repoToken(); if (!token) throw new Error('还没有设置访问令牌');
+    const response = await fetch(serverBase() + pathname, { headers: { Authorization: 'Bearer ' + token, 'ngrok-skip-browser-warning': 'true' } });
+    if (!response.ok) { let message = 'HTTP ' + response.status; try { const data = await response.json(); if (data && (data.error || data.message)) message = data.error || data.message; } catch (error) {} throw new Error(message); }
+    const blob = await response.blob(); const disposition = response.headers.get('Content-Disposition') || ''; const match = /filename\*=UTF-8''([^;]+)/i.exec(disposition); const name = match ? decodeURIComponent(match[1]) : 'skill_tree.zip';
+    const url = URL.createObjectURL(blob); const anchor = el('a', { href: url, download: name }); document.body.append(anchor); anchor.click(); anchor.remove(); setTimeout(() => URL.revokeObjectURL(url), 1500);
+  }
 
   function save() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        treeId: state.treeId,
-        displayName: state.displayName,
-        order: state.order,
-        defaultUnlocked: state.defaultUnlocked,
-        resetXpPerPoint: state.resetXpPerPoint,
-        nodes: state.nodes,
-        edges: state.edges,
-        enums: state.enums,
-        commands: Array.from(state.commands.values()),
-        seq: state.seq,
-        meta: state.meta,
-        remote: state.remote
+        treeId: state.treeId, displayName: state.displayName, order: state.order, defaultUnlocked: state.defaultUnlocked, resetXpPerPoint: state.resetXpPerPoint,
+        nodes: state.nodes, edges: state.edges, enums: state.enums, commands: Array.from(state.commands.values()), seq: state.seq, meta: state.meta, remote: state.remote
       }));
-    } catch (error) {
-      console.warn('保存到 localStorage 失败', error);
-    }
+    } catch (error) { console.warn('保存到 localStorage 失败', error); }
   }
 
   function load() {
-    let raw = null;
-    try { raw = localStorage.getItem(STORAGE_KEY); } catch (error) { raw = null; }
+    let raw = null; try { raw = localStorage.getItem(STORAGE_KEY); } catch (error) { raw = null; }
     if (!raw) return false;
     try {
       const data = JSON.parse(raw);
-      state.treeId = typeof data.treeId === 'string' ? data.treeId : state.treeId;
-      state.displayName = typeof data.displayName === 'string' ? data.displayName : state.displayName;
-      state.order = Number.isInteger(data.order) ? data.order : 0;
-      state.defaultUnlocked = data.defaultUnlocked === true;
-      state.resetXpPerPoint = Number.isFinite(data.resetXpPerPoint) ? data.resetXpPerPoint : 0;
-      state.nodes = Array.isArray(data.nodes) ? data.nodes : [];
-      state.edges = Array.isArray(data.edges) ? data.edges : [];
-      state.enums = (Array.isArray(data.enums) ? data.enums : []).map(normalizeEnum).filter(Boolean);
-      state.seq = Number.isInteger(data.seq) ? data.seq : 1;
-      state.meta = normalizeMeta(data.meta);
-      state.remote = {
-        treeId: data.remote && typeof data.remote.treeId === 'string' ? data.remote.treeId : '',
-        baseVersion: data.remote && Number.isInteger(data.remote.baseVersion) ? data.remote.baseVersion : 0,
-        lastSyncedHash: data.remote && typeof data.remote.lastSyncedHash === 'string' ? data.remote.lastSyncedHash : ''
-      };
-      if (Array.isArray(data.commands) && data.commands.length) {
-        state.commands = new Map(data.commands.map(def => [def.id, def]));
-      }
+      state.treeId = typeof data.treeId === 'string' ? data.treeId : state.treeId; state.displayName = typeof data.displayName === 'string' ? data.displayName : state.displayName;
+      state.order = Number.isInteger(data.order) ? data.order : 0; state.defaultUnlocked = data.defaultUnlocked === true; state.resetXpPerPoint = Number.isFinite(data.resetXpPerPoint) ? data.resetXpPerPoint : 0;
+      state.nodes = Array.isArray(data.nodes) ? data.nodes : []; state.edges = Array.isArray(data.edges) ? data.edges : [];
+      state.enums = (Array.isArray(data.enums) ? data.enums : []).map(normalizeEnum).filter(Boolean); state.seq = Number.isInteger(data.seq) ? data.seq : 1;
+      state.meta = normalizeMeta(data.meta); state.remote = { treeId: data.remote && typeof data.remote.treeId === 'string' ? data.remote.treeId : '', baseVersion: data.remote && Number.isInteger(data.remote.baseVersion) ? data.remote.baseVersion : 0, lastSyncedHash: data.remote && typeof data.remote.lastSyncedHash === 'string' ? data.remote.lastSyncedHash : '' };
+      if (Array.isArray(data.commands) && data.commands.length) state.commands = new Map(data.commands.map(def => [def.id, def]));
       return true;
-    } catch (error) {
-      console.warn('读取本地草稿失败', error);
-      return false;
-    }
+    } catch (error) { console.warn('读取本地草稿失败', error); return false; }
   }
-
-  // ==========================================================================================
-  // 文件与按钮
-  // ==========================================================================================
 
   document.getElementById('btn-defs').addEventListener('click', () => dom.fileDefs.click());
   document.getElementById('btn-enums').addEventListener('click', () => dom.fileEnums.click());
@@ -3170,131 +2116,62 @@
   document.getElementById('btn-export').addEventListener('click', exportTree);
   document.getElementById('btn-export-pack').addEventListener('click', exportDataPack);
   document.getElementById('btn-help').addEventListener('click', showHelp);
-
-  document.getElementById('btn-upload').addEventListener('click', () => {
-    quickUpload().catch(error => toast('上传失败：' + error.message, 'error'));
-  });
+  document.getElementById('btn-upload').addEventListener('click', () => { quickUpload().catch(error => toast('上传失败：' + error.message, 'error')); });
   document.getElementById('btn-repo').addEventListener('click', openRepo);
+  
+  // 绑定关闭按钮
   document.getElementById('repo-close').addEventListener('click', closeRepo);
-  document.getElementById('repo-save-config').addEventListener('click', () => {
-    if (saveRepoConfig(false)) refreshTrees().catch(showRepoError);
-  });
-  document.getElementById('repo-refresh').addEventListener('click', () => {
-    if (saveRepoConfig(true)) refreshTrees().catch(showRepoError);
-  });
-  document.getElementById('repo-push-new').addEventListener('click', () => {
-    uploadWorkspace('new').catch(error => toast('上传失败：' + error.message, 'error'));
-  });
-  document.getElementById('repo-push-version').addEventListener('click', () => {
-    if (dom.repoPushVersion.disabled) return;
-    uploadWorkspace('version').catch(error => toast('上传失败：' + error.message, 'error'));
-  });
-  dom.repoModal.addEventListener('pointerdown', event => {
-    if (event.target === dom.repoModal) closeRepo();
-  });
+  document.getElementById('repo-close-top').addEventListener('click', closeRepo);
+  
+  document.getElementById('repo-save-config').addEventListener('click', () => { if (saveRepoConfig(false)) refreshTrees().catch(showRepoError); });
+  document.getElementById('repo-refresh').addEventListener('click', () => { if (saveRepoConfig(true)) refreshTrees().catch(showRepoError); });
+  document.getElementById('repo-push-new').addEventListener('click', () => { uploadWorkspace('new').catch(error => toast('上传失败：' + error.message, 'error')); });
+  document.getElementById('repo-push-version').addEventListener('click', () => { if (dom.repoPushVersion.disabled) return; uploadWorkspace('version').catch(error => toast('上传失败：' + error.message, 'error')); });
+  dom.repoModal.addEventListener('pointerdown', event => { if (event.target === dom.repoModal) closeRepo(); });
 
   document.getElementById('btn-new').addEventListener('click', () => {
-    showModal('新建技能树', [el('div', { text: '当前草稿会被清空，是否继续？' })], [
-      { label: '取消' },
-      {
-        label: '新建', primary: true, action: () => {
-          state.nodes = [];
-          state.edges = [];
-          state.selection = null;
-          state.connect = null;
-          state.treeId = DEFAULT_NAMESPACE + ':skill_tree';
-          state.displayName = '技能树';
-          state.order = 0;
-          state.defaultUnlocked = false;
-          state.resetXpPerPoint = 0;
-          state.seq = 1;
-          state.meta = { originalAuthor: repoAuthor(), version: 0, editors: [], editedAt: '', message: '' };
-          state.remote = { treeId: '', baseVersion: 0, lastSyncedHash: '' };
-          updateBanner();
-          renderAll();
-          fitView();
-          save();
-        }
+    showModal('新建技能树', [el('div', { text: '当前草稿会被清空，是否继续？' })], [{ label: '取消' }, {
+      label: '新建', primary: true, action: () => {
+        state.nodes = []; state.edges = []; state.selection = null; state.connect = null;
+        state.treeId = DEFAULT_NAMESPACE + ':skill_tree'; state.displayName = '技能树'; state.order = 0; state.defaultUnlocked = false; state.resetXpPerPoint = 0; state.seq = 1;
+        state.meta = { originalAuthor: repoAuthor(), version: 0, editors: [], editedAt: '', message: '' }; state.remote = { treeId: '', baseVersion: 0, lastSyncedHash: '' };
+        updateBanner(); renderAll(); fitView(); save();
       }
-    ]);
+    }]);
   });
 
   dom.fileDefs.addEventListener('change', async () => {
-    const file = dom.fileDefs.files && dom.fileDefs.files[0];
-    dom.fileDefs.value = '';
-    if (!file) return;
-    try { loadDefinitions(await readJsonFile(file)); }
-    catch (error) { toast(error.message, 'error'); }
+    const file = dom.fileDefs.files && dom.fileDefs.files[0]; dom.fileDefs.value = ''; if (!file) return;
+    try { loadDefinitions(await readJsonFile(file)); } catch (error) { toast(error.message, 'error'); }
   });
-
   dom.fileEnums.addEventListener('change', async () => {
-    const files = Array.from(dom.fileEnums.files || []);
-    dom.fileEnums.value = '';
-    if (!files.length) return;
-    try {
-      for (const file of files) loadEnums(await readJsonFile(file), true);
-      toast('已加载 ' + files.length + ' 个 enum 文件，共 ' + state.enums.length + ' 条表', 'ok');
-    } catch (error) { toast(error.message, 'error'); }
+    const files = Array.from(dom.fileEnums.files || []); dom.fileEnums.value = ''; if (!files.length) return;
+    try { for (const file of files) loadEnums(await readJsonFile(file), true); toast('已加载 ' + files.length + ' 个 enum 文件，共 ' + state.enums.length + ' 条表', 'ok'); } catch (error) { toast(error.message, 'error'); }
   });
-
   dom.fileTree.addEventListener('change', async () => {
-    const file = dom.fileTree.files && dom.fileTree.files[0];
-    dom.fileTree.value = '';
-    if (!file) return;
-    try {
-      applyTreeJson(await readJsonFile(file), file.name);
-      toast('已导入技能树：' + file.name, 'ok');
-    } catch (error) { toast(error.message, 'error'); }
+    const file = dom.fileTree.files && dom.fileTree.files[0]; dom.fileTree.value = ''; if (!file) return;
+    try { applyTreeJson(await readJsonFile(file), file.name); toast('已导入技能树：' + file.name, 'ok'); } catch (error) { toast(error.message, 'error'); }
   });
 
-  // 直接把 JSON 拖进页面：自动识别命令定义 / enum 表 / 技能树
   function handleJsonObject(json, filename) {
     if (json && Array.isArray(json.commands)) { loadDefinitions(json); return true; }
     if (json && (Array.isArray(json.enums) || Array.isArray(json.values))) { loadEnums(json); return true; }
     if (json && Array.isArray(json.nodes)) { applyTreeJson(json, filename); toast('已导入技能树：' + filename, 'ok'); return true; }
     return false;
   }
-
-  document.addEventListener('dragover', event => {
-    if (event.dataTransfer && Array.from(event.dataTransfer.types).includes('Files')) event.preventDefault();
-  });
-
+  document.addEventListener('dragover', event => { if (event.dataTransfer && Array.from(event.dataTransfer.types).includes('Files')) event.preventDefault(); });
   document.addEventListener('drop', async event => {
-    const files = Array.from((event.dataTransfer && event.dataTransfer.files) || []);
-    if (!files.length) return;
-    event.preventDefault();
-    for (const file of files) {
-      try {
-        const json = await readJsonFile(file);
-        if (!handleJsonObject(json, file.name)) toast('无法识别文件：' + file.name, 'error');
-      } catch (error) { toast(error.message, 'error'); }
-    }
+    const files = Array.from((event.dataTransfer && event.dataTransfer.files) || []); if (!files.length) return; event.preventDefault();
+    for (const file of files) { try { const json = await readJsonFile(file); if (!handleJsonObject(json, file.name)) toast('无法识别文件：' + file.name, 'error'); } catch (error) { toast(error.message, 'error'); } }
   });
-
-  // ==========================================================================================
-  // 启动
-  // ==========================================================================================
 
   function boot() {
-    const restored = load();
-    loadBuiltins();
-    renderLibrary();
-    renderAll();
-    updateBanner();
-    applyView();
+    const restored = load(); loadBuiltins(); renderLibrary(); renderAll(); updateBanner(); applyView();
     if (state.nodes.length) fitView();
-
     if (!state.commands.size) {
-      // 通过 http 打开时，尝试自动读取同目录的定义表；file:// 下会被浏览器拦截，忽略即可。
-      fetch('./command_definitions.json', { cache: 'no-store' })
-        .then(response => response.ok ? response.json() : null)
-        .then(json => { if (json) loadDefinitions(json, true); })
-        .catch(() => { /* 忽略：手动导入即可 */ });
+      fetch('./command_definitions.json', { cache: 'no-store' }).then(response => response.ok ? response.json() : null).then(json => { if (json) loadDefinitions(json, true); }).catch(() => {});
     }
-
-    if (!restored) {
-      toast('提示：先导入命令定义，再把命令拖到画布上创建节点', 'ok');
-    }
+    if (!restored) toast('提示：先导入命令定义，再把命令拖到画布上创建节点', 'ok');
   }
 
   boot();

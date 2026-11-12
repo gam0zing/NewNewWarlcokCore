@@ -6,9 +6,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.util.Mth;
 
 import com.gam0zing.newnew_warlock_core.enchant.EnchantBaseline;
+import com.gam0zing.newnew_warlock_core.enchant.EnchantUnlockData;
 
 /**
  * 最大等级的全局兜底。
@@ -27,18 +27,24 @@ public abstract class EnchantmentMaxLevelMixin {
 
     @Inject(method = "getMaxLevel", at = @At("RETURN"), cancellable = true)
     private void warlock$getMaxLevel(CallbackInfoReturnable<Integer> cir) {
-        EnchantBaseline.Entry entry = EnchantBaseline.get((Enchantment) (Object) this);
-        if (entry != null) {
-            cir.setReturnValue(Mth.clamp(entry.maxLevel(), 1, EnchantBaseline.LEVEL_HARD_CAP));
+        Enchantment self = (Enchantment) (Object) this;
+        if (EnchantBaseline.get(self) != null) {
+            // 走基准表的统一入口，让「首次击杀末影龙 → 基准最大等级 +1」在这条全局路径也生效。
+            cir.setReturnValue(EnchantBaseline.maxLevel(self, cir.getReturnValue()));
         }
     }
 
-    /** 铁砧每级附魔费用的全局兜底，来源同 {@link EnchantBaseline}。 */
+    /**
+     * 铁砧每级附魔费用的全局兜底，来源同 {@link EnchantBaseline}；
+     * 首次击杀监守者后在此处减半（对所有铁砧实现生效，因此不再在 {@code AnvilMenuMixin} 里重复处理）。
+     */
     @Inject(method = "getAnvilCost", at = @At("RETURN"), cancellable = true)
     private void warlock$getAnvilCost(CallbackInfoReturnable<Integer> cir) {
         EnchantBaseline.Entry entry = EnchantBaseline.get((Enchantment) (Object) this);
-        if (entry != null) {
-            cir.setReturnValue(Math.max(0, entry.anvilCost()));
+        int cost = entry == null ? cir.getReturnValue() : Math.max(0, entry.anvilCost());
+        if (cost > 0 && EnchantUnlockData.wardenDefeated()) {
+            cost = Math.max(1, cost / 2);
         }
+        cir.setReturnValue(cost);
     }
 }
