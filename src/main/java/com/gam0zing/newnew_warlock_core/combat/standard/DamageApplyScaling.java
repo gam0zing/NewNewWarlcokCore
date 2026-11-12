@@ -1,5 +1,6 @@
 package com.gam0zing.newnew_warlock_core.combat.standard;
 
+import com.gam0zing.newnew_warlock_core.combat.spine.DamageCategory;
 import com.gam0zing.newnew_warlock_core.combat.spine.DamageContext;
 import com.gam0zing.newnew_warlock_core.share.EffectSources;
 import com.gam0zing.newnew_warlock_core.share.ModAttributes;
@@ -20,7 +21,7 @@ import net.minecraft.world.entity.LivingEntity;
  *     <li>{@code critical} / {@code critical_damage}：攻击者的暴击率与暴击伤害；</li>
  *     <li>{@code damage_distance_fix}：攻击者的伤害距离修正，相距 8 格为零点按距离线性变化；</li>
  *     <li>{@code unarmored_slayer}：目标没穿任何护甲时攻击者的伤害倍率；</li>
- *     <li>{@code giant_slayer} / {@code dwarf_slayer}：按双方 AABB 体积大小关系施加「大出血」/「致命伤」；</li>
+ *     <li>{@code giant_slayer} / {@code dwarf_slayer}：按双方 AABB 体积大小关系施加「大出血」/「致命伤」，仅物理、魔法伤害触发；</li>
  *     <li>{@code rock_skin}：受击者扣除血量前减去的固定值；</li>
  *     <li>{@code hurt_scale}：受击者的受伤倍率；</li>
  *     <li>{@code hurt_limit}：受击者单次扣血上限（最大生命值的比例）。</li>
@@ -61,7 +62,10 @@ public final class DamageApplyScaling {
             result = applyCritical(attacker, result);
             result = applyDistanceFix(attacker, target, result);
             result = applyUnarmoredSlayer(attacker, target, result);
-            applySlayerEffects(attacker, target);
+            DamageCategory category = ctx.getCategory();
+            if (category == DamageCategory.PHYSICS || category == DamageCategory.MAGIC) {
+                applySlayerEffects(attacker, target);
+            }
         }
 
         result = Math.max(0.0F, result - (float) ModAttributes.getValue(target, ModAttributes.ROCK_SKIN));
@@ -121,7 +125,7 @@ public final class DamageApplyScaling {
         return damage * scale;
     }
 
-    /** 巨人杀手 / 侏儒杀手：按双方 AABB 体积大小关系施加「大出血」/「致命伤」，相等时都不触发。 */
+    /** 巨人杀手 / 侏儒杀手：按双方 AABB 体积大小关系施加「大出血」/「致命伤」，相等时都不触发。仅物理、魔法伤害触发。 */
     private static void applySlayerEffects(LivingEntity attacker, LivingEntity target) {
         double attackerVolume = VanillaDamageUtils.boundingBoxVolume(attacker);
         double targetVolume = VanillaDamageUtils.boundingBoxVolume(target);

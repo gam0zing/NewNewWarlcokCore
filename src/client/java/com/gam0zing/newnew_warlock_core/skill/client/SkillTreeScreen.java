@@ -27,7 +27,6 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -44,15 +43,22 @@ public class SkillTreeScreen extends Screen {
     private static final int SCALED_NODE_SIZE = Math.max(1, Math.round(NODE_SIZE * CANVAS_SCALE));
     private static final int TAB_HEIGHT = 28;
     private static final int TAB_WIDTH = 90;
-    private static final int COLOR_BACKGROUND = 0xF0101216;
-    private static final int COLOR_EDGE = 0xFF3A4250;
-    private static final int COLOR_LOCKED = 0xFF2A2F38;
-    private static final int COLOR_AVAILABLE = 0xFF3E4A5C;
-    private static final int COLOR_UNLOCKED = 0xFF2F6B4F;
-    private static final int COLOR_BORDER_LOCKED = 0xFF4A515C;
-    private static final int COLOR_BORDER_AVAILABLE = 0xFFD7B45A;
-    private static final int COLOR_BORDER_UNLOCKED = 0xFF67D08B;
-    private static final int COLOR_BORDER_SELECTED = 0xFFFFFFFF;
+
+    private static final int COLOR_BACKGROUND = 0xD0101216;
+
+    private static final int COLOR_EDGE = 0xFF2A3240;
+    private static final int COLOR_EDGE_AVAILABLE = 0xFF62666A;
+    private static final int COLOR_EDGE_UNLOCKED = 0xFFEFE2EA;
+
+    private static final int COLOR_LOCKED = 0xFF101216;
+    private static final int COLOR_AVAILABLE = 0xFF1A1C20;
+    private static final int COLOR_UNLOCKED = 0xFF303040;
+    private static final int COLOR_SELECTED = 0xDD444444;
+
+    private static final int COLOR_BORDER_LOCKED = 0xFF202226;
+    private static final int COLOR_BORDER_AVAILABLE = 0xFF203726;
+    private static final int COLOR_BORDER_UNLOCKED = 0xFFBFB2BA;
+    private static final int COLOR_BORDER_SELECTED = 0xDDFFFFFF;
 
     private final List<SkillTreeDefinition> trees = new ArrayList<>();
     private int tab;
@@ -191,7 +197,11 @@ public class SkillTreeScreen extends Screen {
             int y1 = this.nodeScreenY(from);
             int x2 = this.nodeScreenX(to);
             int y2 = this.nodeScreenY(to);
-            drawArrow(graphics, x1, y1, x2, y2, COLOR_EDGE);
+            // 父节点未解锁：保持暗色；父已解锁子未解锁：亮白；两端都已解锁：黄色，用于突出玩家 build 的形状
+            boolean fromUnlocked = this.isUnlocked(from);
+            int color = !fromUnlocked ? COLOR_EDGE
+                : this.isUnlocked(to) ? COLOR_EDGE_UNLOCKED : COLOR_EDGE_AVAILABLE;
+            drawArrow(graphics, x1, y1, x2, y2, color);
         }
     }
 
@@ -204,7 +214,8 @@ public class SkillTreeScreen extends Screen {
             boolean unlocked = this.isUnlocked(node);
             boolean available = !unlocked && this.prerequisitesSatisfied(node);
 
-            int fill = unlocked ? COLOR_UNLOCKED : available ? COLOR_AVAILABLE : COLOR_LOCKED;
+            int fill = node == this.selected ? COLOR_SELECTED
+                : unlocked ? COLOR_UNLOCKED : available ? COLOR_AVAILABLE : COLOR_LOCKED;
             int border = node == this.selected ? COLOR_BORDER_SELECTED
                 : unlocked ? COLOR_BORDER_UNLOCKED : available ? COLOR_BORDER_AVAILABLE : COLOR_BORDER_LOCKED;
 

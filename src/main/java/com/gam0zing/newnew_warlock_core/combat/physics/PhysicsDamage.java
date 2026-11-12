@@ -11,6 +11,7 @@ import com.gam0zing.newnew_warlock_core.combat.spine.DamageCategory;
 import com.gam0zing.newnew_warlock_core.combat.spine.DamageContext;
 import com.gam0zing.newnew_warlock_core.body.hit.HitLocation;
 import com.gam0zing.newnew_warlock_core.body.hit.HitLocationResolver;
+import com.gam0zing.newnew_warlock_core.share.EffectSources;
 import com.gam0zing.newnew_warlock_core.share.PhysicsWeapon;
 
 import net.minecraft.resources.Identifier;
@@ -164,7 +165,8 @@ public final class PhysicsDamage {
     /**
      * 落地之后：按实际扣血量折算概率，施加合并后的受击效果。
      * <p>效果列表由“身体部位基础值 + 武器增量 + 护甲增量”合并而成（见 {@link BodyEffect#merge}）。
-     * 护甲增量只在受击部位确实有护甲时参与。</p>
+     * 护甲增量只在受击部位确实有护甲时参与。施加来源为本次伤害的攻击者，
+     * 使出血等持续效果结算时能正确归因。</p>
      *
      * @param dealtDamage  本次实际从目标身上扣除的生命值（不含伤害吸收承担的部分）
      * @param healthBefore 扣除前的生命值
@@ -187,7 +189,9 @@ public final class PhysicsDamage {
         for (BodyEffect effect : effects) {
             if (target.getRandom().nextFloat()
                 < effect.probabilityFor(dealtDamage, healthBefore, maxHealth)) {
-                target.addEffect(new MobEffectInstance(effect.effect(), effect.duration(), effect.amplifier()));
+                EffectSources.apply(target,
+                    new MobEffectInstance(effect.effect(), effect.duration(), effect.amplifier()),
+                    ctx.getAttacker());
             }
         }
     }

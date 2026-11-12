@@ -9,6 +9,7 @@
     "BlocksAttacksMixin",
     "DolphinDryOutMixin",
     "EnchantRandomlyFunctionMixin",
+    "EnderDragonBleedingMixin",
     "EnderEyeItemMixin",
     "EnchantWithLevelsFunctionMixin",
     "EnchantmentMaxLevelMixin",

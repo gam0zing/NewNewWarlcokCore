@@ -20,7 +20,8 @@ import net.minecraft.world.entity.LivingEntity;
  * 等级按原版语义计算（{@code amplifier} 0 表示 I 级，即 1）。</p>
  * <p>伤害类型为 {@code newnew_warlock_core:bleeding}，属于 {@code inner_damage} 标签：
  * 伤害走正常的 {@link LivingEntity#hurt} 入口，由伤害管线按标签路由到内部伤害结算，
- * 不经过任何防护与加成流程。</p>
+ * 不经过任何防护与加成流程。结算时会把效果施加者写进伤害来源，
+ * 使末影龙这类只接受“有攻击者的伤害”的生物也能正常受到出血伤害。</p>
  */
 public class BleedingMobEffect extends MobEffect {
 
@@ -58,7 +59,13 @@ public class BleedingMobEffect extends MobEffect {
         float damage = Math.max(
             entity.getHealth() * HEALTH_RATIO_PER_LEVEL * effectLevel,
             MIN_DAMAGE_PER_LEVEL * effectLevel);
-        entity.hurt(new DamageSource(type), damage);
+        // 直接把施加者写进伤害来源：末影龙等覆写了 hurtServer 的生物不会经过
+        // LivingEntityEffectSourceMixin 的补来源逻辑，只能在这里把来源做实
+        LivingEntity source = EffectSources.currentTickingSource(entity);
+        DamageSource damageSource = source == null
+            ? new DamageSource(type)
+            : new DamageSource(type, source);
+        entity.hurt(damageSource, damage);
         return true;
     }
 

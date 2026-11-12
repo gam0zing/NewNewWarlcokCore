@@ -32,17 +32,22 @@ public class HemorrhageMobEffect extends InstantaneousMobEffect {
     public void applyInstantaneousEffect(
         ServerLevel level, @Nullable Entity source, @Nullable Entity indirectSource,
         LivingEntity target, int amplifier, double health) {
-        this.applyPayload(target, amplifier);
+        LivingEntity effectSource = EffectSources.sourceEntity(source);
+        if (effectSource == null) {
+            effectSource = EffectSources.sourceEntity(indirectSource);
+        }
+        this.applyPayload(target, amplifier, effectSource);
     }
 
     @Override
     public void onEffectStarted(LivingEntity target, int amplifier) {
-        // 常规 addEffect 路径不会调用 applyInstantenousEffect，这里补齐结算并立即移除自身
-        this.applyPayload(target, amplifier);
+        // 常规 addEffect 路径不会调用 applyInstantenousEffect，这里补齐结算并立即移除自身。
+        // 原版此时已把实例放进 activeEffects，可从中取回 EffectSources.apply 写入的来源。
+        this.applyPayload(target, amplifier, EffectSources.sourceOf(target.getEffect(ModMobEffects.HEMORRHAGE)));
         target.removeEffect(ModMobEffects.HEMORRHAGE);
     }
 
-    private void applyPayload(LivingEntity target, int amplifier) {
+    private void applyPayload(LivingEntity target, int amplifier, @Nullable LivingEntity source) {
         if (target.level().isClientSide() || target.isDeadOrDying()) {
             return;
         }
@@ -52,10 +57,10 @@ public class HemorrhageMobEffect extends InstantaneousMobEffect {
 
         int bleedingLevel = random.nextInt(2 * level + 1);
         if (bleedingLevel > 0) {
-            target.addEffect(new BleedingEffectInstance(
+            EffectSources.apply(target, new BleedingEffectInstance(
                 ModMobEffects.BLEEDING,
                 BLEEDING_BASE_DURATION + BLEEDING_DURATION_PER_LEVEL * level,
-                bleedingLevel - 1));
+                bleedingLevel - 1), source);
         }
     }
 }
