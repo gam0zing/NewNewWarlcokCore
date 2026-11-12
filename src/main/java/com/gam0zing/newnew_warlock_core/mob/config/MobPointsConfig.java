@@ -36,6 +36,7 @@ import net.neoforged.neoforge.event.server.ServerStoppedEvent;
  *     新世界首次启动时直接从 common 复制生成。</li>
  * </ul>
  * <p>每种拥有 {@code newnew_points} 的生物（玩家除外）都有一份数据：四项属性的分配权重与最小值。
+ * 顶层另有一条全局项 {@code xp-points-divisor}：被玩家击杀时的经验掉落分母，所有生物共用。
  * 增量合并语义：只补齐配置文件里不存在的生物类型，已存在的条目一律不覆盖、不删除；
  * 注册表里被移除的类型也保留在文件里。文件缺失时按默认值重新生成。</p>
  * <p>之所以不用 {@code ModConfigSpec}：条目键由实体注册表动态决定，无法静态声明；且 Spec 的 correction
@@ -47,6 +48,11 @@ public final class MobPointsConfig {
     private static final String FILE_NAME = "mobs.toml";
     private static final String MOD_DIR = NewNewWarlockCore.MOD_ID;
     private static final int VERSION = 1;
+
+    /** 经验掉落分母的默认值；配置值 ≤ 0 或非法时也回退到它。 */
+    public static final double DEFAULT_XP_POINTS_DIVISOR = 10.0D;
+    /** 全局配置键：玩家击杀生物时的经验分母，所有生物共用一条。 */
+    private static final String XP_POINTS_DIVISOR = "xp-points-divisor";
 
     /** 属性点分配参数：points 基准值、每点难度增幅，以及四项属性的权重与最小值。 */
     public record Entry(
@@ -75,6 +81,7 @@ public final class MobPointsConfig {
     private static Path commonPath;
 
     private static volatile Map<Identifier, Entry> entries = Map.of();
+    private static volatile double xpPointsDivisor = DEFAULT_XP_POINTS_DIVISOR;
 
     private MobPointsConfig() {}
 
@@ -102,6 +109,7 @@ public final class MobPointsConfig {
 
         if (common != null) {
             boolean dirty = ensureVersion(common);
+            dirty |= ensureXpPointsDivisor(common);
             dirty |= mergeMissing(common, types);
             if (dirty) {
                 save(common);
@@ -130,6 +138,7 @@ public final class MobPointsConfig {
 
         if (server != null) {
             boolean dirty = ensureVersion(server);
+            dirty |= ensureXpPointsDivisor(server);
             dirty |= mergeMissing(server, types);
             if (dirty) {
                 save(server);
@@ -152,12 +161,22 @@ public final class MobPointsConfig {
             common = null;
         }
         entries = Map.of();
+        xpPointsDivisor = DEFAULT_XP_POINTS_DIVISOR;
     }
 
     /** 读取某种生物的分配参数；未初始化或没有该类型时返回默认值。 */
     public static Entry get(EntityType<?> type) {
         Entry entry = entries.get(EntityType.getKey(type));
         return entry != null ? entry : Entry.DEFAULT;
+    }
+
+    /**
+     * 经验掉落分母（全局一条，所有生物共用）。
+     * <p>被玩家击杀时掉落经验 = 原本该掉落的经验 × {@code max(1 + points / 该值, 0)}。
+     * 配置值 ≤ 0 或非法时按 {@link #DEFAULT_XP_POINTS_DIVISOR}（10）处理。</p>
+     */
+    public static double xpPointsDivisor() {
+        return xpPointsDivisor;
     }
 
     // ============================================================
@@ -244,6 +263,7 @@ public final class MobPointsConfig {
     private static void rebuildEntries(@Nullable CommentedFileConfig config, List<Identifier> types) {
         if (config == null) {
             entries = Map.of();
+            xpPointsDivisor = DEFAULT_XP_POINTS_DIVISOR;
             return;
         }
         Map<Identifier, Entry> table = new HashMap<>(types.size());
@@ -251,6 +271,19 @@ public final class MobPointsConfig {
             table.put(id, readEntry(config, id));
         }
         entries = Map.copyOf(table);
+        xpPointsDivisor = readXpPointsDivisor(config);
+    }
+
+    /** 缺失时补上全局经验分母；不覆盖已有值。 */
+    private static boolean ensureXpPointsDivisor(CommentedFileConfig config) {
+        return setDoubleIfMissing(config, List.of(XP_POINTS_DIVISOR), DEFAULT_XP_POINTS_DIVISOR,
+            "经验掉落分母（所有生物共用）：被玩家击杀时经验 = 原本经验 × max(1 + 该生物 points / 该值, 0)；<= 0 按 10 处理");
+    }
+
+    /** 读取全局经验分母；≤ 0 或非有限值一律按默认 10。 */
+    private static double readXpPointsDivisor(CommentedFileConfig config) {
+        double value = readDouble(config, List.of(XP_POINTS_DIVISOR), DEFAULT_XP_POINTS_DIVISOR);
+        return Double.isFinite(value) && value > 0.0D ? value : DEFAULT_XP_POINTS_DIVISOR;
     }
 
     private static Entry readEntry(CommentedFileConfig config, Identifier id) {

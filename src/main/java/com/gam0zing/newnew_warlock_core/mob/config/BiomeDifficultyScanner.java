@@ -316,11 +316,11 @@ final class BiomeDifficultyScanner {
         values.put("minecraft:crimson_forest", 12.0D);
         values.put("minecraft:soul_sand_valley", 12.0D);
         values.put("minecraft:basalt_deltas", 20.0D);
-        values.put("minecraft:the_end", 0.0D);
-        values.put("minecraft:end_highlands", 16.0D);
+        values.put("minecraft:the_end", 8.0D);
+        values.put("minecraft:end_highlands", 20.0D);
         values.put("minecraft:end_midlands", 0.0D);
-        values.put("minecraft:small_end_islands", 12.0D);
-        values.put("minecraft:end_barrens", 12.0D);
+        values.put("minecraft:small_end_islands", 0.0D);
+        values.put("minecraft:end_barrens", 0.0D);
         values.put("minecraft:the_void", 0.0D);
         return values;
     }
