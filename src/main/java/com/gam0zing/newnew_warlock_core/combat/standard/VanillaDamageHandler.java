@@ -2,6 +2,7 @@ package com.gam0zing.newnew_warlock_core.combat.standard;
 
 import com.gam0zing.newnew_warlock_core.NewNewWarlockCore;
 import com.gam0zing.newnew_warlock_core.combat.api.IDamageHandler;
+import com.gam0zing.newnew_warlock_core.combat.spine.DamageCategory;
 import com.gam0zing.newnew_warlock_core.combat.spine.DamageContext;
 
 import net.minecraft.resources.Identifier;
@@ -63,7 +64,9 @@ public final class VanillaDamageHandler implements IDamageHandler {
 
     @Override
     public void apply(DamageContext ctx, float damage) {
-        VanillaDamageUtils.apply(ctx, damage);
+        float dealt = VanillaDamageUtils.apply(ctx, damage);
+        // 插槽 F2：物理基础击退（强度 sqrt(伤害 / 10)）
+        this.applyKnockback(ctx, dealt);
     }
 
     @Override
@@ -84,6 +87,10 @@ public final class VanillaDamageHandler implements IDamageHandler {
 
     @Override
     public void applyKnockback(DamageContext ctx, float dealtDamage) {
-        // 原版非物理伤害不会因为伤害本身产生击退
+        // 击退只对物理伤害生效
+        if (ctx.getCategory() != DamageCategory.PHYSICS) {
+            return;
+        }
+        VanillaDamageUtils.dealDefaultKnockback(ctx, dealtDamage);
     }
 }

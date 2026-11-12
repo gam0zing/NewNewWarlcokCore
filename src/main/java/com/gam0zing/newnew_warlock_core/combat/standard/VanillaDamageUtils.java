@@ -3,10 +3,13 @@ package com.gam0zing.newnew_warlock_core.combat.standard;
 import com.gam0zing.newnew_warlock_core.combat.spine.DamageContext;
 import com.gam0zing.newnew_warlock_core.combat.spine.WarlockDamageHost;
 
+import it.unimi.dsi.fastutil.doubles.DoubleDoubleImmutablePair;
+
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.damagesource.DamageContainer;
@@ -159,6 +162,39 @@ public final class VanillaDamageUtils {
     public static double boundingBoxVolume(LivingEntity entity) {
         var box = entity.getBoundingBox();
         return Math.max(1.0E-6D, box.getXsize() * box.getYsize() * box.getZsize());
+    }
+
+    /**
+     * 插槽 F2（物理基础击退）：以 26.3 {@code LivingEntity#dealDefaultKnockback} 为骨架，
+     * 强度改为随伤害递增的 {@code sqrt(伤害 / 10)}。
+     * <p>原版这段逻辑挂在 {@code hurtServer} 的收尾处，伤害被管线接管后不会执行，
+     * 所以普通攻击没有任何击退；疾跑攻击的额外 0.5 是 {@code Player#attack} 在 {@code hurtServer}
+     * 之外单独加的，因此仍然生效。</p>
+     * <p>方向：弹射物用它自己的水平受击击退方向，其余伤害用来源位置；
+     * 强度为 {@code sqrt(伤害 / 10)}，伤害越高击退越强，0 伤害时无击退。
+     * 是否击退由 {@code NO_KNOCKBACK} 标签与是否被完全格挡决定，与原版一致。
+     * 伤害类型层面的限制（例如“仅物理伤害产生击退”）由调用方在 {@code applyKnockback} 里判断。</p>
+     */
+    public static void dealDefaultKnockback(DamageContext ctx, float dealtDamage) {
+        DamageSource source = ctx.getSource();
+        if (source.is(DamageTypeTags.NO_KNOCKBACK) || ctx.isShieldFullyBlocked()) {
+            return;
+        }
+
+        LivingEntity target = ctx.getTarget();
+        double xd = 0.0D;
+        double zd = 0.0D;
+        if (source.getDirectEntity() instanceof Projectile projectile) {
+            DoubleDoubleImmutablePair direction =
+                projectile.calculateHorizontalHurtKnockbackDirection(target, source);
+            xd = -direction.leftDouble();
+            zd = -direction.rightDouble();
+        } else if (source.getSourcePosition() != null) {
+            xd = source.getSourcePosition().x() - target.getX();
+            zd = source.getSourcePosition().z() - target.getZ();
+        }
+        float strength = (float) Math.sqrt(Math.max(0.0F, dealtDamage) / 10.0D);
+        target.knockback(strength, xd, zd, source, dealtDamage);
     }
 
     private static WarlockDamageHost host(DamageContext ctx) {
