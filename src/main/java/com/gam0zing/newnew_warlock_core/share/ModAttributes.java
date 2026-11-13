@@ -108,6 +108,9 @@ public final class ModAttributes {
     /** 生命偷取：扣血阶段结束后，伤害来源按「实际扣血量 × 该值」回复自身，默认 0 不生效 */
     public static final DeferredHolder<Attribute, Attribute> LIFE_STEALING =
         registerRanged("life_stealing", 0.0D, 0.0D, 1024.0D);
+    /** 光明荆棘：被伤害时，以自身 AABB 几何中心为起点，对 3×3×3 范围内的生物造成 4×该值的火焰伤害，并治疗该值（向下取整）点生命 */
+    public static final DeferredHolder<Attribute, Attribute> LIGHT_THORNS =
+        registerRanged("light_thorns", 0.0D, 0.0D, 1024.0D);
 
     // ============================== 玩家专属属性 ==============================
 
@@ -123,11 +126,31 @@ public final class ModAttributes {
     public static final DeferredHolder<Attribute, Attribute> EXTRA_ENCHANT_MAX_LEVEL =
         registerRanged("extra_enchant_max_level", 0.0D, -1024.0D, 1024.0D);
 
+    /** 自动扳机：大于 0 时，拉满的弓与上弦完成的弩会自动松开，实现持续自动射击 */
+    public static final DeferredHolder<Attribute, Attribute> AUTO_FIRE =
+        registerRanged("auto_fire", 0.0D, 0.0D, 1.0D);
+
+    /** 蓄力移速：拉弓、弩时的移动速度乘以该值 */
+    public static final DeferredHolder<Attribute, Attribute> CHARGE_MOVE_SPEED =
+        registerScale("charge_move_speed");
+
+    /** 蓄力速度：拉弓、弩的蓄力速度乘以该值 */
+    public static final DeferredHolder<Attribute, Attribute> CHARGE_SPEED =
+        registerScale("charge_speed");
+
+    /** 幻影箭矢：射出箭矢时按该概率不消耗箭矢，改为额外消耗耐久 */
+    public static final DeferredHolder<Attribute, Attribute> PHANTOM_ARROW =
+        registerRanged("phantom_arrow", 0.0D, 0.0D, 1.0D);
+
     /** 只挂载到玩家身上的属性（供 {@code AttributeEvt} 遍历） */
     public static final List<DeferredHolder<Attribute, Attribute>> PLAYER_ATTRIBUTES = List.of(
         CONCEALMENT,
         EXTRA_ANVIL_MAX_COST,
-        EXTRA_ENCHANT_MAX_LEVEL);
+        EXTRA_ENCHANT_MAX_LEVEL,
+        AUTO_FIRE,
+        CHARGE_MOVE_SPEED,
+        CHARGE_SPEED,
+        PHANTOM_ARROW);
 
     /** 需要挂载到所有生物身上的属性（供 {@code AttributeEvt} 遍历） */
     public static final List<DeferredHolder<Attribute, Attribute>> ALL = List.of(
@@ -166,7 +189,8 @@ public final class ModAttributes {
         HURT_LIMIT,
         ROCK_SKIN,
         MOVE_HEALING,
-        LIFE_STEALING);
+        LIFE_STEALING,
+        LIGHT_THORNS);
 
     // ============================== 生物基础属性 ==============================
     // 生物自身的面板数值，除傀儡生物（铁傀儡、雪傀儡）外的所有生物都会持有，玩家也包含在内。

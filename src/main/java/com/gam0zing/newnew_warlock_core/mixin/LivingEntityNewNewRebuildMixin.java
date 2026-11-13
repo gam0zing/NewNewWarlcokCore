@@ -9,6 +9,7 @@ import com.gam0zing.newnew_warlock_core.mob.config.MobPointsConfig;
 import com.gam0zing.newnew_warlock_core.mob.MobDerivedAttributes;
 import com.gam0zing.newnew_warlock_core.mob.MobDifficulty;
 import com.gam0zing.newnew_warlock_core.mob.NewNewRebuildHost;
+import com.gam0zing.newnew_warlock_core.mob.skill.MobSkills;
 import com.gam0zing.newnew_warlock_core.share.ModAttributes;
 
 /**
@@ -58,10 +59,15 @@ public abstract class LivingEntityNewNewRebuildMixin implements NewNewRebuildHos
             double spiritualityWeight = mobPoints.spiritualityWeight();
 
             // points数据来源为config
-            // rebuild过程整体数据流向为："生物points基准-->难度增幅-->正态分布随机化-->四维-->属性和技能（暂不实现）"
+            // rebuild过程整体数据流向为："生物points基准-->难度增幅-->正态分布随机化-->技能抽取（占用points）-->四维-->属性"
             double pointsWithDifficulty = MobDifficulty.scaledPoints(self, mobPoints);
 
             double pointsByRandom = MobDifficulty.randomize(self, pointsWithDifficulty);
+
+            // 重建时先清空旧技能（含冷却/持续状态），再按剩余 points 抽取新技能；
+            // 抽到的技能会按价值从 points 中扣除，剩余部分才分配给四维
+            MobSkills.clear(self);
+            pointsByRandom = MobSkills.assignFromPools(self, pointsByRandom);
 
             double strength = strengthAttr.getBaseValue();
             double toughness = toughnessAttr.getBaseValue();

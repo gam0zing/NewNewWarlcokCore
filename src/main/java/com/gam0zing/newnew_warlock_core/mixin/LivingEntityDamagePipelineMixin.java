@@ -37,6 +37,7 @@ import com.gam0zing.newnew_warlock_core.combat.spine.WarlockDamageHost;
 import com.gam0zing.newnew_warlock_core.combat.spine.WarlockHealingHost;
 import com.gam0zing.newnew_warlock_core.combat.standard.DamageApplyScaling;
 import com.gam0zing.newnew_warlock_core.combat.standard.DamageDodge;
+import com.gam0zing.newnew_warlock_core.combat.standard.LightThorns;
 import com.gam0zing.newnew_warlock_core.share.FatalWoundMobEffect;
 import com.gam0zing.newnew_warlock_core.share.ModAttributes;
 
@@ -244,6 +245,10 @@ public abstract class LivingEntityDamagePipelineMixin implements WarlockDamageHo
         if (DamagePipeline.routeInnerDamage(ctx)) {
             // 扣血阶段结束后检查致命伤
             FatalWoundMobEffect.afterHealthDeducted(self);
+            // 被伤害时触发光明荆棘
+            if (ctx.isDealtDamage()) {
+                LightThorns.retaliate(self, source);
+            }
             return ctx.isDealtDamage();
         }
 
@@ -298,6 +303,11 @@ public abstract class LivingEntityDamagePipelineMixin implements WarlockDamageHo
         // 骨架 + 外部钩子：护甲耐久(ArmorHurtEvent)、LivingDamageEvent.Pre/Post、扣血、onDamageTaken
         this.newnew$applyDamage(ctx);
         ctx.setDealtDamage(!ctx.isShieldFullyBlocked() || container.getNewDamage() > 0.0F);
+
+        // 被伤害时触发光明荆棘
+        if (ctx.isDealtDamage()) {
+            LightThorns.retaliate(self, source);
+        }
 
         // 插槽 G：受伤表现与反馈
         DamagePipeline.playFeedback(ctx);

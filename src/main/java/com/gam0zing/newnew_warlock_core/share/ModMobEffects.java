@@ -57,6 +57,13 @@ public final class ModMobEffects {
     public static final DeferredHolder<MobEffect, MobEffect> NECK_FRACTURE =
         register("neck_fracture", 0xEDE6D0);
 
+    // ============================== 增益效果 ==============================
+
+    /** 不可阻挡：每级提供 20% 击退抗性 */
+    public static final DeferredHolder<MobEffect, MobEffect> UNSTOPPABLE =
+        MOB_EFFECTS.register("unstoppable",
+            () -> new UnstoppableMobEffect(MobEffectCategory.BENEFICIAL, 0x8FA0B5));
+
     // ============================== 瞬时效果 ==============================
 
     /** 大出血：瞬时效果，施加时立即结算一次（随机施加出血） */

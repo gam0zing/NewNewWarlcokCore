@@ -25,3 +25,4 @@ eclipse
 src/generated/resources/.cache
 tools/release/
 .trae/
+.trae-html-share-packages/

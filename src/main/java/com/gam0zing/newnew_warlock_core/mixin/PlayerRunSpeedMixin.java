@@ -6,15 +6,19 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BowItem;
+import net.minecraft.world.item.CrossbowItem;
+import net.minecraft.world.item.ItemStack;
 
 import com.gam0zing.newnew_warlock_core.mob.ExplorerBonus;
 import com.gam0zing.newnew_warlock_core.share.ModAttributes;
 
 /**
- * 奔跑速度倍率与探险家的移动速度加成（玩家侧）。
+ * 奔跑速度倍率、蓄力移速与探险家的移动速度加成（玩家侧）。
  * <p>疾跑加成在原版是以 {@code MOVEMENT_SPEED} 的瞬时修饰符实现的，因此这里不改面板数值，
  * 只在 {@link Player#getSpeed()} 的出口乘 {@code run_speed}：移动计算读到的就是倍率后的速度，
  * 属性面板保持原样。探险家的 {@code 属性值 × 当前位置难度}% 移速加成在同一出口叠加。</p>
+ * <p>蓄力移速：正在拉弓或使用弩时，移动速度再乘 {@code charge_move_speed}。</p>
  * <p>玩家重写了 {@code LivingEntity#getSpeed()}，所以必须挂在玩家自己的实现上。</p>
  */
 @Mixin(Player.class)
@@ -32,6 +36,13 @@ public abstract class PlayerRunSpeedMixin {
         double explorerMultiplier = ExplorerBonus.speedMultiplier(self);
         if (explorerMultiplier != 1.0D) {
             speed = (float) (speed * explorerMultiplier);
+        }
+
+        if (self.isUsingItem()) {
+            ItemStack using = self.getUseItem();
+            if (using.getItem() instanceof BowItem || using.getItem() instanceof CrossbowItem) {
+                speed *= ModAttributes.getScale(self, ModAttributes.CHARGE_MOVE_SPEED);
+            }
         }
 
         if (speed != cir.getReturnValue()) {
