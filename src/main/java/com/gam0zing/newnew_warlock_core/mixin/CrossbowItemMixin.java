@@ -17,6 +17,7 @@ import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
 
 import com.gam0zing.newnew_warlock_core.share.ModAttributes;
+import com.gam0zing.newnew_warlock_core.share.PhantomArrowState;
 
 /**
  * 蓄力速度（弩）与幻影箭矢（弩）。

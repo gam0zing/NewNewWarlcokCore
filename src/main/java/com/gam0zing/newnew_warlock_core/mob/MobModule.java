@@ -68,6 +68,8 @@ public final class MobModule implements ModModule {
         NeoForge.EVENT_BUS.addListener(MobSkillPoolLoader::onAddReloadListener);
         // 被玩家击杀时按该生物的 points 缩放经验掉落
         NeoForge.EVENT_BUS.addListener(MobExperienceEvt::onLivingExperienceDrop);
+        // 被玩家击杀时按 base_points × 缩放 提高玩家的属性点上限
+        NeoForge.EVENT_BUS.addListener(MobKillPointsEvt::onLivingDeath);
     }
 
     private static Identifier id(String path) {

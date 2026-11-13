@@ -18,6 +18,7 @@ import net.minecraft.world.item.ProjectileWeaponItem;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 
 import com.gam0zing.newnew_warlock_core.share.ModAttributes;
+import com.gam0zing.newnew_warlock_core.share.PhantomArrowState;
 
 /**
  * 幻影箭矢（弓、弩）。

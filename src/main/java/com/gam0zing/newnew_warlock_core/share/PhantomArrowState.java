@@ -1,4 +1,4 @@
-package com.gam0zing.newnew_warlock_core.mixin;
+package com.gam0zing.newnew_warlock_core.share;
 
 import java.util.function.Consumer;
 
@@ -13,6 +13,8 @@ import net.minecraft.world.item.component.CustomData;
  * 隔着几层调用，用线程内标记把「本次射击是幻影箭矢」传给箭矢创建处，在那里统一做减伤与不可拾取。</p>
  * <p>2）物品标记：弩在装填时判定幻影，命中后箭矢不入包；这层信息要跨越「装填 → 射击」的间隔，
  * 因此写在弩的 {@code CUSTOM_DATA} 上，射击时读取并清理（玩家一般看不见这个标记）。</p>
+ * <p>注意：该类不能被放进 {@code mixin} 包。Mixin 禁止被注入的类直接引用 mixin 包内的类，
+ * 否则运行时会抛 {@code IllegalClassLoadError}。</p>
  */
 public final class PhantomArrowState {
 
