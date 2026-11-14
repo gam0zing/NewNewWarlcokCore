@@ -1,12 +1,14 @@
 package com.gam0zing.newnew_warlock_core.mob;
 
 import com.gam0zing.newnew_warlock_core.mob.config.MobPointsConfig;
+import com.gam0zing.newnew_warlock_core.mob.net.MobKillPointsPayload;
 import com.gam0zing.newnew_warlock_core.share.ModAttributes;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * 玩家击杀使用 points 的生物时，按 {@code base_points × 缩放} 提高自己的属性点上限。
@@ -32,11 +34,16 @@ public final class MobKillPointsEvt {
             return;
         }
 
-        double gained = MobPointsConfig.killPoints(dead.getType(), mobPoints.getValue(), playerPoints.getValue());
+        double mobPointsValue = mobPoints.getValue();
+        double playerPointsValue = playerPoints.getValue();
+        double scale = MobPointsConfig.killScale(mobPointsValue, playerPointsValue);
+        double gained = MobPointsConfig.killPoints(dead.getType(), mobPointsValue, playerPointsValue);
         if (gained <= 0.0D) {
             return;
         }
         MobKillPoints.add(player, gained);
         MobKillPoints.applyModifier(player);
+        // 只通知击杀者，客户端 HUD 据此播放浮动提示
+        PacketDistributor.sendToPlayer(player, new MobKillPointsPayload(gained, scale));
     }
 }

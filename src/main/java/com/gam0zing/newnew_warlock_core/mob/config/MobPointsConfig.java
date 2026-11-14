@@ -201,8 +201,7 @@ public final class MobPointsConfig {
 
     /**
      * 计算玩家击杀该生物获得的属性点：{@code base_points × 缩放}。
-     * <p>生物 points 高于玩家时按差值读 {@code higher_scales}，低于时按差值读 {@code lower_scales}；
-     * 差值从 1 开始计数，超出表长时取最后一位。两者相同则缩放为 1。差值为非整数时向下取整。</p>
+     * <p>缩放规则见 {@link #killScale(double, double)}。</p>
      *
      * @param type        被杀生物的类型
      * @param mobPoints   被杀生物当前的 points
@@ -210,15 +209,24 @@ public final class MobPointsConfig {
      * @return 玩家应获得的属性点，恒为非负有限值
      */
     public static double killPoints(EntityType<?> type, double mobPoints, double playerPoints) {
-        double diff = mobPoints - playerPoints;
-        double scale = 1.0D;
-        if (diff > 0.0D) {
-            scale = pickScale(higherScales, (int) Math.floor(diff));
-        } else if (diff < 0.0D) {
-            scale = pickScale(lowerScales, (int) Math.floor(-diff));
-        }
-        double gained = get(type).basePoints() * scale;
+        double gained = get(type).basePoints() * killScale(mobPoints, playerPoints);
         return Double.isFinite(gained) && gained > 0.0D ? gained : 0.0D;
+    }
+
+    /**
+     * 根据双方 points 计算获取缩放。
+     * <p>生物 points 高于玩家时按差值读 {@code higher_scales}，低于时按差值读 {@code lower_scales}；
+     * 差值从 1 开始计数，超出表长时取最后一位。两者相同则返回 1。差值为非整数时向下取整。</p>
+     */
+    public static double killScale(double mobPoints, double playerPoints) {
+        double diff = mobPoints - playerPoints;
+        if (diff > 0.0D) {
+            return pickScale(higherScales, (int) Math.floor(diff));
+        }
+        if (diff < 0.0D) {
+            return pickScale(lowerScales, (int) Math.floor(-diff));
+        }
+        return 1.0D;
     }
 
     /** 按 1 起始的差值取缩放值；超出表长取最后一位，表为空返回 1。 */
@@ -277,7 +285,7 @@ public final class MobPointsConfig {
         int added = 0;
         for (Identifier id : types) {
             if (!config.contains(entryPath(id))) {
-                writeEntry(config, id, Entry.DEFAULT);
+                writeEntry(config, id, defaultEntry(id));
                 added++;
                 continue;
             }
@@ -290,6 +298,22 @@ public final class MobPointsConfig {
                 added, config == server ? "server" : "common");
         }
         return added > 0;
+    }
+
+    /** 默认分配参数，只把击杀基础点数换成该生物所属的威胁档位。 */
+    private static Entry defaultEntry(Identifier id) {
+        return new Entry(
+            Entry.DEFAULT.pointsBase(),
+            Entry.DEFAULT.pointsGainPerDifficulty(),
+            Entry.DEFAULT.strengthWeight(),
+            Entry.DEFAULT.toughnessWeight(),
+            Entry.DEFAULT.dexterityWeight(),
+            Entry.DEFAULT.spiritualityWeight(),
+            Entry.DEFAULT.strengthMin(),
+            Entry.DEFAULT.toughnessMin(),
+            Entry.DEFAULT.dexterityMin(),
+            Entry.DEFAULT.spiritualityMin(),
+            defaultBasePoints(id));
     }
 
     /** 给已存在的生物条目补上新增字段，不覆盖任何已有值。 */

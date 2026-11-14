@@ -145,11 +145,12 @@ public final class MobSkills {
      * {@link NewNewMobSkill#getTotalPrice(int)}）；价值超过剩余 points 的技能不会被抽取。
      * 未知技能池、未注册技能、返回 {@code null} 或非法条目只跳过自身并记录日志。</p>
      *
-     * @param points 正态分布发放的 points
+     * @param points 正态分布发放的 points（可以是负值，负难度时直接原样返回）
      * @return 扣除技能价值后剩余的 points
      */
     public static double assignFromPools(LivingEntity self, double points) {
-        double remaining = Math.max(points, 0.0D);
+        // 负 points 不截断：技能池自身会跳过抽取，剩余值继续透传给四维分配
+        double remaining = points;
         List<Identifier> poolIds =
             new ArrayList<>(MobSkillPools.poolsFor(EntityType.getKey(self.getType())));
         if (poolIds.isEmpty()) {

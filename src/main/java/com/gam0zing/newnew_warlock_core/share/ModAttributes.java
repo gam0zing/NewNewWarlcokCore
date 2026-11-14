@@ -197,7 +197,7 @@ public final class ModAttributes {
     // 属性点与四项属性都允许负数，用于后续的“属性点分配到属性”机制。
 
     /** 属性点：默认 0，区间 [0, 32767] */
-    public static final DeferredHolder<Attribute, Attribute> NEWNEW_POINTS = registerRanged("newnew_points", 0.0D, 0.0D, 32767.0D);
+    public static final DeferredHolder<Attribute, Attribute> NEWNEW_POINTS = registerRanged("newnew_points", 0.0D, -32767.0D, 32767.0D);
     /** 力量：默认 0，区间 [0, 32767] */
     public static final DeferredHolder<Attribute, Attribute> NEWNEW_STRENGTH = registerRanged("newnew_strength", 10.0D, 1.0D, 32767.0D);
     /** 坚韧：默认 0，区间 [0, 32767] */

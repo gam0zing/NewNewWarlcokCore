@@ -1,6 +1,7 @@
 package com.gam0zing.newnew_warlock_core.mob;
 
 import com.gam0zing.newnew_warlock_core.NewNewWarlockCore;
+import com.gam0zing.newnew_warlock_core.mob.net.MobKillPointsPayload;
 import com.gam0zing.newnew_warlock_core.share.ModAttributes;
 import com.mojang.serialization.Codec;
 
@@ -12,6 +13,8 @@ import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
@@ -42,6 +45,17 @@ public final class MobKillPoints {
 
     public static void register(IEventBus modEventBus) {
         ATTACHMENTS.register(modEventBus);
+        modEventBus.addListener(MobKillPoints::registerPayloads);
+    }
+
+    private static void registerPayloads(RegisterPayloadHandlersEvent event) {
+        event.registrar("1").playToClient(
+            MobKillPointsPayload.TYPE, MobKillPointsPayload.STREAM_CODEC, MobKillPoints::handle);
+    }
+
+    private static void handle(MobKillPointsPayload payload, IPayloadContext context) {
+        context.enqueueWork(() ->
+            MobKillPointsDisplay.push(payload.gained(), payload.scale()));
     }
 
     /** {@return 玩家累计获得的击杀点数} */

@@ -28,6 +28,12 @@ public final class VanillaDamageUtils {
     /** 受击无敌帧长度（刻）：命中后这段时间内只接受更高伤害 */
     public static final int IFRAME_TICKS = 10;
 
+    /** 击退强度上限：防止极端伤害体积换算后产生超大位移 */
+    public static final double MAX_KNOCKBACK_STRENGTH = 1024.0D;
+
+    /** 伤害换算击退的强度系数：在原公式基础上降低 75% */
+    public static final double DAMAGE_KNOCKBACK_SCALE = 0.25D;
+
     /** 插槽 A：原版没有与伤害类型无关的预处理。 */
     public static void prepare(DamageContext ctx) {
     }
@@ -133,6 +139,7 @@ public final class VanillaDamageUtils {
      * <p>调用方已经重发过 {@code LivingKnockBackEvent} 并判断了取消，这里拿到的是最终强度。</p>
      * <p>击退强度按目标的 AABB 体积缩放：体积越大的生物越难被击退。
      * （后续 Body 侧的重量数值成熟后，体积将替换为身体重量。）</p>
+     * <p>最终强度受 {@link #MAX_KNOCKBACK_STRENGTH} 限制，避免极端伤害造成超大位移。</p>
      */
     public static void handleKnockback(LivingEntity target, LivingKnockBackEvent event) {
         double strength = event.getStrength() * (1.0D - target.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
@@ -140,6 +147,8 @@ public final class VanillaDamageUtils {
             return;
         }
         strength /= boundingBoxVolume(target);
+        // 强度限制在 [0, MAX]：负值（例如抗性超过 1 的模组配置）不写入位移
+        strength = Math.max(0.0D, Math.min(strength, MAX_KNOCKBACK_STRENGTH));
         if (strength <= 0.0D) {
             return;
         }
@@ -171,7 +180,7 @@ public final class VanillaDamageUtils {
      * 所以普通攻击没有任何击退；疾跑攻击的额外 0.5 是 {@code Player#attack} 在 {@code hurtServer}
      * 之外单独加的，因此仍然生效。</p>
      * <p>方向：弹射物用它自己的水平受击击退方向，其余伤害用来源位置；
-     * 强度为 {@code sqrt(伤害 / 10)}，伤害越高击退越强，0 伤害时无击退。
+     * 强度为 {@code sqrt(伤害 / 10) × DAMAGE_KNOCKBACK_SCALE}，伤害越高击退越强，0 伤害时无击退。
      * 是否击退由 {@code NO_KNOCKBACK} 标签与是否被完全格挡决定，与原版一致。
      * 伤害类型层面的限制（例如“仅物理伤害产生击退”）由调用方在 {@code applyKnockback} 里判断。</p>
      */
@@ -193,7 +202,7 @@ public final class VanillaDamageUtils {
             xd = source.getSourcePosition().x() - target.getX();
             zd = source.getSourcePosition().z() - target.getZ();
         }
-        float strength = (float) Math.sqrt(Math.max(0.0F, dealtDamage) / 10.0D);
+        float strength = (float) (Math.sqrt(Math.max(0.0F, dealtDamage) / 10.0D) * DAMAGE_KNOCKBACK_SCALE);
         target.knockback(strength, xd, zd, source, dealtDamage);
     }
 

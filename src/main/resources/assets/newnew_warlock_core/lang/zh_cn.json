@@ -60,6 +60,7 @@
   "effect.newnew_warlock_core.fatal_wound": "致命伤",
   "effect.newnew_warlock_core.hemorrhage": "大出血",
   "effect.newnew_warlock_core.unstoppable": "不可阻挡",
+  "hud.newnew_warlock_core.kill_points": "属性点 +%s",
   "death.attack.bleeding": "%1$s的血流干了",
   "death.attack.bleeding.player": "%1$s被%2$s打至血流干了",
   "death.attack.light_thorns": "%1$s被光明灼烧了",

@@ -24,8 +24,8 @@ import com.gam0zing.newnew_warlock_core.mob.config.MobPointsConfig;
  * <p>服务器游戏难度（简单/普通/困难）是一个固定难度偏移（默认 -12 / 0 / +12），只影响怪物：
  * 怪物使用 {@link #scaledDifficulty(LivingEntity)}（原始难度 + 偏移）计算 points；
  * 玩家侧加成（探险家、险地矿工等）使用不含偏移的原始难度，保证阶段进度不随难度选择变化。
- * 和平固定为 0。随机化使用均值 = 难度增幅后的 points、标准差 = 均值的 15%，
- * 结果下限截断为 0。</p>
+ * 和平固定为 0。随机化使用均值 = 难度增幅后的 points、标准差 = 均值的 15%。
+ * 负难度会得到负 points，不做 0 截断（属性本身的区间负责最终兜底）。</p>
  */
 public final class MobDifficulty {
 
@@ -84,10 +84,12 @@ public final class MobDifficulty {
         return difficulty;
     }
 
-    /** points 基准值加上经“难度 + 服务器难度偏移”增幅后的增量。 */
+    /**
+     * points 基准值加上经“难度 + 服务器难度偏移”增幅后的增量。
+     * <p>负难度会把 points 压到基准值以下，得到负值；这里不截断，交由属性区间兜底。</p>
+     */
     public static double scaledPoints(LivingEntity entity, MobPointsConfig.Entry entry) {
-        double points = entry.pointsBase() + scaledDifficulty(entity) * entry.pointsGainPerDifficulty();
-        return Math.max(0.0D, points);
+        return entry.pointsBase() + scaledDifficulty(entity) * entry.pointsGainPerDifficulty();
     }
 
     /**
@@ -115,12 +117,11 @@ public final class MobDifficulty {
         return times;
     }
 
-    /** 正态分布随机化：均值 {@code mean}，标准差为均值的 15%，下限 0。 */
+    /**
+     * 正态分布随机化：均值 {@code mean}，标准差为均值的 15%。
+     * <p>负均值会得到以该负值为中心的分布，不做 0 截断，保证负难度完整透传到 points。</p>
+     */
     public static double randomize(LivingEntity entity, double mean) {
-        if (!(mean > 0.0D)) {
-            return 0.0D;
-        }
-        double rolled = mean * (1.0D + entity.getRandom().nextGaussian() * RANDOM_STDDEV_RATIO);
-        return Math.max(0.0D, rolled);
+        return mean * (1.0D + entity.getRandom().nextGaussian() * RANDOM_STDDEV_RATIO);
     }
 }

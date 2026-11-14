@@ -60,6 +60,7 @@
   "effect.newnew_warlock_core.fatal_wound": "Fatal Wound",
   "effect.newnew_warlock_core.hemorrhage": "Hemorrhage",
   "effect.newnew_warlock_core.unstoppable": "Unstoppable",
+  "hud.newnew_warlock_core.kill_points": "Attribute Points +%s",
   "death.attack.bleeding": "%1$s's blood ran dry",
   "death.attack.bleeding.player": "%1$s's blood ran dry while fighting %2$s",
   "death.attack.light_thorns": "%1$s was scorched by radiant light",
