@@ -45,6 +45,8 @@ public final class MobModule implements ModModule {
         DifficultySync.register(modEventBus);
         // 生物技能列表附件（技能 id + 等级 + 技能自定义状态，持久化在生物自己的 NBT 上）
         MobSkills.register(modEventBus);
+        // 玩家击杀累计点数附件（死亡保留，登录/重生时重建属性修饰符）
+        MobKillPoints.register(modEventBus);
         // 内置技能
         MobSkills.register(new BerserkSkill());
         MobSkills.register(new HardeningSkill());
@@ -70,6 +72,9 @@ public final class MobModule implements ModModule {
         NeoForge.EVENT_BUS.addListener(MobExperienceEvt::onLivingExperienceDrop);
         // 被玩家击杀时按 base_points × 缩放 提高玩家的属性点上限
         NeoForge.EVENT_BUS.addListener(MobKillPointsEvt::onLivingDeath);
+        // 登录/重生后按持久化累计值重建击杀加成
+        NeoForge.EVENT_BUS.addListener(MobKillPoints::onPlayerLoggedIn);
+        NeoForge.EVENT_BUS.addListener(MobKillPoints::onPlayerRespawn);
     }
 
     private static Identifier id(String path) {
