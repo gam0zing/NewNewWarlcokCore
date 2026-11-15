@@ -57,6 +57,10 @@ public final class MobPointsConfig {
 
     /** 经验掉落分母的默认值；配置值 ≤ 0 或非法时也回退到它。 */
     public static final double DEFAULT_XP_POINTS_DIVISOR = 10.0D;
+    /** points 正态分布标准差的默认值；配置值 < 0 或非法时也回退到它。 */
+    public static final double DEFAULT_RANDOM_STDDEV = 5.0D;
+    /** 全局配置键：points 正态分布的固定标准差。 */
+    private static final String RANDOM_STDDEV = "points-random-stddev";
     /** 全局配置键：玩家击杀生物时的经验分母，所有生物共用一条。 */
     private static final String XP_POINTS_DIVISOR = "xp-points-divisor";
     /** 全局配置键：生物 points 高于玩家时的缩放表。 */
@@ -104,6 +108,7 @@ public final class MobPointsConfig {
     private static Path commonPath;
 
     private static volatile Map<Identifier, Entry> entries = Map.of();
+    private static volatile double randomStddev = DEFAULT_RANDOM_STDDEV;
     private static volatile double xpPointsDivisor = DEFAULT_XP_POINTS_DIVISOR;
     private static volatile List<Double> higherScales = DEFAULT_HIGHER_SCALES;
     private static volatile List<Double> lowerScales = DEFAULT_LOWER_SCALES;
@@ -133,7 +138,9 @@ public final class MobPointsConfig {
         List<Identifier> types = collectTypes();
 
         if (common != null) {
-            boolean dirty = ensureVersion(common);
+            // 先写随机化标准差，保证新生成的表里它位于开头
+            boolean dirty = ensureRandomStddev(common);
+            dirty |= ensureVersion(common);
             dirty |= ensureScales(common);
             dirty |= ensureXpPointsDivisor(common);
             dirty |= mergeMissing(common, types);
@@ -163,7 +170,8 @@ public final class MobPointsConfig {
         server = open(path);
 
         if (server != null) {
-            boolean dirty = ensureVersion(server);
+            boolean dirty = ensureRandomStddev(server);
+            dirty |= ensureVersion(server);
             dirty |= ensureScales(server);
             dirty |= ensureXpPointsDivisor(server);
             dirty |= mergeMissing(server, types);
@@ -188,6 +196,7 @@ public final class MobPointsConfig {
             common = null;
         }
         entries = Map.of();
+        randomStddev = DEFAULT_RANDOM_STDDEV;
         xpPointsDivisor = DEFAULT_XP_POINTS_DIVISOR;
         higherScales = DEFAULT_HIGHER_SCALES;
         lowerScales = DEFAULT_LOWER_SCALES;
@@ -245,6 +254,15 @@ public final class MobPointsConfig {
      */
     public static double xpPointsDivisor() {
         return xpPointsDivisor;
+    }
+
+    /**
+     * points 正态分布的标准差（全局一条，所有生物共用）。
+     * <p>以难度增幅后的 points 为均值，按该标准差上下波动；配置值 < 0 或非法时按
+     * {@link #DEFAULT_RANDOM_STDDEV}（5）处理。</p>
+     */
+    public static double randomStddev() {
+        return randomStddev;
     }
 
     // ============================================================
@@ -349,6 +367,7 @@ public final class MobPointsConfig {
     private static void rebuildEntries(@Nullable CommentedFileConfig config, List<Identifier> types) {
         if (config == null) {
             entries = Map.of();
+            randomStddev = DEFAULT_RANDOM_STDDEV;
             xpPointsDivisor = DEFAULT_XP_POINTS_DIVISOR;
             higherScales = DEFAULT_HIGHER_SCALES;
             lowerScales = DEFAULT_LOWER_SCALES;
@@ -359,6 +378,7 @@ public final class MobPointsConfig {
             table.put(id, readEntry(config, id));
         }
         entries = Map.copyOf(table);
+        randomStddev = readRandomStddev(config);
         xpPointsDivisor = readXpPointsDivisor(config);
         higherScales = readScales(config, HIGHER_SCALES, DEFAULT_HIGHER_SCALES);
         lowerScales = readScales(config, LOWER_SCALES, DEFAULT_LOWER_SCALES);
@@ -405,6 +425,18 @@ public final class MobPointsConfig {
             }
         }
         return scales.isEmpty() ? fallback : List.copyOf(scales);
+    }
+
+    /** 缺失时补上 points 随机化标准差；不覆盖已有值。 */
+    private static boolean ensureRandomStddev(CommentedFileConfig config) {
+        return setDoubleIfMissing(config, List.of(RANDOM_STDDEV), DEFAULT_RANDOM_STDDEV,
+            "points 正态分布的标准差（所有生物共用）：以难度增幅后的 points 为均值上下波动；< 0 按 5 处理");
+    }
+
+    /** 读取随机化标准差；< 0 或非有限值一律按默认 5。 */
+    private static double readRandomStddev(CommentedFileConfig config) {
+        double value = readDouble(config, List.of(RANDOM_STDDEV), DEFAULT_RANDOM_STDDEV);
+        return Double.isFinite(value) && value >= 0.0D ? value : DEFAULT_RANDOM_STDDEV;
     }
 
     /** 缺失时补上全局经验分母；不覆盖已有值。 */

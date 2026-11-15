@@ -24,13 +24,13 @@ import com.gam0zing.newnew_warlock_core.mob.config.MobPointsConfig;
  * <p>服务器游戏难度（简单/普通/困难）是一个固定难度偏移（默认 -12 / 0 / +12），只影响怪物：
  * 怪物使用 {@link #scaledDifficulty(LivingEntity)}（原始难度 + 偏移）计算 points；
  * 玩家侧加成（探险家、险地矿工等）使用不含偏移的原始难度，保证阶段进度不随难度选择变化。
- * 和平固定为 0。随机化使用均值 = 难度增幅后的 points、标准差 = 均值的 15%。
+ * 和平固定为 0。随机化使用均值 = 难度增幅后的 points、固定标准差（{@code mobs.toml} 全局项
+ * {@code points-random-stddev}，默认 5，与数值大小无关）。
  * 负难度会得到负 points，不做 0 截断（属性本身的区间负责最终兜底）。</p>
  */
 public final class MobDifficulty {
 
     private static final double TICKS_PER_DAY = 24_000.0D;
-    private static final double RANDOM_STDDEV_RATIO = 0.15D;
 
     private MobDifficulty() {}
 
@@ -118,10 +118,11 @@ public final class MobDifficulty {
     }
 
     /**
-     * 正态分布随机化：均值 {@code mean}，标准差为均值的 15%。
-     * <p>负均值会得到以该负值为中心的分布，不做 0 截断，保证负难度完整透传到 points。</p>
+     * 正态分布随机化：均值 {@code mean}，标准差为配置的全局值（默认 5）。
+     * <p>波动幅度与当前值大小无关，因此 0 基准的生物同样有随机性；
+     * 负均值会得到以该负值为中心的分布，不做 0 截断，保证负难度完整透传到 points。</p>
      */
     public static double randomize(LivingEntity entity, double mean) {
-        return mean * (1.0D + entity.getRandom().nextGaussian() * RANDOM_STDDEV_RATIO);
+        return mean + entity.getRandom().nextGaussian() * MobPointsConfig.randomStddev();
     }
 }
