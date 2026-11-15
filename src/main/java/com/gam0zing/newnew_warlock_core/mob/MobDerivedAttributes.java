@@ -20,7 +20,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
  *     <li>toughness → {@link Attributes#MAX_HEALTH}（乘算），以及 {@link Attributes#ARMOR}、{@link Attributes#ARMOR_TOUGHNESS}（加算）</li>
  *     <li>dexterity → {@link Attributes#MOVEMENT_SPEED}、{@link Attributes#FLYING_SPEED}，
  *     以及 {@link ModAttributes#CRITICAL}、{@link ModAttributes#DODGE}（加算）</li>
- *     <li>spirituality → 暂无目标属性</li>
+ *     <li>spirituality → 索敌范围（不在属性上投影，在 {@code getVisibilityPercent} 出口按隐蔽缺口/增幅结算）</li>
  * </ul>
  * <p>灵巧：地面移速与飞行速度高于基准每点 +1%、低于基准每点 -10%；
  * 另按基准以上的每点 +1% 暴击率、+2% 闪避率（低于基准不扣减，保持原属性基础值）。

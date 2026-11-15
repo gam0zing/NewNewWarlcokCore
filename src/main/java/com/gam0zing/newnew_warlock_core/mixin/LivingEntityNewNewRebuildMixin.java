@@ -59,15 +59,15 @@ public abstract class LivingEntityNewNewRebuildMixin implements NewNewRebuildHos
             double spiritualityWeight = mobPoints.spiritualityWeight();
 
             // points数据来源为config
-            // rebuild过程整体数据流向为："生物points基准-->难度增幅-->正态分布随机化-->技能抽取（占用points）-->四维-->属性"
+            // rebuild过程整体数据流向为："生物points基准-->难度增幅-->正态分布随机化-->技能抽取（占用临时点数）-->四维-->属性"
             double pointsWithDifficulty = MobDifficulty.scaledPoints(self, mobPoints);
 
             double pointsByRandom = MobDifficulty.randomize(self, pointsWithDifficulty);
 
-            // 重建时先清空旧技能（含冷却/持续状态），再按剩余 points 抽取新技能；
-            // 抽到的技能会按价值从 points 中扣除，剩余部分才分配给四维
+            // points 属性只记录难度与随机化得到的原始值，不参与消耗；
+            // 技能与四维分配都从临时变量里扣，保证击杀奖励等外部读取到的是原始 points
             MobSkills.clear(self);
-            pointsByRandom = MobSkills.assignFromPools(self, pointsByRandom);
+            double remainingPoints = MobSkills.assignFromPools(self, pointsByRandom);
 
             double strength = strengthAttr.getBaseValue();
             double toughness = toughnessAttr.getBaseValue();
@@ -75,7 +75,7 @@ public abstract class LivingEntityNewNewRebuildMixin implements NewNewRebuildHos
             double spirituality = spiritualityAttr.getBaseValue();
 
             double pointsCanUse = Math.max(
-                    pointsByRandom +
+                    remainingPoints +
                             strength - strengthMin +
                             toughness - toughnessMin +
                             dexterity - dexterityMin +
@@ -119,7 +119,7 @@ public abstract class LivingEntityNewNewRebuildMixin implements NewNewRebuildHos
             dexterityAttr.setBaseValue(finals[2]);
             spiritualityAttr.setBaseValue(finals[3]);
 
-            // 四维已写入，按其当前值投影到原版属性；spirituality 暂无目标属性
+            // 四维已写入，按其当前值投影到原版属性；spirituality 在索敌范围结算处生效，不投影到属性
             // 生命上限在生成后才提高，原本满血的生物补到新上限，已受伤的生物不顺带治疗
             boolean wasFull = self.getHealth() >= self.getMaxHealth() - 1.0E-4D;
             MobDerivedAttributes.sync(self);
