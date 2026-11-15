@@ -309,15 +309,9 @@ public abstract class LivingEntityDamagePipelineMixin implements WarlockDamageHo
             LightThorns.retaliate(self, source);
         }
 
-        // 插槽 G：受伤表现与反馈
-        DamagePipeline.playFeedback(ctx);
-
-        // 插槽 H：免死；死亡分派（die 内会发出 LivingDeathEvent、掉落与经验）
-        if (self.isDeadOrDying() && !DamagePipeline.tryPreventDeath(ctx)) {
-            self.die(source);
-        }
-
-        // 骨架：仇恨归因（供 AI 反击；如需接管可移入业务插槽）
+        // 骨架：仇恨与击杀归属（供 AI 反击；如需接管可移入业务插槽）
+        // 必须早于 die()：原版 dropExperience 以 lastHurtByPlayerMemoryTime > 0 作为经验掉落开关，
+        // 同时也决定玩家击杀限定掉落与 onLivingDrops 的 killedByPlayer 标记
         Entity attacker = source.getEntity();
         if (attacker != null) {
             if (attacker instanceof LivingEntity livingAttacker
@@ -333,6 +327,14 @@ public abstract class LivingEntityDamagePipelineMixin implements WarlockDamageHo
                 && tamable.getOwner() instanceof Player owner) {
                 self.setLastHurtByPlayer(owner, 100);
             }
+        }
+
+        // 插槽 G：受伤表现与反馈
+        DamagePipeline.playFeedback(ctx);
+
+        // 插槽 H：免死；死亡分派（die 内会发出 LivingDeathEvent、掉落与经验）
+        if (self.isDeadOrDying() && !DamagePipeline.tryPreventDeath(ctx)) {
+            self.die(source);
         }
 
         if (ctx.isDealtDamage()) {
