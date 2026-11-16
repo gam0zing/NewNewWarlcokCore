@@ -47,6 +47,15 @@ public interface WarlockDamageHost {
      */
     void newnew$hurtShield(float blockedDamage);
 
+    /**
+     * 原版近战格挡表现入口（对应原版 {@code LivingEntity#blockUsingItem}）。
+     * <p>玩家会进入盾牌禁用冷却并停止使用物品；攻击者按原版 {@code blockedByItem} 规则被击退。</p>
+     *
+     * @param damage      格挡前的伤害值
+     * @param fullyBlocked 是否完全挡下
+     */
+    void newnew$blockUsingItem(LivingEntity attacker, DamageSource source, float damage, boolean fullyBlocked);
+
     // ----------------------------------------------------------------------------------
     // 无敌帧状态：骨架只负责存取，判定规则在处理器里（原版规则见 VanillaDamageUtils#onGate）。
     // ----------------------------------------------------------------------------------

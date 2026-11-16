@@ -26,7 +26,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.BlocksAttacks;
 import net.neoforged.neoforge.common.CommonHooks;
 import net.neoforged.neoforge.common.damagesource.DamageContainer;
-import net.neoforged.neoforge.event.entity.living.LivingShieldBlockEvent;
 
 import com.gam0zing.newnew_warlock_core.combat.api.DamageHandlerRegistry;
 import com.gam0zing.newnew_warlock_core.combat.api.IDamageHandler;
@@ -91,6 +90,10 @@ public abstract class LivingEntityDamagePipelineMixin implements WarlockDamageHo
 
     @Shadow
     protected abstract float getDamageAfterMagicAbsorb(DamageSource source, float damage);
+
+    @Shadow
+    protected abstract void blockUsingItem(ServerLevel level, LivingEntity attacker, DamageSource source, float damage,
+        boolean fullyBlocked);
 
     /** 原版护甲槽位顺序（与 Player#hurtArmor 一致） */
     @Unique
@@ -163,6 +166,14 @@ public abstract class LivingEntityDamagePipelineMixin implements WarlockDamageHo
             return;
         }
         blocksAttacks.hurtBlockingItem(self.level(), blockingItem, self, self.getUsedItemHand(), blockedDamage);
+    }
+
+    @Override
+    public void newnew$blockUsingItem(LivingEntity attacker, DamageSource source, float damage, boolean fullyBlocked) {
+        LivingEntity self = (LivingEntity) (Object) this;
+        if (self.level() instanceof ServerLevel serverLevel) {
+            this.blockUsingItem(serverLevel, attacker, source, damage, fullyBlocked);
+        }
     }
 
     // ---- 无敌帧状态（判定规则在处理器里，这里只负责存取） ----
@@ -267,20 +278,7 @@ public abstract class LivingEntityDamagePipelineMixin implements WarlockDamageHo
         }
         this.noActionTime = 0;
 
-        // 外部钩子：LivingShieldBlockEvent（格挡结果、格挡量、盾牌耐久消耗同步进上下文）
-        if (container.getNewDamage() > 0.0F) {
-            LivingShieldBlockEvent shieldEvent =
-                CommonHooks.onDamageBlock(self, container, container.getNewDamage(), self.isBlocking());
-            if (shieldEvent.getBlocked()) {
-                container.setBlockedDamage(shieldEvent);
-                ctx.setBlockedDamage(shieldEvent.getBlockedDamage());
-                ctx.setShieldDamage(shieldEvent.shieldDamage());
-                ctx.setShieldBlocked(true);
-                ctx.setShieldFullyBlocked(container.getNewDamage() <= 0.0F);
-            }
-        }
-
-        // 插槽 B：盾牌行为（音效、反击、表现……）
+        // 插槽 B：盾牌格挡（原版判定与 LivingShieldBlockEvent 重发都在 VanillaDamageUtils#onShieldBlock）
         DamagePipeline.handleShieldBlock(ctx);
 
         // 插槽 B2：盾牌耐久（防守方）

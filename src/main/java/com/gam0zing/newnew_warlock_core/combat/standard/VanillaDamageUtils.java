@@ -5,16 +5,22 @@ import com.gam0zing.newnew_warlock_core.combat.spine.WarlockDamageHost;
 
 import it.unimi.dsi.fastutil.doubles.DoubleDoubleImmutablePair;
 
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.BlocksAttacks;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.CommonHooks;
 import net.neoforged.neoforge.common.damagesource.DamageContainer;
 import net.neoforged.neoforge.common.extensions.ILivingEntityExtension;
 import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent;
+import net.neoforged.neoforge.event.entity.living.LivingShieldBlockEvent;
 
 /**
  * 原版伤害机制。
@@ -38,12 +44,77 @@ public final class VanillaDamageUtils {
     public static void prepare(DamageContext ctx) {
     }
 
-    /** 插槽 B：原版格挡表现（音效、缴械等），当前尚未接入。 */
+    /**
+     * 插槽 B：原版盾牌格挡（复刻 {@code LivingEntity#applyItemBlocking}）。
+     * <p>判定顺序：举盾与 {@code BlocksAttacks} 组件 → 穿透箭 → 来源朝向 → {@code bypassed_by} 标签 →
+     * 减伤结算 → {@code LivingShieldBlockEvent}。结果写回 {@link DamageContainer} 与上下文。</p>
+     * <p>近战格挡后还会走原版 {@code blockUsingItem}（玩家进入盾牌禁用冷却、攻击者被击退）。</p>
+     */
     public static void onShieldBlock(DamageContext ctx) {
+        DamageContainer container = ctx.getContainer();
+        float damage = container.getNewDamage();
+        if (damage <= 0.0F) {
+            return;
+        }
+        LivingEntity self = ctx.getTarget();
+        ItemStack blockingWith = self.getItemBlockingWith();
+        if (blockingWith == null) {
+            return;
+        }
+        BlocksAttacks blocksAttacks = blockingWith.get(DataComponents.BLOCKS_ATTACKS);
+        if (blocksAttacks == null) {
+            return;
+        }
+        DamageSource source = ctx.getSource();
+        // 穿透箭无视盾牌
+        if (source.getDirectEntity() instanceof AbstractArrow arrow && arrow.getPierceLevel() > 0) {
+            return;
+        }
+
+        // 朝向：只挡水平 ±90°；无来源位置（如环境伤害）按原版视为正后方，不挡
+        Vec3 sourcePosition = source.getSourcePosition();
+        double angle;
+        if (sourcePosition != null) {
+            Vec3 view = self.calculateViewVector(0.0F, self.getYHeadRot());
+            Vec3 toSource = sourcePosition.subtract(self.position());
+            toSource = new Vec3(toSource.x, 0.0D, toSource.z).normalize();
+            angle = Math.acos(toSource.dot(view));
+        } else {
+            angle = Math.PI;
+        }
+
+        float damageBlocked = blocksAttacks.resolveBlockedDamage(source, damage, angle);
+        boolean originalBlocked = !blocksAttacks.bypassedBy()
+                .map(tag -> tag.contains(source.typeHolder()))
+                .orElse(false);
+        LivingShieldBlockEvent shieldEvent =
+                CommonHooks.onDamageBlock(self, container, damageBlocked, originalBlocked);
+        if (!shieldEvent.getBlocked()) {
+            return;
+        }
+
+        // 事件结果必须在写回容器之前读取：getBlockedDamage 依赖容器当前未扣除的伤害
+        float blocked = shieldEvent.getBlockedDamage();
+        float shieldDamage = shieldEvent.shieldDamage();
+        container.setBlockedDamage(shieldEvent);
+        ctx.setBlockedDamage(blocked);
+        ctx.setShieldDamage(shieldDamage);
+        ctx.setShieldBlocked(true);
+        ctx.setShieldFullyBlocked(container.getNewDamage() <= 0.0F);
+
+        // 原版近战格挡表现：非弹射物且直接攻击者是生物
+        if (blocked > 0.0F && !source.is(DamageTypeTags.IS_PROJECTILE)
+                && source.getDirectEntity() instanceof LivingEntity attacker) {
+            ((WarlockDamageHost) self).newnew$blockUsingItem(attacker, source, damage, blocked >= damage);
+        }
     }
 
-    /** 插槽 B2：原版盾牌耐久，当前尚未接入。 */
+    /** 插槽 B2：原版盾牌耐久（按 {@code BlocksAttacks} 的阈值规则扣除）。 */
     public static void onShieldDurability(DamageContext ctx) {
+        if (!ctx.isShieldBlocked() || ctx.getBlockedDamage() <= 0.0F) {
+            return;
+        }
+        ((WarlockDamageHost) ctx.getTarget()).newnew$hurtShield(ctx.getBlockedDamage());
     }
 
     /**
