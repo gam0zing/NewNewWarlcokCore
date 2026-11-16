@@ -101,6 +101,8 @@ public final class VanillaDamageUtils {
         ctx.setShieldDamage(shieldDamage);
         ctx.setShieldBlocked(true);
         ctx.setShieldFullyBlocked(container.getNewDamage() <= 0.0F);
+        // 原版在 hurtServer 开头就捕获了 useItem，表现阶段即便已停止举盾也仍用它播格挡音
+        ctx.setShieldItem(blockingWith);
 
         // 原版近战格挡表现：非弹射物且直接攻击者是生物
         if (blocked > 0.0F && !source.is(DamageTypeTags.IS_PROJECTILE)
@@ -275,6 +277,37 @@ public final class VanillaDamageUtils {
         }
         float strength = (float) (Math.sqrt(Math.max(0.0F, dealtDamage) / 10.0D) * DAMAGE_KNOCKBACK_SCALE);
         target.knockback(strength, xd, zd, source, dealtDamage);
+    }
+
+    /**
+     * 插槽 G（表现）：原版受击方向指示（{@code LivingEntity#indicateDamage}）。
+     * <p>玩家会收到 {@code ClientboundHurtAnimationPacket}，客户端据此播放受击动画并显示方向箭头；
+     * 其他生物的原版实现为空。</p>
+     * <p>触发条件与原版 {@code dealDefaultKnockback} 内的调用一致：伤害带 {@code NO_KNOCKBACK}、
+     * 被完全格挡、或发生了格挡（{@code blocked}）时都不发。</p>
+     */
+    public static void indicateDamage(DamageContext ctx) {
+        DamageSource source = ctx.getSource();
+        if (source.is(DamageTypeTags.NO_KNOCKBACK) || ctx.isShieldFullyBlocked()) {
+            return;
+        }
+        if (ctx.isShieldBlocked() && ctx.getBlockedDamage() > 0.0F) {
+            return;
+        }
+
+        LivingEntity target = ctx.getTarget();
+        double xd = 0.0D;
+        double zd = 0.0D;
+        if (source.getDirectEntity() instanceof Projectile projectile) {
+            DoubleDoubleImmutablePair direction =
+                projectile.calculateHorizontalHurtKnockbackDirection(target, source);
+            xd = -direction.leftDouble();
+            zd = -direction.rightDouble();
+        } else if (source.getSourcePosition() != null) {
+            xd = source.getSourcePosition().x() - target.getX();
+            zd = source.getSourcePosition().z() - target.getZ();
+        }
+        target.indicateDamage(xd, zd);
     }
 
     private static WarlockDamageHost host(DamageContext ctx) {

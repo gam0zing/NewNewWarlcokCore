@@ -13,6 +13,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
@@ -218,6 +220,32 @@ public abstract class LivingEntityDamagePipelineMixin implements WarlockDamageHo
     }
 
     @Override
+    public void newnew$playBlockSound(ItemStack blockingItem) {
+        LivingEntity self = (LivingEntity) (Object) this;
+        if (blockingItem == null || !(self.level() instanceof ServerLevel level)) {
+            return;
+        }
+        BlocksAttacks blocksAttacks = blockingItem.get(DataComponents.BLOCKS_ATTACKS);
+        if (blocksAttacks != null) {
+            blocksAttacks.onBlocked(level, self);
+        }
+    }
+
+    /**
+     * 等价于原版私有的 {@code LivingEntity#playSecondaryHurtSound}。
+     * <p>原版该方法只处理荆棘反伤；{@code @Shadow} 无法解析 private 方法，因此就地复刻同一逻辑。</p>
+     */
+    @Override
+    public void newnew$playSecondaryHurtSound(DamageSource source) {
+        if (!source.is(DamageTypes.THORNS)) {
+            return;
+        }
+        LivingEntity self = (LivingEntity) (Object) this;
+        SoundSource soundSource = self instanceof Player ? SoundSource.PLAYERS : SoundSource.HOSTILE;
+        self.level().playSound(null, self.getX(), self.getY(), self.getZ(), SoundEvents.THORNS_HIT, soundSource);
+    }
+
+    @Override
     public float newnew$getDamageAfterArmorAbsorb(DamageSource source, float damage) {
         return this.getDamageAfterArmorAbsorb(source, damage);
     }
@@ -256,9 +284,13 @@ public abstract class LivingEntityDamagePipelineMixin implements WarlockDamageHo
         if (DamagePipeline.routeInnerDamage(ctx)) {
             // 扣血阶段结束后检查致命伤
             FatalWoundMobEffect.afterHealthDeducted(self);
-            // 被伤害时触发光明荆棘
             if (ctx.isDealtDamage()) {
-                LightThorns.retaliate(self, source);
+                // 内部伤害不触发光明荆棘
+                // LightThorns.retaliate(self, source);
+                // 内部伤害跳过的只是防护/加成/无敌帧，落地结果与原版一致：
+                // 原版溺水、饥饿这类伤害仍有受伤音与受击红闪，因此表现阶段照常执行
+                ctx.setApplied(true);
+                DamagePipeline.playFeedback(ctx);
             }
             return ctx.isDealtDamage();
         }

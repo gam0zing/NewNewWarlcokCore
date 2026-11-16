@@ -9,6 +9,7 @@ import com.gam0zing.newnew_warlock_core.combat.api.IDamageHandler;
 
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.common.damagesource.DamageContainer;
 
 /**
@@ -35,6 +36,14 @@ public final class DamageContext {
     private boolean shieldBlocked;
     /** 盾牌是否完全挡下（格挡后伤害为 0） */
     private boolean shieldFullyBlocked;
+    /**
+     * 格挡时正在使用的物品。
+     * <p>原版用 {@code hurtServer} 开头捕获的 {@code useItem} 播放格挡音；但玩家格挡近战后会被
+     * {@code BlocksAttacks#disable} 停止举盾，届时 {@code getItemBlockingWith()} 已为 null，
+     * 因此这里保存同一份引用，供表现阶段取用。</p>
+     */
+    @Nullable
+    private ItemStack shieldItem;
     /** 本次是否真正进入落地阶段（无敌帧不足时为 false） */
     private boolean applied;
     /** LivingDamageEvent.Pre 之后的伤害（供 Post 阶段或业务逻辑参考） */
@@ -131,6 +140,16 @@ public final class DamageContext {
 
     public void setShieldFullyBlocked(boolean shieldFullyBlocked) {
         this.shieldFullyBlocked = shieldFullyBlocked;
+    }
+
+    /** {@return 格挡时正在使用的物品} 未发生格挡时为 null。 */
+    @Nullable
+    public ItemStack getShieldItem() {
+        return this.shieldItem;
+    }
+
+    public void setShieldItem(@Nullable ItemStack shieldItem) {
+        this.shieldItem = shieldItem;
     }
 
     public boolean isApplied() {

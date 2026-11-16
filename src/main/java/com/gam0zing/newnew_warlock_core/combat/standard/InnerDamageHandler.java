@@ -10,8 +10,9 @@ import net.neoforged.neoforge.common.damagesource.DamageContainer;
 
 /**
  * 内部伤害处理器：{@code inner_damage} 标签的伤害（出血、溺水、饥饿、脱水等）。
- * <p>在插槽 0 直接扣除生命值并结束流程：不经过防护、加成、无敌帧与伤害事件。
- * 其余阶段不可达，因此显式抛出异常，避免有人误以为“内部伤害也会走这些阶段”。</p>
+ * <p>在插槽 0 直接扣除生命值：不经过防护、加成、无敌帧与伤害事件。
+ * 扣血成功后仍会执行表现阶段（{@link #playFeedback}），其余阶段不可达，因此显式抛出异常，
+ * 避免有人误以为“内部伤害也会走这些阶段”。</p>
  */
 public final class InnerDamageHandler implements IDamageHandler {
 
@@ -70,7 +71,9 @@ public final class InnerDamageHandler implements IDamageHandler {
 
     @Override
     public void playFeedback(DamageContext ctx) {
-        throw unreachable("playFeedback");
+        // 内部伤害只跳过防护、加成、无敌帧与伤害事件；受伤表现与原版一致
+        // （溺水播 player.hurt_drown、饥饿播对应音效，并广播受击红闪）
+        VanillaCombatViewHelper.playHurtFeedback(ctx);
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.gam0zing.newnew_warlock_core.combat.spine;
 
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.common.damagesource.DamageContainer;
 
 /**
@@ -84,6 +85,25 @@ public interface WarlockDamageHost {
 
     /** 原版死亡音效（{@code makeSound(getDeathSound())}）。 */
     void newnew$playDeathSound();
+
+    /**
+     * 原版盾牌格挡音效（{@code BlocksAttacks#onBlocked}）。
+     * <p>音效取自格挡物品的 {@code minecraft:blocks_attacks} 组件：原版盾牌为
+     * {@code minecraft:item.shield.block}，音量 1.0、音调 0.8~1.2 随机。
+     * 原版在格挡成功时只播这个音效，不广播伤害事件，因此不会有受击红闪。</p>
+     *
+     * @param blockingItem 格挡时正在使用的物品；玩家被禁用举盾后仍需要它来取组件，
+     *                     所以由调用方传入，而不是在这里重新查询
+     */
+    void newnew$playBlockSound(ItemStack blockingItem);
+
+    /**
+     * 原版二次受伤音效（{@code LivingEntity#playSecondaryHurtSound}）。
+     * <p>目前只有荆棘反伤会产生 {@code minecraft:enchant.thorns.hit}。溺水、火焰、冰冻这类
+     * 按伤害类型区分的专属受伤音由 {@code getHurtSound(source)} 决定，已包含在
+     * {@link #newnew$playHurtSound(DamageSource)} 里，不需要走这里。</p>
+     */
+    void newnew$playSecondaryHurtSound(DamageSource source);
 
     /**
      * 原版护甲吸收（{@code LivingEntity#getDamageAfterArmorAbsorb}）。
