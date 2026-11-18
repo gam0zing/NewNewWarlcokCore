@@ -21,8 +21,8 @@ import net.minecraft.world.phys.Vec3;
  * 光明荆棘：被伤害时，以自身 AABB 几何中心为起点，对周围 3×3×3 范围内的生物
  * 造成 {@code 5 × 属性值} 的火焰伤害。
  * <p>伤害来源记为荆棘持有者自身，使用 {@code newnew_warlock_core:light_thorns} 伤害类型
- * （归入 fire 标签，走常规火焰伤害链路）；该类型也是递归保护：由光明荆棘造成的伤害
- * 不会再次触发任何生物的光明荆棘。</p>
+ * （归入 {@code inner_damage} 标签，走内部伤害链路，不经过防护与加成）；该类型也是递归保护：
+ * 由光明荆棘造成的伤害不会再次触发任何生物的光明荆棘。</p>
  */
 public final class LightThorns {
 

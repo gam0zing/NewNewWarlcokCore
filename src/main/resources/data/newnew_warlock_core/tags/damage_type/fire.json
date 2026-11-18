@@ -5,7 +5,6 @@
     {
       "id": "#forge:is_fire",
       "required": false
-    },
-    "newnew_warlock_core:light_thorns"
+    }
   ]
 }

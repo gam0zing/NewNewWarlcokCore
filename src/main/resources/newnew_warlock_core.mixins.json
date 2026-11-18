@@ -47,6 +47,7 @@
     "PlayerDifficultyScalingMixin",
     "PlayerExperienceMixin",
     "PlayerRunSpeedMixin",
+    "PlayerSweepAttackMixin",
     "PoisonMobEffectMixin",
     "ProjectileMixin",
     "ProjectileWeaponItemMixin",

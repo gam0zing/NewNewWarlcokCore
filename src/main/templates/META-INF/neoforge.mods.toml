@@ -11,6 +11,9 @@ NewNewWarlock Modpack's core mod (Minecraft 26.3 / NeoForge build).
 [[mixins]]
 config="${mod_id}.mixins.json"
 
+[[mixins]]
+config="${mod_id}.bettercombat.mixins.json"
+
 [[dependencies.${mod_id}]]
     modId="neoforge"
     type="required"

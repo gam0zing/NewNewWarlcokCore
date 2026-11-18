@@ -26,3 +26,5 @@ src/generated/resources/.cache
 tools/release/
 .trae/
 .trae-html-share-packages/
+# 本地第三方模组 jar（编译期可选依赖，不随仓库分发）
+libs/

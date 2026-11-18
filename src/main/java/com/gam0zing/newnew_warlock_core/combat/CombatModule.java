@@ -4,10 +4,16 @@ import com.gam0zing.newnew_warlock_core.combat.api.DamageHandlerRegistry;
 import com.gam0zing.newnew_warlock_core.combat.api.DamageTags;
 import com.gam0zing.newnew_warlock_core.combat.standard.InnerDamageHandler;
 import com.gam0zing.newnew_warlock_core.combat.standard.VanillaDamageHandler;
+import com.gam0zing.newnew_warlock_core.combat.sweep.SweepAttackTracker;
+import com.gam0zing.newnew_warlock_core.combat.sweep.SweepDecision;
+import com.gam0zing.newnew_warlock_core.combat.sweep.SweepEntities;
+import com.gam0zing.newnew_warlock_core.combat.sweep.SweepNetwork;
+import com.gam0zing.newnew_warlock_core.combat.sweep.SweepParticles;
 import com.gam0zing.newnew_warlock_core.core.ModModule;
 
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
+import net.neoforged.neoforge.common.NeoForge;
 
 /**
  * 战斗模块：伤害标签 → 处理器的分发表。
@@ -28,6 +34,11 @@ public final class CombatModule implements ModModule {
     @Override
     public void init(IEventBus modEventBus, ModContainer modContainer) {
         registerDamageHandlers();
+        SweepEntities.ENTITY_TYPES.register(modEventBus);
+        SweepParticles.PARTICLE_TYPES.register(modEventBus);
+        modEventBus.addListener(SweepNetwork::register);
+        NeoForge.EVENT_BUS.addListener(SweepDecision::onSweepAttack);
+        NeoForge.EVENT_BUS.addListener(SweepAttackTracker::onServerTickPost);
     }
 
     /**

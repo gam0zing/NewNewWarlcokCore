@@ -111,6 +111,12 @@ public final class ModAttributes {
     /** 光明荆棘：被伤害时，以自身 AABB 几何中心为起点，对 3×3×3 范围内的生物造成 4×该值的火焰伤害，并治疗该值（向下取整）点生命 */
     public static final DeferredHolder<Attribute, Attribute> LIGHT_THORNS =
         registerRanged("light_thorns", 0.0D, 0.0D, 1024.0D);
+    /**
+     * 横扫之波：大于 0 时生效，横扫结束后额外生成一个飞行波，对更远的敌人造成伤害。
+     * <p>数值表示波的最大伤害总量百分比，基准为「单体伤害 × (横扫之刃等级 + 1)」。</p>
+     */
+    public static final DeferredHolder<Attribute, Attribute> SWEEP_WAVE =
+        registerRanged("sweep_wave", 0.0D, 0.0D, 1024.0D);
 
     // ============================== 玩家专属属性 ==============================
 
@@ -142,6 +148,14 @@ public final class ModAttributes {
     public static final DeferredHolder<Attribute, Attribute> PHANTOM_ARROW =
         registerRanged("phantom_arrow", 0.0D, 0.0D, 1.0D);
 
+    // 主动技能区 注册名前缀sk
+    /**
+     * 闪身步：双击移动方向键时，沿该方向对玩家施加水平推力，推力大小等于该值。
+     * <p>冷却 1 秒，消耗 0.5 点饥饿值，饥饿值不高于 6 时无法释放。</p>
+     */
+    public static final DeferredHolder<Attribute, Attribute> SK_FLASH_STEP =
+        registerRanged("sk_flash_step", 0.0D, 0.0D, 1024.0D);
+
     /** 只挂载到玩家身上的属性（供 {@code AttributeEvt} 遍历） */
     public static final List<DeferredHolder<Attribute, Attribute>> PLAYER_ATTRIBUTES = List.of(
         CONCEALMENT,
@@ -150,7 +164,9 @@ public final class ModAttributes {
         AUTO_FIRE,
         CHARGE_MOVE_SPEED,
         CHARGE_SPEED,
-        PHANTOM_ARROW);
+        PHANTOM_ARROW,
+        // 主动技能
+        SK_FLASH_STEP);
 
     /** 需要挂载到所有生物身上的属性（供 {@code AttributeEvt} 遍历） */
     public static final List<DeferredHolder<Attribute, Attribute>> ALL = List.of(
@@ -190,7 +206,8 @@ public final class ModAttributes {
         ROCK_SKIN,
         MOVE_HEALING,
         LIFE_STEALING,
-        LIGHT_THORNS);
+        LIGHT_THORNS,
+        SWEEP_WAVE);
 
     // ============================== 生物基础属性 ==============================
     // 生物自身的面板数值，除傀儡生物（铁傀儡、雪傀儡）外的所有生物都会持有，玩家也包含在内。
