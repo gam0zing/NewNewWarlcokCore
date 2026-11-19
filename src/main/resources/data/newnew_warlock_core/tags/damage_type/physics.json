@@ -24,6 +24,7 @@
     "minecraft:explosion",
     "minecraft:player_explosion",
     "minecraft:fireworks",
+    "newnew_warlock_core:spear_lift",
     {
       "id": "#forge:is_physical",
       "required": false

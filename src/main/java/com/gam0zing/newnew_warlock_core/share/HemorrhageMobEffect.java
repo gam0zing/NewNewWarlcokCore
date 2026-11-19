@@ -13,16 +13,17 @@ import org.jetbrains.annotations.Nullable;
  * 大出血：瞬时效果，施加时立即结算一次。
  * <p>按自身等级（{@code amplifier} 0 表示 I 级）随机施加：</p>
  * <ul>
- *     <li>出血：等级在 [0, 2×等级] 内随机，时长为 {@code 1200 + 600×等级} 游戏刻。</li>
+ *     <li>出血：等级在 [0, 2×等级] 内随机，时长为 {@code 10 + 10×等级} 秒
+ *     （{@code 200 + 200×等级} 游戏刻）。</li>
  * </ul>
  * <p>随机到 0 级表示不施加该效果。</p>
  */
 public class HemorrhageMobEffect extends InstantaneousMobEffect {
 
-    /** 出血基础时长 */
-    public static final int BLEEDING_BASE_DURATION = 1200;
-    /** 出血每级追加时长 */
-    public static final int BLEEDING_DURATION_PER_LEVEL = 600;
+    /** 出血基础时长：10 秒 */
+    public static final int BLEEDING_BASE_DURATION = 200;
+    /** 出血每级追加时长：10 秒 */
+    public static final int BLEEDING_DURATION_PER_LEVEL = 200;
 
     public HemorrhageMobEffect(MobEffectCategory category, int color) {
         super(category, color);

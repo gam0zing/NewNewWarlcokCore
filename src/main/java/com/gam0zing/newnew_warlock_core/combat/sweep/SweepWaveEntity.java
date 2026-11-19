@@ -32,7 +32,7 @@ public class SweepWaveEntity extends Entity {
     /** 满池时的初速，约等于满蓄力箭矢。 */
     private static final double BASE_SPEED = 3.0D;
     /** 每飞行 1 格消耗的池量系数。 */
-    private static final double TRAVEL_COST = 0.1D;
+    private static final double TRAVEL_COST = 0.2D;
     private static final double MIN_SPEED = 0.05D;
     /** 实体检查盒：2.6 × 2.3 × 2.6，随速度方向水平旋转。 */
     private static final double HIT_BOX_WIDTH = 2.6D;

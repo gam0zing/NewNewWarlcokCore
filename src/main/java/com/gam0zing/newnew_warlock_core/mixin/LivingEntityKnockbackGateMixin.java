@@ -11,6 +11,7 @@ import net.neoforged.neoforge.common.CommonHooks;
 import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent;
 
 import com.gam0zing.newnew_warlock_core.combat.standard.VanillaDamageUtils;
+import com.gam0zing.newnew_warlock_core.compat.bettercombat.SpearLift;
 
 /**
  * 击退断流。
@@ -42,6 +43,14 @@ public abstract class LivingEntityKnockbackGateMixin {
         }
 
         // 位移：原版规则（按伤害类型区分时替换这里）
+        if (source.is(SpearLift.KEY)) {
+            // 只有本模组挑飞结算发起的这一次走 45° 上抬；
+            // BC 在 player.attack 后补的 0.4 与疾跑额外 0.5 一并屏蔽，避免重复位移。
+            if (VanillaDamageUtils.isLiftRequest()) {
+                VanillaDamageUtils.handleLiftKnockback(self, event);
+            }
+            return;
+        }
         VanillaDamageUtils.handleKnockback(self, event);
     }
 }

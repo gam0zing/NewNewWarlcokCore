@@ -10,13 +10,13 @@ import net.minecraft.world.entity.LivingEntity;
 
 /**
  * 急速再生：价值 10，普通技能。
- * <p>每 20 秒给自己施加持续 5 秒的【生命恢复】（等级 = 技能等级 × 2）和【抗性提升 III】。</p>
+ * <p>每 10 秒给自己施加持续 5 秒的【生命恢复】（等级 = 技能等级 × 2）和【抗性提升 II】。</p>
  */
 public final class RapidRegenerationSkill extends CooldownMobSkill {
 
-    private static final int INTERVAL_TICKS = 400;
+    private static final int INTERVAL_TICKS = 200;
     private static final int EFFECT_DURATION_TICKS = 100;
-    private static final int RESISTANCE_AMPLIFIER = 2;
+    private static final int RESISTANCE_AMPLIFIER = 1;
 
     public RapidRegenerationSkill() {
         super(Identifier.fromNamespaceAndPath(NewNewWarlockCore.MOD_ID, "rapid_regeneration"), 10.0F,

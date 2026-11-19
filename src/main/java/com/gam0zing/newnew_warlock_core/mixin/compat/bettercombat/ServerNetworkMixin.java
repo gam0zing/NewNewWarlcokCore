@@ -1,5 +1,8 @@
 package com.gam0zing.newnew_warlock_core.mixin.compat.bettercombat;
 
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.llamalad7.mixinextras.sugar.Local;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -15,6 +18,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 
 import com.gam0zing.newnew_warlock_core.combat.sweep.SweepAttackTracker;
+import com.gam0zing.newnew_warlock_core.compat.bettercombat.BetterCombatGate;
+import com.gam0zing.newnew_warlock_core.compat.bettercombat.SpearLiftContext;
 
 /**
  * Better Combat 出手入口。
@@ -40,5 +45,34 @@ public abstract class ServerNetworkMixin {
             return;
         }
         SweepAttackTracker.begin(player, packet.cursorTarget(), attack.damageMultiplier());
+    }
+
+    /**
+     * 为矛的左键结算建立挑飞上下文。
+     * <p>{@code executeIfPossible} 在服务端线程上同步执行整个左键结算，任务内部的
+     * {@code ItemStack#getDamageSource} 据此把伤害类型换成 {@code newnew_warlock_core:spear_lift}；
+     * 右键冲锋不经过这个任务，仍保持原版 {@code minecraft:spear}。</p>
+     */
+    @WrapOperation(
+        method = "handleAttackRequest",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/server/MinecraftServer;executeIfPossible(Ljava/lang/Runnable;)V"),
+        require = 0)
+    private static void newnew$wrapSpearLift(MinecraftServer server, Runnable task, Operation<Void> original,
+        @Local(argsOnly = true) Packets.C2S_AttackRequest packet,
+        @Local(argsOnly = true) ServerPlayer player) {
+        AttackHand hand = PlayerAttackHelper.getCurrentAttack(player, packet.comboCount());
+        WeaponAttributes.Attack attack = hand == null ? null : hand.attack();
+        if (attack == null || attack.angle() > 0.0D || !BetterCombatGate.isSpear(player.getWeaponItem())) {
+            original.call(server, task);
+            return;
+        }
+        SpearLiftContext.enter();
+        try {
+            original.call(server, task);
+        } finally {
+            SpearLiftContext.exit();
+        }
     }
 }

@@ -6,6 +6,7 @@ import com.gam0zing.newnew_warlock_core.combat.spine.WarlockDamageHost;
 import it.unimi.dsi.fastutil.doubles.DoubleDoubleImmutablePair;
 
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
@@ -14,6 +15,7 @@ import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.BlocksAttacks;
+import net.minecraft.world.item.component.KineticWeapon;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.CommonHooks;
@@ -39,6 +41,16 @@ public final class VanillaDamageUtils {
 
     /** 伤害换算击退的强度系数：在原公式基础上降低 75% */
     public static final double DAMAGE_KNOCKBACK_SCALE = 0.25D;
+
+    /** 挑飞击退的固定强度：最终位移向量的模长（再乘击退抗性修正） */
+    public static final double LIFT_STRENGTH = 0.8D;
+
+    /** 挑飞击退的上抬角（45°）对应的水平/垂直分量系数 */
+    private static final double LIFT_HORIZONTAL = Math.cos(Math.toRadians(45.0D));
+    private static final double LIFT_VERTICAL = Math.sin(Math.toRadians(45.0D));
+
+    /** 标记：当前这次 {@code knockback} 调用来自挑飞结算，而不是其它来源 */
+    private static final ThreadLocal<Boolean> LIFT_REQUEST = ThreadLocal.withInitial(() -> false);
 
     /** 插槽 A：原版没有与伤害类型无关的预处理。 */
     public static void prepare(DamageContext ctx) {
@@ -277,6 +289,98 @@ public final class VanillaDamageUtils {
         }
         float strength = (float) (Math.sqrt(Math.max(0.0F, dealtDamage) / 10.0D) * DAMAGE_KNOCKBACK_SCALE);
         target.knockback(strength, xd, zd, source, dealtDamage);
+    }
+
+    /** {@return 当前 {@code knockback} 调用是否来自 {@link #dealLiftKnockback}} */
+    public static boolean isLiftRequest() {
+        return LIFT_REQUEST.get();
+    }
+
+    /**
+     * 插槽 F2（挑飞）：使用固定强度 {@link #LIFT_STRENGTH}，委托给 {@link #handleLiftKnockback}
+     * 施加斜上 45° 的位移，与伤害高低无关。
+     * <p>同时在目标位置播放武器 {@code KINETIC_WEAPON} 组件自带的命中音效（原版矛冲锋命中音）。</p>
+     */
+    public static void dealLiftKnockback(DamageContext ctx, float dealtDamage) {
+        DamageSource source = ctx.getSource();
+        if (source.is(DamageTypeTags.NO_KNOCKBACK) || ctx.isShieldFullyBlocked()) {
+            return;
+        }
+
+        LivingEntity target = ctx.getTarget();
+        double xd = 0.0D;
+        double zd = 0.0D;
+        if (source.getDirectEntity() instanceof Projectile projectile) {
+            DoubleDoubleImmutablePair direction =
+                projectile.calculateHorizontalHurtKnockbackDirection(target, source);
+            xd = -direction.leftDouble();
+            zd = -direction.rightDouble();
+        } else if (source.getSourcePosition() != null) {
+            xd = source.getSourcePosition().x() - target.getX();
+            zd = source.getSourcePosition().z() - target.getZ();
+        } else if (ctx.getAttacker() != null) {
+            xd = ctx.getAttacker().getX() - target.getX();
+            zd = ctx.getAttacker().getZ() - target.getZ();
+        }
+
+        LIFT_REQUEST.set(true);
+        try {
+            target.knockback((float) LIFT_STRENGTH, xd, zd, source, dealtDamage);
+        } finally {
+            LIFT_REQUEST.set(false);
+        }
+
+        if (dealtDamage > 0.0F) {
+            playLiftHitSound(ctx, target);
+        }
+    }
+
+    /** 在目标位置播放攻击武器 {@code KINETIC_WEAPON} 组件自带的命中音效。 */
+    private static void playLiftHitSound(DamageContext ctx, LivingEntity target) {
+        LivingEntity attacker = ctx.getAttacker();
+        if (attacker == null) {
+            return;
+        }
+        ItemStack weapon = attacker.getWeaponItem();
+        KineticWeapon kinetic = weapon.get(DataComponents.KINETIC_WEAPON);
+        if (kinetic == null) {
+            return;
+        }
+        kinetic.hitSound().ifPresent(holder -> target.level().playSound(
+            null, target.getX(), target.getY(), target.getZ(), holder.value(), SoundSource.PLAYERS, 1.0F, 1.0F));
+    }
+
+    /**
+     * 挑飞位移：强度就是事件强度（固定 {@link #LIFT_STRENGTH}）再乘击退抗性，按 45° 拆成水平与垂直分量。
+     * <p>垂直分量直接叠加到当前垂直速度，不套原版 0.4 上限。</p>
+     */
+    public static void handleLiftKnockback(LivingEntity target, LivingKnockBackEvent event) {
+        double strength = event.getStrength()
+            * (1.0D - target.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
+        if (strength <= 0.0D) {
+            return;
+        }
+        strength = Math.max(0.0D, Math.min(strength, MAX_KNOCKBACK_STRENGTH));
+        if (strength <= 0.0D) {
+            return;
+        }
+
+        double x = event.getRatioX();
+        double z = event.getRatioZ();
+        while (x * x + z * z < 1.0E-5F) {
+            x = (target.getRandom().nextDouble() - target.getRandom().nextDouble()) * 0.01D;
+            z = (target.getRandom().nextDouble() - target.getRandom().nextDouble()) * 0.01D;
+        }
+
+        double horizontal = strength * LIFT_HORIZONTAL;
+        double vertical = strength * LIFT_VERTICAL;
+        target.needsSync = true;
+        Vec3 movement = target.getDeltaMovement();
+        Vec3 push = new Vec3(x, 0.0D, z).normalize().scale(horizontal);
+        target.setDeltaMovement(
+            movement.x / 2.0D - push.x,
+            movement.y / 2.0D + vertical,
+            movement.z / 2.0D - push.z);
     }
 
     /**

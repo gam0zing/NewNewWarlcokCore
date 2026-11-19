@@ -5,6 +5,9 @@
   "plugin": "com.gam0zing.newnew_warlock_core.mixin.compat.BetterCombatMixinPlugin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "ItemStackDamageSourceMixin",
+    "KineticWeaponMixin",
+    "LungeEnchantmentMixin",
     "ServerNetworkMixin"
   ],
   "client": [],

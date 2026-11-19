@@ -4,6 +4,7 @@ import com.gam0zing.newnew_warlock_core.NewNewWarlockCore;
 import com.gam0zing.newnew_warlock_core.combat.api.IDamageHandler;
 import com.gam0zing.newnew_warlock_core.combat.spine.DamageCategory;
 import com.gam0zing.newnew_warlock_core.combat.spine.DamageContext;
+import com.gam0zing.newnew_warlock_core.compat.bettercombat.SpearLift;
 
 import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.common.damagesource.DamageContainer;
@@ -89,6 +90,11 @@ public final class VanillaDamageHandler implements IDamageHandler {
     public void applyKnockback(DamageContext ctx, float dealtDamage) {
         // 击退只对物理伤害生效
         if (ctx.getCategory() != DamageCategory.PHYSICS) {
+            return;
+        }
+        // 矛的挑飞使用独立的 45° 上抬位移
+        if (ctx.getSource().is(SpearLift.KEY)) {
+            VanillaDamageUtils.dealLiftKnockback(ctx, dealtDamage);
             return;
         }
         VanillaDamageUtils.dealDefaultKnockback(ctx, dealtDamage);

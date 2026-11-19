@@ -30,9 +30,14 @@ public abstract class DurationMobSkill extends CooldownMobSkill {
     /** 持续技能在 custom 中保存的状态。 */
     public record DurationState(int cooldown, int duration) {
 
+        /**
+         * 两个字段都必须用 {@link Codec#fieldOf}：{@code optionalFieldOf(..., 0)} 在编码时会把
+         * 等于默认值的 {@code 0} 省略，而 {@link MobSkills#setState} 是把编码结果 {@code merge}
+         * 进 custom，键被省略就不会覆盖旧值，导致 cooldown/duration 卡在 1 无法归零。
+         */
         public static final MapCodec<DurationState> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codec.INT.optionalFieldOf("cooldown", 0).forGetter(DurationState::cooldown),
-            Codec.INT.optionalFieldOf("duration", 0).forGetter(DurationState::duration))
+            Codec.INT.fieldOf("cooldown").forGetter(DurationState::cooldown),
+            Codec.INT.fieldOf("duration").forGetter(DurationState::duration))
             .apply(instance, DurationState::new));
 
         public static final DurationState EMPTY = new DurationState(0, 0);

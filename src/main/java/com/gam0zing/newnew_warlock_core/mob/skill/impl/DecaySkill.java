@@ -23,7 +23,7 @@ public final class DecaySkill extends CooldownMobSkill {
 
     private static final int INTERVAL_TICKS = 100;
     private static final double AREA_RADIUS = 2.5D;
-    private static final int FATAL_WOUND_DURATION_TICKS = 200;
+    private static final int FATAL_WOUND_DURATION_TICKS = 400;
 
     /** 可随机施加的效果列表，按索引等概率抽取 */
     private static final List<EffectChoice> EFFECTS = List.of(
