@@ -8,6 +8,8 @@ import java.util.Map;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.gam0zing.newnew_warlock_core.skill.unlock.TreeUnlock;
+
 import net.minecraft.resources.Identifier;
 
 /**
@@ -20,7 +22,7 @@ public final class SkillTreeDefinition {
     private final Identifier id;
     private final String displayName;
     private final int order;
-    private final boolean defaultUnlocked;
+    private final TreeUnlock unlock;
     private final double resetXpPerPoint;
     private final List<SkillTreeNode> nodes;
     private final List<SkillTreeEdge> edges;
@@ -33,7 +35,7 @@ public final class SkillTreeDefinition {
         Identifier id,
         String displayName,
         int order,
-        boolean defaultUnlocked,
+        TreeUnlock unlock,
         double resetXpPerPoint,
         List<SkillTreeNode> nodes,
         List<SkillTreeEdge> edges,
@@ -41,7 +43,7 @@ public final class SkillTreeDefinition {
         this.id = id;
         this.displayName = displayName;
         this.order = order;
-        this.defaultUnlocked = defaultUnlocked;
+        this.unlock = unlock;
         this.resetXpPerPoint = resetXpPerPoint;
         this.nodes = List.copyOf(nodes);
         this.edges = List.copyOf(edges);
@@ -78,9 +80,9 @@ public final class SkillTreeDefinition {
         return this.order;
     }
 
-    /** {@return 树是否对玩家默认开放；不开放时由业务层解锁} */
-    public boolean defaultUnlocked() {
-        return this.defaultUnlocked;
+    /** {@return 树的解锁条件} */
+    public TreeUnlock unlock() {
+        return this.unlock;
     }
 
     /** {@return 每重置一点已分配点数需要消耗的经验等级} */

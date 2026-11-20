@@ -1,0 +1,9 @@
+{
+  "order": 4,
+  "name": "origins.layer.newnew_warlock_core.blessing",
+  "origins": [],
+  "allow_random": false,
+  "auto_choose": false,
+  "hidden": true,
+  "enabled": true
+}

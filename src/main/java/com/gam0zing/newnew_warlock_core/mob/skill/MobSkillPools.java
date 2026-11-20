@@ -24,8 +24,8 @@ import net.minecraft.world.entity.ai.attributes.DefaultAttributes;
  * 生物技能池注册表与“生物 id → 技能池 id 列表”的绑定表。
  * <p>绑定来源分三层，依次累积：</p>
  * <ul>
- *     <li><b>默认绑定</b>：所有参与重建（即使用 points）的生物绑定通用池；其中敌对生物再按攻击方式
- *     绑定近战池或远程池（见 {@link #applyDefaultBindings}）；</li>
+ *     <li><b>默认绑定</b>：所有参与重建（即使用 points）的生物绑定通用池；其中敌对生物再绑定恶意池，
+ *     并按攻击方式绑定近战池或远程池（见 {@link #applyDefaultBindings}）；</li>
  *     <li><b>内置绑定</b>：代码里通过 {@link #bind(Identifier, Identifier...)} 注册，先于数据文件生效；</li>
  *     <li><b>数据文件</b>：{@code data/<命名空间>/mob_skill_pool/*.json}（见 {@link MobSkillPoolFile}），
  *     按文件 id 升序应用；{@code over_write} 为 true 时先清空已累积的列表再追加。</li>
@@ -37,6 +37,7 @@ import net.minecraft.world.entity.ai.attributes.DefaultAttributes;
 public final class MobSkillPools {
 
     private static final Identifier GENERAL_POOL = poolId("general");
+    private static final Identifier MALICE_POOL = poolId("malice");
     private static final Identifier MELEE_POOL = poolId("melee");
     private static final Identifier RANGED_POOL = poolId("ranged");
 
@@ -182,7 +183,7 @@ public final class MobSkillPools {
 
     /**
      * 生成默认绑定：所有持有重建标识（即 rebuild 时会使用 points）的生物绑定通用池；
-     * 其中 {@link MobCategory#MONSTER} 按攻击方式再绑定近战池或远程池：
+     * 其中 {@link MobCategory#MONSTER} 再绑定恶意池，并按攻击方式绑定近战池或远程池：
      * {@link #RANGED_MONSTERS} 只绑远程，{@link #HYBRID_MONSTERS} 两个都绑，其余敌对生物绑近战。
      * <p>按实体注册表动态生成，因此其它模组的生物也会绑上通用池；未知的敌对生物默认按近战处理，
      * 需要时可通过数据文件的 {@code over_write} 改写。</p>
@@ -198,6 +199,7 @@ public final class MobSkillPools {
             if (type.getCategory() != MobCategory.MONSTER) {
                 continue;
             }
+            poolIds.add(MALICE_POOL);
             boolean ranged = RANGED_MONSTERS.contains(mobId);
             boolean hybrid = HYBRID_MONSTERS.contains(mobId);
             if (hybrid || !ranged) {

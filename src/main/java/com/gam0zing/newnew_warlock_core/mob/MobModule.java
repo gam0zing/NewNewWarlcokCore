@@ -53,12 +53,16 @@ public final class MobModule implements ModModule {
         MobSkills.register(new RapidRegenerationSkill());
         MobSkills.register(new RocketJumpSkill());
         MobSkills.register(new DecaySkill());
-        // 内置技能池；优先级高的先抽取（通用 0 < 近战/远程 10），远程池暂时为空
+        // 内置技能池；优先级高的先抽取（通用 0 < 恶意/近战/远程 10），远程池暂时为空
         MobSkillPool general = new MobSkillPool(id("general"), 0);
         general.addSkill(id("hardening"), 1);
         general.addSkill(id("rapid_regeneration"), 1);
-        general.addSkill(id("decay"), 1);
         MobSkillPools.register(general);
+
+        // 恶意：只有敌对生物默认绑定
+        MobSkillPool malice = new MobSkillPool(id("malice"), 10);
+        malice.addSkill(id("decay"), 1);
+        MobSkillPools.register(malice);
 
         MobSkillPool melee = new MobSkillPool(id("melee"), 10);
         melee.addSkill(id("berserk"), 1);

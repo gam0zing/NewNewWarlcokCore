@@ -5,8 +5,11 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import com.gam0zing.newnew_warlock_core.NewNewWarlockCore;
+import com.gam0zing.newnew_warlock_core.skill.unlock.TreeUnlockMode;
+import com.gam0zing.newnew_warlock_core.skill.unlock.TreeUnlocks;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -23,7 +26,7 @@ import net.neoforged.fml.loading.FMLPaths;
  */
 public final class CommandDefinitionExporter {
 
-    public static final int SCHEMA_VERSION = 1;
+    public static final int SCHEMA_VERSION = 2;
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
@@ -46,13 +49,21 @@ public final class CommandDefinitionExporter {
         }
         root.add("commands", commands);
 
+        JsonArray unlockModes = new JsonArray();
+        for (TreeUnlockMode mode : TreeUnlocks.all()) {
+            unlockModes.add(toJson(mode));
+        }
+        root.add("unlock_modes", unlockModes);
+
         Path path = FMLPaths.GAMEDIR.get().resolve(NewNewWarlockCore.MOD_ID).resolve("command_definitions.json");
         try {
             Files.createDirectories(path.getParent());
             try (Writer writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
                 GSON.toJson(root, writer);
             }
-            NewNewWarlockCore.LOGGER.info("[skill] 已导出 {} 个命令类型到 {}", commands.size(), path);
+            NewNewWarlockCore.LOGGER.info(
+                "[skill] 已导出 {} 个命令类型、{} 个解锁方式到 {}",
+                commands.size(), unlockModes.size(), path);
         } catch (IOException exception) {
             NewNewWarlockCore.LOGGER.error("[skill] 导出命令定义表失败：{}", path, exception);
         }
@@ -64,9 +75,22 @@ public final class CommandDefinitionExporter {
         json.addProperty("name", type.displayName());
         json.addProperty("doc", type.documentation());
         json.addProperty("summary", type.summary());
+        json.add("params", paramsToJson(type.params()));
+        return json;
+    }
 
+    private static JsonObject toJson(TreeUnlockMode mode) {
+        JsonObject json = new JsonObject();
+        json.addProperty("id", mode.id().toString());
+        json.addProperty("name", mode.displayName());
+        json.addProperty("doc", mode.documentation());
+        json.add("params", paramsToJson(mode.params()));
+        return json;
+    }
+
+    private static JsonArray paramsToJson(List<ParamSpec> specs) {
         JsonArray params = new JsonArray();
-        for (ParamSpec spec : type.params()) {
+        for (ParamSpec spec : specs) {
             JsonObject param = new JsonObject();
             param.addProperty("name", spec.name());
             param.addProperty("type", spec.type().id());
@@ -79,7 +103,6 @@ public final class CommandDefinitionExporter {
             }
             params.add(param);
         }
-        json.add("params", params);
-        return json;
+        return params;
     }
 }

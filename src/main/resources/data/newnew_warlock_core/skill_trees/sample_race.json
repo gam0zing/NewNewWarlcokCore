@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "display_name": "示例：种族觉醒",
+  "order": 100,
+  "unlock": {
+    "type": "newnew_warlock_core:origin",
+    "origin": "newnew_warlock_core:race/sample"
+  },
+  "reset_xp_per_point": 0.0,
+  "nodes": [
+    {
+      "id": "root",
+      "x": 0,
+      "y": 0,
+      "name": "觉醒",
+      "description": "选择示例种族后自动解锁。",
+      "commands": []
+    }
+  ],
+  "edges": []
+}

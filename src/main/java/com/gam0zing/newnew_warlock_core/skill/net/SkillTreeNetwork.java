@@ -1,9 +1,11 @@
 package com.gam0zing.newnew_warlock_core.skill.net;
 
+import com.gam0zing.newnew_warlock_core.origin.event.PlayerOriginChangedEvent;
 import com.gam0zing.newnew_warlock_core.skill.SkillTreeService;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
@@ -24,8 +26,10 @@ public final class SkillTreeNetwork {
     public static void register(IEventBus modEventBus) {
         modEventBus.addListener(SkillTreeNetwork::registerPayloads);
         NeoForge.EVENT_BUS.addListener(SkillTreeNetwork::onDatapackSync);
-        NeoForge.EVENT_BUS.addListener(SkillTreeNetwork::onPlayerLoggedIn);
+        // 放在 LOWEST：确保 NeoOrigins 的登录/首次选择逻辑先执行
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, SkillTreeNetwork::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener(SkillTreeNetwork::onPlayerRespawn);
+        NeoForge.EVENT_BUS.addListener(SkillTreeNetwork::onOriginChanged);
     }
 
     private static void registerPayloads(RegisterPayloadHandlersEvent event) {
@@ -39,8 +43,14 @@ public final class SkillTreeNetwork {
 
     private static void onDatapackSync(OnDatapackSyncEvent event) {
         for (ServerPlayer player : event.getRelevantPlayers().toList()) {
+            SkillTreeService.reconcile(player);
             SkillTreeService.syncAll(player);
         }
+    }
+
+    private static void onOriginChanged(PlayerOriginChangedEvent event) {
+        SkillTreeService.reconcile(event.player());
+        SkillTreeService.syncAll(event.player());
     }
 
     private static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {

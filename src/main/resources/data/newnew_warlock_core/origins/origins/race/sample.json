@@ -1,0 +1,9 @@
+{
+  "name": "origin.newnew_warlock_core.race.sample.name",
+  "description": "origin.newnew_warlock_core.race.sample.description",
+  "icon": "minecraft:player_head",
+  "impact": "none",
+  "order": 1,
+  "powers": [],
+  "upgrades": []
+}

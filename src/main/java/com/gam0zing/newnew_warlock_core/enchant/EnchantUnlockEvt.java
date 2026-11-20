@@ -1,5 +1,7 @@
 package com.gam0zing.newnew_warlock_core.enchant;
 
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
@@ -38,13 +40,29 @@ public final class EnchantUnlockEvt {
         }
 
         Entity entity = event.getEntity();
+        EnchantUnlockData data = EnchantUnlockData.get(level);
         if (entity instanceof Warden) {
-            EnchantUnlockData.get(level).markWardenDefeated();
+            if (data.markWardenDefeated()) {
+                announceUnlock(level, "unlock.newnew_warlock_core.warden");
+            }
         } else if (entity instanceof WitherBoss) {
-            EnchantUnlockData.get(level).markWitherDefeated();
+            if (data.markWitherDefeated()) {
+                announceUnlock(level, "unlock.newnew_warlock_core.wither");
+            }
         } else if (entity instanceof EnderDragon) {
-            EnchantUnlockData.get(level).markDragonDefeated();
+            if (data.markDragonDefeated()) {
+                announceUnlock(level, "unlock.newnew_warlock_core.dragon");
+            }
         }
+    }
+
+    /**
+     * 向全服玩家聊天栏广播一条解锁提示（青色）。
+     * <p>一次性解锁是世界级的，因此提示发给所有在线玩家；{@code overlay = false} 表示走聊天栏而非动作栏。</p>
+     */
+    public static void announceUnlock(ServerLevel level, String translationKey) {
+        level.getServer().getPlayerList().broadcastSystemMessage(
+            Component.translatable(translationKey).withStyle(ChatFormatting.AQUA), false);
     }
 
     private EnchantUnlockEvt() {}

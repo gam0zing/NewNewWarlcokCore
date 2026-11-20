@@ -83,32 +83,44 @@ public final class EnchantUnlockData extends SavedData {
         return data != null && data.dragonDefeated ? DRAGON_MAX_LEVEL_BONUS : 0;
     }
 
-    public void markRaidDefeated() {
+    /** {@return 本次是否首次标记} 已标记过时直接返回 {@code false}，调用方可据此只提示一次。 */
+    public boolean markRaidDefeated() {
         if (!this.raidDefeated) {
             this.raidDefeated = true;
             this.setDirty();
+            return true;
         }
+        return false;
     }
 
-    public void markWardenDefeated() {
+    /** {@return 本次是否首次标记} */
+    public boolean markWardenDefeated() {
         if (!this.wardenDefeated) {
             this.wardenDefeated = true;
             this.setDirty();
+            return true;
         }
+        return false;
     }
 
-    public void markWitherDefeated() {
+    /** {@return 本次是否首次标记} */
+    public boolean markWitherDefeated() {
         if (!this.witherDefeated) {
             this.witherDefeated = true;
             this.setDirty();
+            return true;
         }
+        return false;
     }
 
-    public void markDragonDefeated() {
+    /** {@return 本次是否首次标记} */
+    public boolean markDragonDefeated() {
         if (!this.dragonDefeated) {
             this.dragonDefeated = true;
             this.setDirty();
+            return true;
         }
+        return false;
     }
 
     private static EnchantUnlockData fromTag(CompoundTag tag) {

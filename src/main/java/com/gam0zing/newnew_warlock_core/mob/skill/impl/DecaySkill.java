@@ -16,7 +16,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 
 /**
  * 衰竭：价值 20，普通技能。
- * <p>每 5 秒对自身周围 5×5 格内的所有生物（不含自己）随机施加【大出血】或【致命伤】，
+ * <p>每 5 秒对自身周围 5×5 格内的所有生物（不含自己、不含与自身同类的生物）随机施加【大出血】或【致命伤】，
  * 两者概率相等，效果等级等于技能等级。新增效果时直接往 {@link #EFFECTS} 里加一项即可。</p>
  */
 public final class DecaySkill extends CooldownMobSkill {
@@ -45,7 +45,7 @@ public final class DecaySkill extends CooldownMobSkill {
     public void invoke(LivingEntity self, int level) {
         AABB area = self.getBoundingBox().inflate(AREA_RADIUS);
         for (LivingEntity target : self.level().getEntitiesOfClass(LivingEntity.class, area)) {
-            if (target == self || !target.isAlive()) {
+            if (target == self || !target.isAlive() || target.getType() == self.getType()) {
                 continue;
             }
             EffectChoice choice = EFFECTS.get(self.getRandom().nextInt(EFFECTS.size()));

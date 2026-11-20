@@ -6,5 +6,7 @@ com.gam0zing.newnew_warlock_core.active.ActiveSkillModule
 com.gam0zing.newnew_warlock_core.enchant.EnchantModule
 com.gam0zing.newnew_warlock_core.loot.LootModule
 com.gam0zing.newnew_warlock_core.mob.MobModule
+com.gam0zing.newnew_warlock_core.origin.content.OriginModule
+com.gam0zing.newnew_warlock_core.compat.neoorigins.NeoOriginsCompatModule
 com.gam0zing.newnew_warlock_core.skill.SkillModule
 com.gam0zing.newnew_warlock_core.gametest.GameTestModule

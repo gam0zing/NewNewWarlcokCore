@@ -1,0 +1,10 @@
+{
+  "name": "origin.newnew_warlock_core.blessing.sample.name",
+  "description": "origin.newnew_warlock_core.blessing.sample.description",
+  "icon": "minecraft:golden_apple",
+  "impact": "none",
+  "order": 2,
+  "unchoosable": true,
+  "powers": [],
+  "upgrades": []
+}

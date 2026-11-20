@@ -28,20 +28,14 @@ public final class SkillTreeService {
 
     private SkillTreeService() {}
 
-    /** 登录/重生后：补默认开放的树、重放已应用命令、下发数据 */
+    /** 登录/重生后：按解锁条件对账、重放已应用命令、下发数据 */
     public static void onLogin(ServerPlayer player) {
-        SkillProgress progress = SkillProgress.of(player);
+        reconcile(player);
 
+        SkillProgress progress = SkillProgress.of(player);
         for (SkillTreeDefinition tree : SkillTrees.all().values()) {
-            TreeProgress treeProgress = progress.treeOrNull(tree.id());
-            if (treeProgress == null && !tree.defaultUnlocked()) {
-                continue;
-            }
-            TreeProgress target = progress.tree(tree.id());
-            if (tree.defaultUnlocked()) {
-                target.unlockTree();
-            }
-            if (!target.isUnlocked()) {
+            TreeProgress target = progress.treeOrNull(tree.id());
+            if (target == null || !target.isUnlocked()) {
                 continue;
             }
             // 幂等重放：修复修饰符丢失等漂移
@@ -52,12 +46,53 @@ public final class SkillTreeService {
     }
 
     /**
+     * 按每棵树的解锁条件对账。
+     * <p>从“允许”变为“不允许”时免费撤销全部已应用命令并清空进度，不扣经验；
+     * 两种方向的变化都会在聊天栏提示。</p>
+     */
+    public static void reconcile(ServerPlayer player) {
+        SkillProgress progress = SkillProgress.of(player);
+        for (SkillTreeDefinition tree : SkillTrees.all().values()) {
+            boolean allows = tree.unlock().allows(player);
+            TreeProgress target = progress.treeOrNull(tree.id());
+            boolean unlocked = target != null && target.isUnlocked();
+            if (allows == unlocked) {
+                continue;
+            }
+
+            if (allows) {
+                progress.tree(tree.id()).unlockTree();
+                player.sendSystemMessage(Component.translatable(
+                    "skill.newnew_warlock_core.tree.unlocked", tree.displayName()));
+            } else {
+                revoke(target, player);
+                target.lockTree();
+                player.sendSystemMessage(Component.translatable(
+                    "skill.newnew_warlock_core.tree.locked", tree.displayName()));
+            }
+        }
+    }
+
+    /** 免费撤销一棵树的全部命令（不返还经验，因为锁定不是玩家主动重置） */
+    private static void revoke(TreeProgress target, ServerPlayer player) {
+        List<AppliedNode> applied = target.applied();
+        for (int nodeIndex = applied.size() - 1; nodeIndex >= 0; nodeIndex--) {
+            List<PointAllocationCommand> commands = applied.get(nodeIndex).commands();
+            for (int commandIndex = commands.size() - 1; commandIndex >= 0; commandIndex--) {
+                commands.get(commandIndex).undo(player);
+            }
+        }
+        target.clearNodes();
+    }
+
+    /**
      * 重生后：死亡会创建新的玩家实体，{@code restoreFrom} 只复制基础属性值、不复制永久修饰符，
      * 所以这里要把已应用的命令重新执行一遍，并补发进度。
      *
      * @param endConquered 是否为通关末地返回（此时玩家数据整体保留，血量不应重置）
      */
     public static void onRespawn(ServerPlayer player, boolean endConquered) {
+        reconcile(player);
         SkillProgress progress = SkillProgress.of(player);
         for (SkillTreeDefinition tree : SkillTrees.all().values()) {
             TreeProgress target = progress.treeOrNull(tree.id());
@@ -97,14 +132,14 @@ public final class SkillTreeService {
 
         SkillProgress progress = SkillProgress.of(player);
         TreeProgress treeProgress = progress.treeOrNull(treeId);
-        if (treeProgress == null) {
-            if (!tree.defaultUnlocked()) {
+        if (treeProgress == null || !treeProgress.isUnlocked()) {
+            if (!tree.unlock().allows(player)) {
                 return;
             }
             treeProgress = progress.tree(treeId);
             treeProgress.unlockTree();
         }
-        if (!treeProgress.isUnlocked() || treeProgress.isNodeUnlocked(nodeId)) {
+        if (treeProgress.isNodeUnlocked(nodeId)) {
             syncAll(player);
             return;
         }

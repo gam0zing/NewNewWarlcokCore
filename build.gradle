@@ -108,7 +108,7 @@ tasks.named('jar', Jar).configure {
     from sourceSets.client.output
 }
 
-// 本地第三方模组 jar（如 Better Combat）。放到 libs/ 下即可被本工程发现。
+// 本地第三方模组 jar（如 Better Combat、NeoOrigins）。放到 libs/ 下即可被本工程发现。
 // 用 fileTree 而不是写死的文件名：jar 还没放进来时不会导致配置/编译失败。
 def localModJars = fileTree(dir: 'libs', include: ['*.jar'])
 

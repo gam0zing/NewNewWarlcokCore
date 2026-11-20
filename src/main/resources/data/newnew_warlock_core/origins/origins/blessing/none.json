@@ -1,0 +1,10 @@
+{
+  "name": "origin.newnew_warlock_core.blessing.none.name",
+  "description": "origin.newnew_warlock_core.blessing.none.description",
+  "icon": "minecraft:glass_bottle",
+  "impact": "none",
+  "order": 1,
+  "unchoosable": true,
+  "powers": [],
+  "upgrades": []
+}

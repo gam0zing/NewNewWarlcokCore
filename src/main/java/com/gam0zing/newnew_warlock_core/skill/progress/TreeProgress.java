@@ -43,6 +43,10 @@ public final class TreeProgress {
         this.unlocked = true;
     }
 
+    public void lockTree() {
+        this.unlocked = false;
+    }
+
     public boolean isNodeUnlocked(String nodeId) {
         return this.nodes.contains(nodeId);
     }

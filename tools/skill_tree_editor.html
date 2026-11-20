@@ -462,7 +462,12 @@
         <label for="tree-reset-xp">重置 1 点消耗经验</label>
         <input id="tree-reset-xp" type="number" step="any" min="0">
       </div>
-      <label class="check"><input id="tree-default-unlocked" type="checkbox"> 默认解锁本树</label>
+      <div class="field">
+        <label for="tree-unlock-mode">解锁方式</label>
+        <select id="tree-unlock-mode"></select>
+        <div class="hint" id="tree-unlock-doc"></div>
+      </div>
+      <div id="tree-unlock-params"></div>
     </section>
 
     <section class="panel grow">
@@ -576,7 +581,7 @@
   const AUTHOR_KEY = 'newnew_skill_tree_editor_author_v1';
   const TOKEN_KEY = 'newnew_skill_tree_editor_token_v1';
   const SERVER_KEY = 'newnew_skill_tree_editor_server_v1';
-  const SCHEMA_VERSION = 1;
+  const SCHEMA_VERSION = 2;
   const DEFAULT_NAMESPACE = 'newnew_warlock_core';
   const BOX = 40;
   const GAME_VIEW_WIDTH = 960;
@@ -588,7 +593,8 @@
     treeId: DEFAULT_NAMESPACE + ':skill_tree',
     displayName: '技能树',
     order: 0,
-    defaultUnlocked: false,
+    unlock: { type: DEFAULT_NAMESPACE + ':locked', params: {} },
+    unlockModes: null,
     resetXpPerPoint: 0,
     nodes: [], edges: [], commands: new Map(), enums: [], builtinEnums: [],
     selection: null, connect: null,
@@ -620,7 +626,9 @@
     treeName: document.getElementById('tree-name'),
     treeOrder: document.getElementById('tree-order'),
     treeResetXp: document.getElementById('tree-reset-xp'),
-    treeDefaultUnlocked: document.getElementById('tree-default-unlocked'),
+    treeUnlockMode: document.getElementById('tree-unlock-mode'),
+    treeUnlockDoc: document.getElementById('tree-unlock-doc'),
+    treeUnlockParams: document.getElementById('tree-unlock-params'),
     treePathHint: document.getElementById('tree-path-hint'),
     repoModal: document.getElementById('repo-modal'),
     repoStatus: document.getElementById('repo-status'),
@@ -1546,10 +1554,96 @@
   // 树设置与导入导出
   // ==========================================================================================
   function setValue(input, value) { if (input.value !== value) input.value = value; }
+
+  const FALLBACK_UNLOCK_MODES = [
+    { id: DEFAULT_NAMESPACE + ':default', name: '默认解锁', doc: '技能树始终对玩家开放。', params: [] },
+    { id: DEFAULT_NAMESPACE + ':locked', name: '不解锁', doc: '技能树始终锁定，只能由其他系统主动开放。', params: [] },
+    { id: DEFAULT_NAMESPACE + ':origin', name: '起源解锁', doc: '玩家任意一层起源等于参数中的注册名时开放。', params: [{ name: 'origin', type: 'string', default: '' }] }
+  ];
+
+  function normalizeUnlockModes(raw) {
+    if (!Array.isArray(raw)) return null;
+    const modes = [];
+    for (const entry of raw) {
+      if (!entry || typeof entry.id !== 'string') continue;
+      modes.push({
+        id: entry.id,
+        name: String(entry.name ?? entry.id),
+        doc: String(entry.doc ?? ''),
+        params: Array.isArray(entry.params)
+          ? entry.params.filter(param => param && typeof param.name === 'string').map(param => ({ name: param.name, type: String(param.type ?? 'string'), default: param.default }))
+          : []
+      });
+    }
+    return modes.length ? modes : null;
+  }
+
+  function unlockModes() { return Array.isArray(state.unlockModes) && state.unlockModes.length ? state.unlockModes : FALLBACK_UNLOCK_MODES; }
+  function currentUnlockMode() { return unlockModes().find(mode => mode.id === state.unlock.type) || null; }
+
+  function normalizeUnlock(json) {
+    if (json && json.unlock && typeof json.unlock.type === 'string') {
+      const params = Object.assign({}, json.unlock); delete params.type;
+      return { type: json.unlock.type, params };
+    }
+    return { type: DEFAULT_NAMESPACE + (json && json.default_unlocked === true ? ':default' : ':locked'), params: {} };
+  }
+
+  function renderUnlockSettings() {
+    const modes = unlockModes();
+    const known = modes.some(mode => mode.id === state.unlock.type);
+    const renderModes = known
+      ? modes
+      : modes.concat([{ id: state.unlock.type, name: state.unlock.type + '（未导入）', doc: '', params: [] }]);
+    dom.treeUnlockMode.innerHTML = '';
+    for (const mode of renderModes) dom.treeUnlockMode.append(el('option', { value: mode.id, text: mode.name + '（' + mode.id + '）' }));
+    dom.treeUnlockMode.value = state.unlock.type;
+
+    const mode = currentUnlockMode();
+    dom.treeUnlockDoc.textContent = mode ? mode.doc : '该解锁方式未在当前定义表中，导出后游戏会按锁定处理。';
+    dom.treeUnlockParams.innerHTML = '';
+    for (const spec of (mode ? mode.params : [])) {
+      const value = state.unlock.params[spec.name] ?? spec.default ?? '';
+      let input;
+      if (spec.type === 'bool') {
+        input = el('select');
+        input.append(el('option', { value: 'true', text: '是' }), el('option', { value: 'false', text: '否' }));
+        input.value = value === true || value === 'true' ? 'true' : 'false';
+        input.addEventListener('change', () => { state.unlock.params[spec.name] = input.value === 'true'; save(); });
+      } else {
+        input = el('input', {
+          type: spec.type === 'int' || spec.type === 'float' ? 'number' : 'text',
+          step: spec.type === 'int' ? '1' : (spec.type === 'float' ? 'any' : null),
+          value: String(value)
+        });
+        input.addEventListener('input', () => {
+          state.unlock.params[spec.name] = spec.type === 'int' || spec.type === 'float' ? Number(input.value) : input.value;
+          save();
+        });
+      }
+      dom.treeUnlockParams.append(el('div', { class: 'field' }, el('label', { text: spec.name }), input));
+    }
+  }
+
+  function buildUnlock() {
+    const mode = currentUnlockMode();
+    if (!mode) return Object.assign({ type: state.unlock.type }, state.unlock.params);
+    const params = {};
+    for (const spec of mode.params) {
+      let value = state.unlock.params[spec.name];
+      if (value === undefined || value === null || value === '') value = spec.default ?? '';
+      if (spec.type === 'int') params[spec.name] = Math.trunc(Number(value) || 0);
+      else if (spec.type === 'float') params[spec.name] = Number(value) || 0;
+      else if (spec.type === 'bool') params[spec.name] = value === true || value === 'true';
+      else params[spec.name] = String(value);
+    }
+    return Object.assign({ type: state.unlock.type }, params);
+  }
+
   function syncSettings() {
     setValue(dom.treeId, state.treeId); setValue(dom.treeName, state.displayName);
     setValue(dom.treeOrder, String(state.order)); setValue(dom.treeResetXp, String(state.resetXpPerPoint));
-    dom.treeDefaultUnlocked.checked = state.defaultUnlocked;
+    renderUnlockSettings();
     const parts = splitTreeId(state.treeId);
     dom.treePathHint.textContent = parts ? '数据包路径：data/' + parts.namespace + '/skill_trees/' + parts.path + '.json' : '树 ID 格式应为 namespace:path';
   }
@@ -1565,7 +1659,10 @@
   dom.treeName.addEventListener('input', () => { state.displayName = dom.treeName.value; save(); });
   dom.treeOrder.addEventListener('input', () => { const parsed = Number(dom.treeOrder.value); if (Number.isInteger(parsed)) { state.order = parsed; save(); } });
   dom.treeResetXp.addEventListener('input', () => { const parsed = Number(dom.treeResetXp.value); if (Number.isFinite(parsed) && parsed >= 0) { state.resetXpPerPoint = parsed; save(); } });
-  dom.treeDefaultUnlocked.addEventListener('change', () => { state.defaultUnlocked = dom.treeDefaultUnlocked.checked; save(); });
+  dom.treeUnlockMode.addEventListener('change', () => {
+    state.unlock = { type: dom.treeUnlockMode.value, params: {} };
+    syncSettings(); save();
+  });
   dom.libSearch.addEventListener('input', renderLibrary);
 
   function readJsonFile(file) {
@@ -1587,8 +1684,11 @@
         params: Array.isArray(entry.params) ? entry.params.map(param => ({ name: String(param.name), type: String(param.type ?? 'string'), default: param.default })) : []
       });
     }
-    state.commands = map; renderLibrary(); renderInspector(); save();
-    if (!silent) toast('已导入 ' + map.size + ' 个命令类型', 'ok');
+    state.commands = map;
+    const modes = normalizeUnlockModes(json.unlock_modes);
+    if (modes) state.unlockModes = modes;
+    renderLibrary(); renderInspector(); syncSettings(); save();
+    if (!silent) toast('已导入 ' + map.size + ' 个命令类型' + (modes ? '、' + modes.length + ' 个解锁方式' : ''), 'ok');
   }
 
   function normalizeEnum(entry) {
@@ -1640,7 +1740,7 @@
     if (!json || !Array.isArray(json.nodes)) throw new Error('不是技能树 JSON（缺少 nodes 数组）');
     state.displayName = String(json.display_name ?? '技能树');
     state.order = Number.isInteger(json.order) ? json.order : 0;
-    state.defaultUnlocked = json.default_unlocked === true;
+    state.unlock = normalizeUnlock(json);
     state.resetXpPerPoint = Number.isFinite(json.reset_xp_per_point) ? json.reset_xp_per_point : 0;
     state.nodes = json.nodes.map(node => ({
       id: String(node.id ?? ''), x: Number(node.x) || 0, y: Number(node.y) || 0, name: String(node.name ?? ''),
@@ -1666,7 +1766,7 @@
 
   function buildCoreTree() {
     return {
-      schema: SCHEMA_VERSION, display_name: state.displayName, order: state.order, default_unlocked: state.defaultUnlocked, reset_xp_per_point: state.resetXpPerPoint,
+      schema: SCHEMA_VERSION, display_name: state.displayName, order: state.order, unlock: buildUnlock(), reset_xp_per_point: state.resetXpPerPoint,
       nodes: state.nodes.map(node => {
         const entry = { id: node.id, x: round1(node.x), y: round1(node.y), name: node.name };
         if (node.description) entry.description = node.description; if (node.icon) entry.icon = node.icon;
@@ -1687,6 +1787,13 @@
     const errors = []; const warnings = [];
     if (!splitTreeId(state.treeId)) errors.push('树 ID 必须形如 namespace:path（小写字母、数字、_、-、.、/）');
     if (!state.displayName.trim()) errors.push('显示名称不能为空');
+    const unlockMode = currentUnlockMode();
+    if (!unlockMode) warnings.push('解锁方式 ' + state.unlock.type + ' 不在当前定义表中，游戏内会按锁定处理');
+    else for (const spec of unlockMode.params) {
+      const value = state.unlock.params[spec.name];
+      if (value === undefined || value === null || String(value).trim() === '') errors.push('解锁方式的参数 ' + spec.name + ' 不能为空');
+      else if (spec.name === 'origin' && !/^[a-z0-9_.-]+:[a-z0-9_./-]+$/.test(String(value))) errors.push('起源注册名格式非法："' + value + '"');
+    }
     const ids = new Set();
     for (const node of state.nodes) {
       if (!/^[a-z0-9_./-]+$/.test(node.id)) errors.push('节点 ID 非法："' + node.id + '"');
@@ -2089,7 +2196,7 @@
   function save() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        treeId: state.treeId, displayName: state.displayName, order: state.order, defaultUnlocked: state.defaultUnlocked, resetXpPerPoint: state.resetXpPerPoint,
+        treeId: state.treeId, displayName: state.displayName, order: state.order, unlock: state.unlock, unlockModes: state.unlockModes, resetXpPerPoint: state.resetXpPerPoint,
         nodes: state.nodes, edges: state.edges, enums: state.enums, commands: Array.from(state.commands.values()), seq: state.seq, meta: state.meta, remote: state.remote
       }));
     } catch (error) { console.warn('保存到 localStorage 失败', error); }
@@ -2101,7 +2208,12 @@
     try {
       const data = JSON.parse(raw);
       state.treeId = typeof data.treeId === 'string' ? data.treeId : state.treeId; state.displayName = typeof data.displayName === 'string' ? data.displayName : state.displayName;
-      state.order = Number.isInteger(data.order) ? data.order : 0; state.defaultUnlocked = data.defaultUnlocked === true; state.resetXpPerPoint = Number.isFinite(data.resetXpPerPoint) ? data.resetXpPerPoint : 0;
+      state.order = Number.isInteger(data.order) ? data.order : 0;
+      state.unlockModes = normalizeUnlockModes(data.unlockModes);
+      state.unlock = data.unlock && typeof data.unlock.type === 'string'
+        ? { type: data.unlock.type, params: Object.assign({}, data.unlock.params || {}) }
+        : { type: DEFAULT_NAMESPACE + (data.defaultUnlocked === true ? ':default' : ':locked'), params: {} };
+      state.resetXpPerPoint = Number.isFinite(data.resetXpPerPoint) ? data.resetXpPerPoint : 0;
       state.nodes = Array.isArray(data.nodes) ? data.nodes : []; state.edges = Array.isArray(data.edges) ? data.edges : [];
       state.enums = (Array.isArray(data.enums) ? data.enums : []).map(normalizeEnum).filter(Boolean); state.seq = Number.isInteger(data.seq) ? data.seq : 1;
       state.meta = normalizeMeta(data.meta); state.remote = { treeId: data.remote && typeof data.remote.treeId === 'string' ? data.remote.treeId : '', baseVersion: data.remote && Number.isInteger(data.remote.baseVersion) ? data.remote.baseVersion : 0, lastSyncedHash: data.remote && typeof data.remote.lastSyncedHash === 'string' ? data.remote.lastSyncedHash : '' };
@@ -2133,7 +2245,7 @@
     showModal('新建技能树', [el('div', { text: '当前草稿会被清空，是否继续？' })], [{ label: '取消' }, {
       label: '新建', primary: true, action: () => {
         state.nodes = []; state.edges = []; state.selection = null; state.connect = null;
-        state.treeId = DEFAULT_NAMESPACE + ':skill_tree'; state.displayName = '技能树'; state.order = 0; state.defaultUnlocked = false; state.resetXpPerPoint = 0; state.seq = 1;
+        state.treeId = DEFAULT_NAMESPACE + ':skill_tree'; state.displayName = '技能树'; state.order = 0; state.unlock = { type: DEFAULT_NAMESPACE + ':locked', params: {} }; state.resetXpPerPoint = 0; state.seq = 1;
         state.meta = { originalAuthor: repoAuthor(), version: 0, editors: [], editedAt: '', message: '' }; state.remote = { treeId: '', baseVersion: 0, lastSyncedHash: '' };
         updateBanner(); renderAll(); fitView(); save();
       }

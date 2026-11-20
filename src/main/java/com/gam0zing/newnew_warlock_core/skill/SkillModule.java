@@ -6,6 +6,7 @@ import com.gam0zing.newnew_warlock_core.skill.command.PointAllocationCommands;
 import com.gam0zing.newnew_warlock_core.skill.net.SkillTreeNetwork;
 import com.gam0zing.newnew_warlock_core.skill.progress.SkillProgressTypes;
 import com.gam0zing.newnew_warlock_core.skill.tree.SkillTreeLoader;
+import com.gam0zing.newnew_warlock_core.skill.unlock.TreeUnlocks;
 
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -31,7 +32,10 @@ public final class SkillModule implements ModModule {
         // 点数分配命令类型（自定义注册表 newnew_warlock_core:point_allocation_command）
         modEventBus.addListener(PointAllocationCommands::createRegistry);
         PointAllocationCommands.COMMANDS.register(modEventBus);
-        // 启动时导出命令定义表，供网页技能树工具导入
+        // 技能树解锁方式（自定义注册表 newnew_warlock_core:tree_unlock_mode）
+        modEventBus.addListener(TreeUnlocks::createRegistry);
+        TreeUnlocks.MODES.register(modEventBus);
+        // 启动时导出命令与解锁方式定义表，供网页技能树工具导入
         CommandDefinitionExporter.register(modEventBus);
 
         // 技能树数据（data/<命名空间>/skill_trees/*.json）

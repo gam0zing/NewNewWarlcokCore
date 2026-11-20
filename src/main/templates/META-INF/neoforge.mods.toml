@@ -27,3 +27,12 @@ config="${mod_id}.bettercombat.mixins.json"
     versionRange="${minecraft_version_range}"
     ordering="NONE"
     side="BOTH"
+
+# NeoOrigins is an optional integration: compat features activate only when it is
+# present. AFTER ensures its origin / power registries exist before our compat setup.
+[[dependencies.${mod_id}]]
+    modId="neoorigins"
+    type="optional"
+    versionRange="[0,)"
+    ordering="AFTER"
+    side="BOTH"

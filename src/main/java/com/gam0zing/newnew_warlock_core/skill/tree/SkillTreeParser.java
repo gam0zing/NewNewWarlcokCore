@@ -14,6 +14,10 @@ import com.gam0zing.newnew_warlock_core.skill.command.ParamValues;
 import com.gam0zing.newnew_warlock_core.skill.command.PointAllocationCommand;
 import com.gam0zing.newnew_warlock_core.skill.command.PointAllocationCommandType;
 import com.gam0zing.newnew_warlock_core.skill.command.PointAllocationCommands;
+import com.gam0zing.newnew_warlock_core.skill.unlock.TreeUnlock;
+import com.gam0zing.newnew_warlock_core.skill.unlock.TreeUnlockMode;
+import com.gam0zing.newnew_warlock_core.skill.unlock.TreeUnlocks;
+import com.gam0zing.newnew_warlock_core.skill.unlock.UnknownTreeUnlock;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -29,7 +33,7 @@ import net.minecraft.resources.Identifier;
 public final class SkillTreeParser {
 
     /** 当前支持的格式版本 */
-    public static final int SCHEMA_VERSION = 1;
+    public static final int SCHEMA_VERSION = 2;
     public static final String DIRECTORY = "skill_trees";
 
     private static final Pattern NODE_ID = Pattern.compile("[a-z0-9_./-]+");
@@ -49,7 +53,7 @@ public final class SkillTreeParser {
 
         String displayName = requireString(json, "display_name");
         int order = optInt(json, "order", 0);
-        boolean defaultUnlocked = optBool(json, "default_unlocked", false);
+        TreeUnlock unlock = parseUnlock(id, json);
         double resetXpPerPoint = optDouble(json, "reset_xp_per_point", 0.0D);
         if (resetXpPerPoint < 0.0D) {
             throw new IllegalArgumentException("reset_xp_per_point must be >= 0");
@@ -59,7 +63,42 @@ public final class SkillTreeParser {
         List<SkillTreeEdge> edges = parseEdges(json, nodes);
 
         return new SkillTreeDefinition(
-            id, displayName, order, defaultUnlocked, resetXpPerPoint, nodes, edges, json.toString());
+            id, displayName, order, unlock, resetXpPerPoint, nodes, edges, json.toString());
+    }
+
+    /**
+     * 解析树级解锁条件。
+     * <p>优先读 {@code unlock} 对象；没有时回退旧字段 {@code default_unlocked}。
+     * 未知类型降级为 {@link UnknownTreeUnlock}，避免可选模组缺席时整棵树解析失败。</p>
+     */
+    private static TreeUnlock parseUnlock(Identifier treeId, JsonObject json) {
+        JsonObject unlock = optObject(json, "unlock");
+        if (unlock == null) {
+            return optBool(json, "default_unlocked", false)
+                ? TreeUnlocks.DEFAULT_UNLOCK
+                : TreeUnlocks.LOCKED_UNLOCK;
+        }
+
+        String typeText = requireString(unlock, "type");
+        Identifier typeId = Identifier.tryParse(typeText);
+        if (typeId == null) {
+            throw new IllegalArgumentException("invalid unlock type '" + typeText + "'");
+        }
+
+        TreeUnlockMode mode = TreeUnlocks.modeFor(typeId);
+        if (mode == null) {
+            NewNewWarlockCore.LOGGER.warn(
+                "[skill] 技能树 {} 使用了未注册的解锁方式 {}，该树将保持锁定", treeId, typeId);
+            return new UnknownTreeUnlock(typeId);
+        }
+
+        JsonObject params = unlock.deepCopy();
+        params.remove("type");
+        try {
+            return mode.create(ParamValues.parse(mode.params(), params));
+        } catch (IllegalArgumentException exception) {
+            throw new IllegalArgumentException("unlock (" + typeId + "): " + exception.getMessage(), exception);
+        }
     }
 
     private static List<SkillTreeNode> parseNodes(Identifier treeId, JsonArray array) {
