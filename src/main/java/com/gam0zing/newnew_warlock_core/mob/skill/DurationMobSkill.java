@@ -34,10 +34,13 @@ public abstract class DurationMobSkill extends CooldownMobSkill {
          * 两个字段都必须用 {@link Codec#fieldOf}：{@code optionalFieldOf(..., 0)} 在编码时会把
          * 等于默认值的 {@code 0} 省略，而 {@link MobSkills#setState} 是把编码结果 {@code merge}
          * 进 custom，键被省略就不会覆盖旧值，导致 cooldown/duration 卡在 1 无法归零。
+         * <p>读取侧逐个字段用 {@link MapCodec#orElse} 兜底：旧存档可能整个 custom 为空容器，
+         * 也可能只缺 duration（旧版把 0 省略后写入的），缺哪个键就把哪个当 0 读，
+         * 不会触发 CompoundTag 的 "Failed to read value" 错误日志；写入仍由 fieldOf 完整写入。</p>
          */
         public static final MapCodec<DurationState> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codec.INT.fieldOf("cooldown").forGetter(DurationState::cooldown),
-            Codec.INT.fieldOf("duration").forGetter(DurationState::duration))
+            Codec.INT.fieldOf("cooldown").orElse(0).forGetter(DurationState::cooldown),
+            Codec.INT.fieldOf("duration").orElse(0).forGetter(DurationState::duration))
             .apply(instance, DurationState::new));
 
         public static final DurationState EMPTY = new DurationState(0, 0);

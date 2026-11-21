@@ -29,9 +29,12 @@ public abstract class CooldownMobSkill implements NewNewMobSkill {
          * 后者在编码时会把等于默认值的 {@code 0} 整个省略，而 {@link MobSkills#setState}
          * 是把编码结果 {@code merge} 进 custom，键被省略就不会覆盖旧值，
          * 导致 cooldown 减到 0 时写不进去、永远停在 1。
+         * <p>读取侧再用 {@link MapCodec#orElse} 兜底：旧存档的 custom 可能是空容器
+         * （旧版 optionalFieldOf 省略 0 后写入的），缺键时按 0 读取，
+         * 不会触发 CompoundTag 的 "Failed to read value" 错误日志；写入仍由 fieldOf 完整写入。</p>
          */
         public static final MapCodec<CooldownState> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codec.INT.fieldOf("cooldown").forGetter(CooldownState::cooldown))
+            Codec.INT.fieldOf("cooldown").orElse(0).forGetter(CooldownState::cooldown))
             .apply(instance, CooldownState::new));
 
         public static final CooldownState EMPTY = new CooldownState(0);
