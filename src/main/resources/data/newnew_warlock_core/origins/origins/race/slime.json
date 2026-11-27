@@ -7,6 +7,7 @@
   "powers": [
     "newnew_warlock_core:slime_kin_ignore",
     "newnew_warlock_core:slime_life",
+    "newnew_warlock_core:slime_model_color",
     "newnew_warlock_core:slime_water_breathing",
     "newnew_warlock_core:slime_split",
     "newnew_warlock_core:slime_environment_sensitivity",

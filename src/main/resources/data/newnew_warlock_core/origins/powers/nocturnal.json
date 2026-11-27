@@ -1,0 +1,13 @@
+{
+  "type": "neoorigins:enhanced_vision",
+  "exposure": 0.4,
+  "condition": {
+    "type": "neoorigins:not",
+    "condition": {
+      "type": "neoorigins:submerged_in",
+      "fluid": "minecraft:water"
+    }
+  },
+  "name": "power.newnew_warlock_core.nocturnal.name",
+  "description": "power.newnew_warlock_core.nocturnal.description"
+}

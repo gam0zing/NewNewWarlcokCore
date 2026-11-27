@@ -1,0 +1,10 @@
+{
+  "bird_fly": {
+    "sounds": [
+      {
+        "name": "newnew_warlock_core:bird_fly",
+        "stream": false
+      }
+    ]
+  }
+}

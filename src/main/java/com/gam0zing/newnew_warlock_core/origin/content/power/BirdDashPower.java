@@ -1,10 +1,12 @@
 package com.gam0zing.newnew_warlock_core.origin.content.power;
 
 import com.cyberday1.neoorigins.power.builtin.base.AbstractActivePower;
+import com.gam0zing.newnew_warlock_core.share.ModSounds;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -26,6 +28,8 @@ public final class BirdDashPower extends AbstractActivePower<BirdDashPower.Confi
         Vec3 look = player.getLookAngle();
         player.setDeltaMovement(look.scale(config.power()));
         player.syncVelocity = true;
+        player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+            ModSounds.BIRD_FLY.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
         return true;
     }
 

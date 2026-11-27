@@ -9,8 +9,13 @@ import com.gam0zing.newnew_warlock_core.share.EffectSources;
 import com.gam0zing.newnew_warlock_core.share.ModMobEffects;
 import com.gam0zing.newnew_warlock_core.share.UnstoppableMobEffect;
 
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Mob;
 
@@ -29,10 +34,8 @@ final class IntimidatePower extends AbstractActivePower<IntimidatePower.Config> 
     protected boolean execute(ServerPlayer player, Config config) {
         ServerLevel level = player.level();
         double catVolume = Math.max(1.0E-4D, VanillaDamageUtils.boundingBoxVolume(player));
-        boolean affected = false;
         for (Mob mob : level.getEntitiesOfClass(Mob.class,
             player.getBoundingBox().inflate(config.radius()))) {
-            affected = true;
             mob.setTarget(null);
             mob.getNavigation().stop();
             // 目标体积越大，威慑持续越短：时长 = 基础时长 × 双方体积比
@@ -50,7 +53,15 @@ final class IntimidatePower extends AbstractActivePower<IntimidatePower.Config> 
             }
             EffectSources.apply(mob, new MobEffectInstance(ModMobEffects.INTIMIDATED, duration, 0), player);
         }
-        return affected;
+        // 返回 true 表示本次释放成功并进入冷却；音效与进入冷却同步。
+        // 使用原版猫对幻翼的嘶声（entity.cat.hiss）。
+        SoundEvent hiss = level.registryAccess()
+            .lookupOrThrow(Registries.SOUND_EVENT)
+            .getValueOrThrow(ResourceKey.create(Registries.SOUND_EVENT,
+                Identifier.withDefaultNamespace("entity.cat.hiss")));
+        level.playSound(null, player.getX(), player.getY(), player.getZ(),
+            hiss, SoundSource.PLAYERS, 1.0F, 1.0F);
+        return true;
     }
 
     public record Config(int cooldownTicks, double radius) implements AbstractActivePower.Config {

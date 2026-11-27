@@ -9,7 +9,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.gam0zing.newnew_warlock_core.origin.OriginTraits;
 
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
@@ -29,18 +28,11 @@ public abstract class OriginEffectClearMixin {
         }
 
         boolean removed = false;
-        boolean kept = false;
         for (MobEffectInstance instance : List.copyOf(player.getActiveEffects())) {
             if (OriginTraits.isProtectedEffect(instance)) {
-                kept = true;
                 continue;
             }
             removed |= player.removeEffect(instance.getEffect());
-        }
-        if (kept && !player.isDeadOrDying()) {
-            // 牛奶与 /effect clear 都会走到这里；提示效果被保留，避免看起来像命令失效
-            player.sendSystemMessage(
-                Component.translatable("origin.newnew_warlock_core.effect.clear_protected"));
         }
         cir.setReturnValue(removed);
     }

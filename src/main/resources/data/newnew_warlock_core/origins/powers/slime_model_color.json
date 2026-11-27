@@ -1,0 +1,10 @@
+{
+  "type": "neoorigins:model_color",
+  "red": 0.38,
+  "green": 0.66,
+  "blue": 0.31,
+  "alpha": 0.9,
+  "hidden": true,
+  "name": "power.newnew_warlock_core.slime_model_color.name",
+  "description": "power.newnew_warlock_core.slime_model_color.description"
+}

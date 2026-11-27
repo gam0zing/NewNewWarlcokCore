@@ -32,5 +32,6 @@ public final class ShareModule implements ModModule {
         modEventBus.addListener(PhysicsDefaultComponents::onModifyDefaultComponents);
 
         ModMobEffects.MOB_EFFECTS.register(modEventBus);
+        ModSounds.SOUNDS.register(modEventBus);
     }
 }

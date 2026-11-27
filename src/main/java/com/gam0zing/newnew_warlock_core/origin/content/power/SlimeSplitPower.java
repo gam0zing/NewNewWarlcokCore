@@ -5,6 +5,8 @@ import com.gam0zing.newnew_warlock_core.share.ModMobEffects;
 
 import net.minecraft.network.protocol.game.ClientboundUpdateMobEffectPacket;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -87,6 +89,7 @@ public final class SlimeSplitPower extends TraitPower {
             clearGiant(player);
             player.removeAllEffects();
             player.setHealth(player.getMaxHealth());
+            playSplitSound(player);
             return Math.max(0.0F, healthBefore - player.getMaxHealth());
         }
 
@@ -102,6 +105,7 @@ public final class SlimeSplitPower extends TraitPower {
         float lost = Math.max(0.0F, healthBefore - player.getMaxHealth());
         player.setHealth(player.getMaxHealth());
         applySplit(player, next);
+        playSplitSound(player);
         return lost;
     }
 
@@ -109,6 +113,12 @@ public final class SlimeSplitPower extends TraitPower {
     public static int splitLevel(ServerPlayer player) {
         MobEffectInstance effect = player.getEffect(ModMobEffects.SLIME_SPLIT);
         return effect == null ? 0 : effect.getAmplifier() + 1;
+    }
+
+    /** 主动分裂与致命分裂共用：播放一次原版史莱姆弹跳音效。 */
+    private static void playSplitSound(ServerPlayer player) {
+        player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+            SoundEvents.SLIME_JUMP, SoundSource.PLAYERS, 1.0F, 1.0F);
     }
 
     private static void applySplit(ServerPlayer player, int level) {
