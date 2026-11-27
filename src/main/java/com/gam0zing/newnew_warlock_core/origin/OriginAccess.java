@@ -25,6 +25,12 @@ public interface OriginAccess {
     /** 清除某一层的起源。 */
     boolean clearOrigin(ServerPlayer player, Identifier layer);
 
+    /** {@return 玩家是否被授予该能力；复合能力的子能力也应命中} */
+    boolean hasPower(ServerPlayer player, Identifier power);
+
+    /** {@return 该起源 id 是否仍然存在于当前数据包中} */
+    boolean originExists(Identifier origin);
+
     /**
      * 打开单层重选界面。
      *

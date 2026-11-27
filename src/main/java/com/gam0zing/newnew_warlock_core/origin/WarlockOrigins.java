@@ -65,6 +65,18 @@ public final class WarlockOrigins {
         return snapshot(player).containsValue(origin);
     }
 
+    /** {@return 玩家是否被授予该能力；复合能力的子能力也会命中} */
+    public static boolean hasPower(ServerPlayer player, Identifier power) {
+        OriginAccess current = access;
+        return current != null && current.hasPower(player, power);
+    }
+
+    /** {@return 该起源 id 是否仍然存在于当前数据包中；未安装 NeoOrigins 时恒为 false} */
+    public static boolean originExists(Identifier origin) {
+        OriginAccess current = access;
+        return current != null && current.originExists(origin);
+    }
+
     /** 设置某个槽位的起源；也用于把玩家替换为无法直接选择的起源。 */
     public static OriginSetResult setOrigin(ServerPlayer player, OriginSlot slot, Identifier origin) {
         OriginAccess current = access;

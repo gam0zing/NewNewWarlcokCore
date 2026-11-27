@@ -20,9 +20,12 @@
     "EnchantmentMenuMixin",
     "ExperienceOrbMixin",
     "FishingHookLureMixin",
+    "FoodDataSlowRegenMixin",
+    "ItemStackConsumeTimingMixin",
     "ItemStackFinishUsingMixin",
     "LivingEntityConcealmentMixin",
     "LivingEntityChargeSpeedMixin",
+    "LivingEntityClimateJumpMixin",
     "LivingEntityDamagePipelineMixin",
     "LivingEntityEffectHooks",
     "LivingEntityEffectPersistenceMixin",
@@ -41,6 +44,13 @@
     "LivingEntityWaterEnchantMixin",
     "MobEffectInstanceSourceMixin",
     "MobEffectInstanceStackAccess",
+    "OriginConsumableMixin",
+    "OriginEffectClearMixin",
+    "OriginFoodConsumeMixin",
+    "OriginFoodMixin",
+    "OriginJumpMixin",
+    "OriginSlimeConsumableMixin",
+    "OriginSprintMixin",
     "PlayerAttackEquipmentMixin",
     "PlayerAttackFeedbackMixin",
     "PlayerAutoFireMixin",
@@ -54,10 +64,14 @@
     "RaidVictoryMixin",
     "RangedAttributeWaterMovementMixin",
     "ServerPlayerAttackFeedbackMixin",
+    "ServerPlayerSprintExhaustionMixin",
     "ThrownLingeringPotionMixin",
     "ThrownSplashPotionMixin"
   ],
-  "client": [],
+  "client": [
+    "FirstPersonEatAnimationMixin",
+    "LivingEntityCatWallMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   },

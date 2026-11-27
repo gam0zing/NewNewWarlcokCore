@@ -42,6 +42,14 @@ public enum VanillaEnchantHooks implements WarlockEnchantHooks {
     public static final int VANILLA_POWER_CAP = 15;
 
     /**
+     * 原版附魔台能产生的最大附魔等级。
+     * <p>第三档费用最高 30（{@code power=15} 时的 {@code max(roll, 2*power)}），再叠加原版最高附魔能力 22
+     * 带来的 {@code 1+5+5}，最后上浮 15%，即 {@code round(41 * 1.15) = 47}。
+     * 本模组抬高 power 后 level 会超过这个值，此时原版的 {@code max_cost} 上限会让整条附魔消失，需要特殊处理。</p>
+     */
+    public static final int VANILLA_MAX_LEVEL = 47;
+
+    /**
      * 把「书架扫描得到的 power」换算成实际使用的 power。
      * <p>先把书架 power 截断到 {@code max_power}（原版在 {@code getEnchantmentCost} 里写死的 15），
      * 再叠加 {@code extra_power}——叠加发生在截断之后，因此 {@code extra_power} 不会被 {@code max_power} 吃掉。</p>
@@ -171,7 +179,14 @@ public enum VanillaEnchantHooks implements WarlockEnchantHooks {
             for (int candidateLevel = maxLevel; candidateLevel >= minLevel; candidateLevel--) {
                 int minCost = entry == null ? enchantment.getMinCost(candidateLevel) : entry.minCost(candidateLevel);
                 int maxCost = entry == null ? enchantment.getMaxCost(candidateLevel) : entry.maxCost(candidateLevel);
-                if (level >= minCost && level <= maxCost) {
+                if (level < minCost) {
+                    continue;
+                }
+                // 原版用「min_cost <= level <= max_cost」判断档位是否可用，但 max_cost 是按 power<=15 设计的。
+                // power 被本模组抬高后第三档 level 会达到 60 甚至更高，超过多重射击/快速装填/穿透的 50 上限，
+                // 若照搬原版上限，这些附魔会被整条剔除，只剩 max_cost 随等级增长的附魔（如耐久）。
+                // 超过原版可达等级后只保留 min_cost 门槛，取当前 level 能支撑的最高档位。
+                if (level <= maxCost || level > VANILLA_MAX_LEVEL) {
                     result.add(new EnchantmentInstance(holder, candidateLevel));
                     break;
                 }

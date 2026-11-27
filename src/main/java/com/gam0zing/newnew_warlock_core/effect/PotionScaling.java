@@ -3,6 +3,7 @@ package com.gam0zing.newnew_warlock_core.effect;
 import org.jetbrains.annotations.Nullable;
 
 import com.gam0zing.newnew_warlock_core.mixin.MobEffectInstanceStackAccess;
+import com.gam0zing.newnew_warlock_core.origin.OriginTraits;
 import com.gam0zing.newnew_warlock_core.share.EffectSources;
 import com.gam0zing.newnew_warlock_core.share.ModAttributes;
 
@@ -29,6 +30,10 @@ public final class PotionScaling {
      * @return {@code false} 表示应当放弃这次施加
      */
     public static boolean apply(LivingEntity target, MobEffectInstance instance, @Nullable Entity sourceEntity) {
+        if (!OriginTraits.adjustPotion(target, instance)) {
+            return false;
+        }
+
         LivingEntity source = EffectSources.sourceEntity(sourceEntity);
         if (source == null) {
             source = EffectSources.currentSelfConsumptionSource(target);

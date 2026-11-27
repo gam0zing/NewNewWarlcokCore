@@ -1,0 +1,6 @@
+{
+  "type": "neoorigins:attribute_modifier",
+  "attribute": "minecraft:sweeping_damage_ratio",
+  "amount": 0.4,
+  "operation": "add_value"
+}

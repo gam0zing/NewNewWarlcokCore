@@ -1,0 +1,21 @@
+{
+  "name": "origin.newnew_warlock_core.race.stone_golem.name",
+  "description": "origin.newnew_warlock_core.race.stone_golem.description",
+  "icon": "minecraft:stone",
+  "impact": "high",
+  "order": 4,
+  "powers": [
+    "newnew_warlock_core:stone_golem_body",
+    "newnew_warlock_core:stone_golem_giant",
+    "newnew_warlock_core:golem_sweep",
+    "newnew_warlock_core:golem_stone_fists",
+    "newnew_warlock_core:golem_no_armor",
+    "newnew_warlock_core:stone_golem_heavy",
+    "newnew_warlock_core:golem_soft_landing",
+    "newnew_warlock_core:stone_golem_sunlight",
+    "newnew_warlock_core:stone_golem_movement",
+    "newnew_warlock_core:stone_golem_food_rules",
+    "newnew_warlock_core:stone_golem_potion_immunity"
+  ],
+  "upgrades": []
+}

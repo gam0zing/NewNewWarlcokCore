@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.cyberday1.neoorigins.api.NeoOriginsAPI;
 import com.cyberday1.neoorigins.api.origin.SetOriginResult;
+import com.cyberday1.neoorigins.data.OriginDataManager;
 import com.cyberday1.neoorigins.network.NeoOriginsNetwork;
 import com.gam0zing.newnew_warlock_core.origin.OriginAccess;
 import com.gam0zing.newnew_warlock_core.origin.OriginSetResult;
@@ -33,6 +34,17 @@ public final class NeoOriginsOriginAccess implements OriginAccess {
     @Override
     public boolean clearOrigin(ServerPlayer player, Identifier layer) {
         return NeoOriginsAPI.clearOrigin(player, layer);
+    }
+
+    /** 复合子能力由 {@code NeoOriginsAPIHasPowerMixin} 在 API 层展开，这里不再重复查询。 */
+    @Override
+    public boolean hasPower(ServerPlayer player, Identifier power) {
+        return NeoOriginsAPI.hasPower(player, power);
+    }
+
+    @Override
+    public boolean originExists(Identifier origin) {
+        return OriginDataManager.INSTANCE.hasOrigin(origin);
     }
 
     @Override

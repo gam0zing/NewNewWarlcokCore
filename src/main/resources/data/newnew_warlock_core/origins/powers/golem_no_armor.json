@@ -1,0 +1,8 @@
+{
+  "type": "neoorigins:prevent_action",
+  "action": "ARMOR_EQUIP",
+  "head": false,
+  "chest": true,
+  "legs": true,
+  "feet": true
+}

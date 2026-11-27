@@ -48,6 +48,7 @@ public final class OriginSync {
         if (!(event.getEntity() instanceof ServerPlayer player)) {
             return;
         }
+        repairUnknownOrigins(player);
         ensureBlessing(player);
         SNAPSHOTS.put(player.getUUID(), snapshot(player));
     }
@@ -100,6 +101,28 @@ public final class OriginSync {
         EnumMap<OriginSlot, Identifier> snapshot = new EnumMap<>(OriginSlot.class);
         snapshot.putAll(WarlockOrigins.snapshot(player));
         return snapshot;
+    }
+
+    /**
+     * 数据包更新删除了某个起源后，旧存档里的 id 会指向不存在的条目。
+     * <p>这里按槽位回收：灵质回落到空白灵质、加护回落到无加护，种族直接清空以便重新选择。
+     * 只在 id 确实不存在时写一次，正常存档不产生任何写操作。</p>
+     */
+    private static void repairUnknownOrigins(ServerPlayer player) {
+        for (Map.Entry<OriginSlot, Identifier> entry : WarlockOrigins.snapshot(player).entrySet()) {
+            Identifier origin = entry.getValue();
+            if (WarlockOrigins.originExists(origin)) {
+                continue;
+            }
+            OriginSlot slot = entry.getKey();
+            NewNewWarlockCore.LOGGER.warn("[origin] {} 的 {} 槽位指向已失效的起源 {}，正在回收",
+                player.getGameProfile().name(), slot.key(), origin);
+            switch (slot) {
+                case ESSENCE -> WarlockOrigins.setOrigin(player, slot, OriginIds.ESSENCE_EMPTY);
+                case BLESSING -> WarlockOrigins.setOrigin(player, slot, OriginIds.BLESSING_NONE);
+                case RACE -> WarlockOrigins.clearOrigin(player, slot);
+            }
+        }
     }
 
     /** 加护为空时补上空白加护；层缺失只记录一次调试日志。 */

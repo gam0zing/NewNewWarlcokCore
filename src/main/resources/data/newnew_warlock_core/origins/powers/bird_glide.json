@@ -1,0 +1,17 @@
+{
+  "type": "newnew_warlock_core:composite",
+  "name": "power.newnew_warlock_core.bird_glide.name",
+  "description": "power.newnew_warlock_core.bird_glide.description",
+  "powers": {
+    "glide": {
+      "type": "neoorigins:natural_glide",
+      "render_elytra": "always"
+    },
+    "chest": {
+      "type": "neoorigins:restrict_armor",
+      "restrictions": [
+        { "slot": "chest" }
+      ]
+    }
+  }
+}

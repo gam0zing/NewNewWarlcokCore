@@ -25,7 +25,7 @@ public final class OriginItems {
     public static final DeferredItem<EssenceBottleItem> ESSENCE_BOTTLE =
         ITEMS.registerItem(
             "essence_bottle",
-            properties -> new EssenceBottleItem(properties, OriginIds.ESSENCE_SAMPLE),
+            properties -> new EssenceBottleItem(properties, OriginIds.ESSENCE_EMPTY),
             () -> new Item.Properties().stacksTo(16));
 
     public static final DeferredItem<net.minecraft.world.item.BlockItem> SAMPLE_STATUE =

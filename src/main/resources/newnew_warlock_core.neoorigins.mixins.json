@@ -1,0 +1,14 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "com.gam0zing.newnew_warlock_core.mixin.neoorigins",
+  "compatibilityLevel": "JAVA_21",
+  "plugin": "com.gam0zing.newnew_warlock_core.mixin.neoorigins.NeoOriginsMixinPlugin",
+  "mixins": [
+    "ActiveOriginServiceCompositeMixin",
+    "NeoOriginsAPIHasPowerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

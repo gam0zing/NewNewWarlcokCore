@@ -1,0 +1,17 @@
+{
+  "name": "origin.newnew_warlock_core.race.paradise_bird.name",
+  "description": "origin.newnew_warlock_core.race.paradise_bird.description",
+  "icon": "minecraft:feather",
+  "impact": "medium",
+  "order": 5,
+  "powers": [
+    "newnew_warlock_core:bird_glide",
+    "newnew_warlock_core:bird_dash",
+    "newnew_warlock_core:fluffy",
+    "newnew_warlock_core:soft_landing",
+    "newnew_warlock_core:paradise_bird_sleep_altitude",
+    "newnew_warlock_core:paradise_bird_food_rules",
+    "newnew_warlock_core:bird_no_sprint"
+  ],
+  "upgrades": []
+}

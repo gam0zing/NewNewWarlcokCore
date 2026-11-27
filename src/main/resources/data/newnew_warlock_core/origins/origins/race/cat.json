@@ -1,0 +1,20 @@
+{
+  "name": "origin.newnew_warlock_core.race.cat.name",
+  "description": "origin.newnew_warlock_core.race.cat.description",
+  "icon": "minecraft:cod",
+  "impact": "medium",
+  "order": 3,
+  "powers": [
+    "newnew_warlock_core:cat_natural_enemy",
+    "newnew_warlock_core:cat_sprint",
+    "newnew_warlock_core:cat_aquaphobic",
+    "newnew_warlock_core:cat_balance",
+    "newnew_warlock_core:soft_landing",
+    "newnew_warlock_core:fluffy",
+    "newnew_warlock_core:cat_climb",
+    "newnew_warlock_core:cat_scratch",
+    "newnew_warlock_core:cat_carnivore",
+    "newnew_warlock_core:cat_intimidate"
+  ],
+  "upgrades": []
+}

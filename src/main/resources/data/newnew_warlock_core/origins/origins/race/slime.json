@@ -1,0 +1,17 @@
+{
+  "name": "origin.newnew_warlock_core.race.slime.name",
+  "description": "origin.newnew_warlock_core.race.slime.description",
+  "icon": "minecraft:slime_ball",
+  "impact": "high",
+  "order": 2,
+  "powers": [
+    "newnew_warlock_core:slime_kin_ignore",
+    "newnew_warlock_core:slime_life",
+    "newnew_warlock_core:slime_water_breathing",
+    "newnew_warlock_core:slime_split",
+    "newnew_warlock_core:slime_environment_sensitivity",
+    "newnew_warlock_core:slime_devour",
+    "newnew_warlock_core:slime_active_split"
+  ],
+  "upgrades": []
+}

@@ -1,0 +1,6 @@
+{
+  "type": "neoorigins:attribute_modifier",
+  "attribute": "minecraft:safe_fall_distance",
+  "amount": 5.0,
+  "operation": "add_value"
+}

@@ -2,6 +2,8 @@
   "replace": false,
   "values": [
     "newnew_warlock_core:bleeding",
+    "newnew_warlock_core:frozen",
+    "newnew_warlock_core:dehydrated",
     "newnew_warlock_core:light_thorns",
     "minecraft:drown",
     "minecraft:starve",

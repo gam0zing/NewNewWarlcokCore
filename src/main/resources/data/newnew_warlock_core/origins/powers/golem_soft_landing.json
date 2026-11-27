@@ -1,0 +1,8 @@
+{
+  "type": "neoorigins:modify_damage",
+  "direction": "in",
+  "multiplier": 0.5,
+  "damage_type": "#minecraft:is_fall",
+  "name": "power.newnew_warlock_core.golem_soft_landing.name",
+  "description": "power.newnew_warlock_core.golem_soft_landing.description"
+}

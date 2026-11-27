@@ -10,8 +10,7 @@ import net.minecraft.resources.Identifier;
  */
 public final class OriginIds {
 
-    public static final Identifier RACE_SAMPLE = id("race/sample");
-    public static final Identifier ESSENCE_SAMPLE = id("essence/sample");
+    public static final Identifier ESSENCE_EMPTY = id("essence/empty");
     public static final Identifier BLESSING_NONE = id("blessing/none");
     public static final Identifier BLESSING_SAMPLE = id("blessing/sample");
 

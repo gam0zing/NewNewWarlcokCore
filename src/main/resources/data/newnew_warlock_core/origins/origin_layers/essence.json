@@ -2,7 +2,7 @@
   "order": 3,
   "name": "origins.layer.newnew_warlock_core.essence",
   "origins": [
-    "newnew_warlock_core:essence/sample"
+    "newnew_warlock_core:essence/empty"
   ],
   "allow_random": false,
   "auto_choose": false,

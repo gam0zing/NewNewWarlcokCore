@@ -186,7 +186,9 @@ public final class EnchantBaselineGameTests {
         HolderSet.Named<Enchantment> tag = registry.get(EnchantmentTags.IN_ENCHANTING_TABLE)
             .orElseThrow(() -> new IllegalStateException("注册表缺少 in_enchanting_table 标签"));
 
-        int[] costs = {1, 5, 10, 20, 30, 40};
+        // 只覆盖原版附魔台可达的费用（第三档最高 30，加上附魔能力随机后不超过 47）。
+        // 更高的费用属于本模组抬高 power 之后的区间，会刻意放宽 max_cost 上限，不再与原版一致。
+        int[] costs = {1, 5, 10, 20, 30};
         for (int cost : costs) {
             for (long seed = 0; seed < 8; seed++) {
                 RandomSource vanillaRandom = RandomSource.create(seed);

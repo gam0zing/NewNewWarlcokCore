@@ -76,6 +76,30 @@ public final class ModMobEffects {
         MOB_EFFECTS.register("fatal_wound",
             () -> new FatalWoundMobEffect(MobEffectCategory.HARMFUL, 0x990000));
 
+    // ============================== 起源效果 ==============================
+
+    /** 威慑：被猫威慑期间无法锁定目标，并持续远离威慑来源 */
+    public static final DeferredHolder<MobEffect, MobEffect> INTIMIDATED =
+        MOB_EFFECTS.register("intimidated", IntimidatedMobEffect::new);
+
+    /** 史莱姆分裂：倒计时结束时降一级并重置为 5 分钟，I 级结束则移除 */
+    public static final DeferredHolder<MobEffect, MobEffect> SLIME_SPLIT =
+        MOB_EFFECTS.register("slime_split",
+            () -> new SlimeSplitMobEffect(MobEffectCategory.BENEFICIAL, 0x63C64A));
+
+    /** 史莱姆巨大化：界面提示，实际增益由起源能力维护 */
+    public static final DeferredHolder<MobEffect, MobEffect> SLIME_GIANT =
+        MOB_EFFECTS.register("slime_giant",
+            () -> new SimpleEffect(MobEffectCategory.BENEFICIAL, 0x8FE06B));
+
+    /** 史莱姆冰冻：寒冷群系的体感状态，到期时按环境升降级 */
+    public static final DeferredHolder<MobEffect, MobEffect> SLIME_FROZEN =
+        MOB_EFFECTS.register("slime_frozen", SlimeFrozenMobEffect::new);
+
+    /** 史莱姆失水：炎热干燥群系的体感状态，到期时按环境升降级 */
+    public static final DeferredHolder<MobEffect, MobEffect> SLIME_DEHYDRATED =
+        MOB_EFFECTS.register("slime_dehydrated", SlimeDehydratedMobEffect::new);
+
     private static DeferredHolder<MobEffect, MobEffect> register(String name, int color) {
         return MOB_EFFECTS.register(name,
             () -> new SimpleEffect(MobEffectCategory.HARMFUL, color));

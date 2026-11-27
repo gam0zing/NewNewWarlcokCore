@@ -1,0 +1,9 @@
+{
+  "name": "origin.newnew_warlock_core.essence.empty.name",
+  "description": "origin.newnew_warlock_core.essence.empty.description",
+  "icon": "minecraft:amethyst_shard",
+  "impact": "none",
+  "order": 1,
+  "powers": [],
+  "upgrades": []
+}

@@ -1,0 +1,19 @@
+{
+  "type": "newnew_warlock_core:composite",
+  "name": "power.newnew_warlock_core.stone_golem_body.name",
+  "description": "power.newnew_warlock_core.stone_golem_body.description",
+  "powers": {
+    "armor": {
+      "type": "neoorigins:attribute_modifier",
+      "attribute": "minecraft:armor",
+      "amount": 10.0,
+      "operation": "add_value"
+    },
+    "skin": {
+      "type": "neoorigins:attribute_modifier",
+      "attribute": "newnew_warlock_core:rock_skin",
+      "amount": 2.0,
+      "operation": "add_value"
+    }
+  }
+}

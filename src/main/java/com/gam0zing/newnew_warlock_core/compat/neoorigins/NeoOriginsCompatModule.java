@@ -1,7 +1,9 @@
 package com.gam0zing.newnew_warlock_core.compat.neoorigins;
 
 import com.gam0zing.newnew_warlock_core.core.ModModule;
+import com.gam0zing.newnew_warlock_core.origin.OriginTraits;
 import com.gam0zing.newnew_warlock_core.origin.WarlockOrigins;
+import com.gam0zing.newnew_warlock_core.origin.content.power.OriginPowers;
 
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.IEventBus;
@@ -32,6 +34,9 @@ public final class NeoOriginsCompatModule implements ModModule {
         }
 
         WarlockOrigins.install(new NeoOriginsOriginAccess());
+        OriginPowers.POWER_TYPES.register(modEventBus);
+        OriginPowers.register();
+        NeoForge.EVENT_BUS.register(OriginTraits.class);
 
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, OriginSync::onLogin);
         NeoForge.EVENT_BUS.addListener(OriginSync::onLogout);

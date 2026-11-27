@@ -1,0 +1,43 @@
+{
+  "type": "newnew_warlock_core:composite",
+  "name": "power.newnew_warlock_core.stone_golem_giant.name",
+  "description": "power.newnew_warlock_core.stone_golem_giant.description",
+  "powers": {
+    "health": {
+      "type": "neoorigins:attribute_modifier",
+      "attribute": "minecraft:max_health",
+      "amount": 1.0,
+      "operation": "add_multiplied_base"
+    },
+    "attack": {
+      "type": "neoorigins:attribute_modifier",
+      "attribute": "minecraft:attack_damage",
+      "amount": 1.0,
+      "operation": "add_multiplied_base"
+    },
+    "scale": {
+      "type": "neoorigins:attribute_modifier",
+      "attribute": "minecraft:scale",
+      "amount": 1.0,
+      "operation": "add_multiplied_base"
+    },
+    "step": {
+      "type": "neoorigins:attribute_modifier",
+      "attribute": "minecraft:step_height",
+      "amount": 0.5,
+      "operation": "add_value"
+    },
+    "block_reach": {
+      "type": "neoorigins:attribute_modifier",
+      "attribute": "minecraft:block_interaction_range",
+      "amount": 1.0,
+      "operation": "add_value"
+    },
+    "entity_reach": {
+      "type": "neoorigins:attribute_modifier",
+      "attribute": "minecraft:entity_interaction_range",
+      "amount": 1.0,
+      "operation": "add_value"
+    }
+  }
+}

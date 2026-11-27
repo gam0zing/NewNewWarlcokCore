@@ -1,0 +1,18 @@
+{
+  "type": "newnew_warlock_core:composite",
+  "name": "power.newnew_warlock_core.stone_golem_heavy.name",
+  "description": "power.newnew_warlock_core.stone_golem_heavy.description",
+  "powers": {
+    "water": {
+      "type": "neoorigins:attribute_modifier",
+      "attribute": "minecraft:water_movement_efficiency",
+      "amount": 0.75,
+      "operation": "add_value"
+    },
+    "sink": {
+      "type": "neoorigins:ignore_fluid",
+      "fluid": "minecraft:water",
+      "mode": "physics"
+    }
+  }
+}

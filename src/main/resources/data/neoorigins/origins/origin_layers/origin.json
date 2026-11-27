@@ -3,7 +3,11 @@
   "order": 1,
   "name": "origins.layer.origin",
   "origins": [
-    "newnew_warlock_core:race/sample"
+    "newnew_warlock_core:race/human",
+    "newnew_warlock_core:race/slime",
+    "newnew_warlock_core:race/cat",
+    "newnew_warlock_core:race/stone_golem",
+    "newnew_warlock_core:race/paradise_bird"
   ],
   "allow_random": false,
   "auto_choose": false,
